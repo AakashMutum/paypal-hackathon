@@ -113,3 +113,85 @@ export interface HealthMeta {
   timestamp: string;
   [key: string]: unknown;
 }
+
+export interface OrderItem {
+  name: string;
+  quantity: number;
+  unitPrice: number;
+}
+
+export interface CreateOrderRequest {
+  storefrontUrl: string;
+  amount: number;
+  currency?: string;
+  merchantId?: string;
+  claimedMerchantName?: string;
+  payeeEmail?: string;
+  orderItems?: OrderItem[];
+  buyerReference?: string;
+  metadata?: Record<string, unknown>;
+}
+
+export interface CreateOrderResponse {
+  sessionId: string;
+  orderId: string;
+  status: string;
+  amount: string;
+  currency: string;
+  approvalUrl?: string;
+}
+
+export interface CaptureOrderRequest {
+  userAcknowledged?: boolean;
+  overrideReason?: string;
+}
+
+export interface CaptureOrderResponse {
+  sessionId: string;
+  orderId: string;
+  captureId?: string;
+  status: string;
+  paymentState: 'COMPLETED' | 'PAUSED' | 'FAILED';
+  decision: DecisionType;
+  actionTaken: ActionTakenType;
+}
+
+export interface MerchantVerificationSummary {
+  isMatch: boolean;
+  matchStatus: 'MATCH' | 'MISMATCH' | 'MISSING_PAYEE' | 'UNVERIFIED_MERCHANT';
+  expectedMerchantId?: string;
+  expectedPayeeEmail?: string;
+  expectedClaimedName?: string;
+  observedMerchantId?: string;
+  observedPayeeEmail?: string;
+  reasons: string[];
+}
+
+export interface RiskScores {
+  domainReputation: number;
+  merchantConsistency: number;
+  pricingAnomaly: number;
+  sslTechnical: number;
+}
+
+export interface RiskWeightsApplied {
+  domain: number;
+  merchantConsistency: number;
+  pricing: number;
+  ssl: number;
+}
+
+export interface OrderDecisionResponse {
+  sessionId: string;
+  orderId: string;
+  sessionStatus: SessionStatusType;
+  decision: DecisionType;
+  actionTaken: ActionTakenType;
+  overallScore: number;
+  scores: RiskScores;
+  weights: RiskWeightsApplied;
+  evidence: Record<string, unknown>;
+  reasons: string[];
+  merchantVerification: MerchantVerificationSummary;
+  captureEligible: boolean;
+}
