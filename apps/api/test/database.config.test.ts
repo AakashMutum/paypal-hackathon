@@ -15,6 +15,7 @@ test('database configuration parses custom connection parameters correctly', () 
     databaseMaxConnections: 20,
   });
 
+  assert.ok(config);
   assert.equal(config.connectionString, 'postgresql://testuser:testpass@localhost:5432/testdb');
   assert.deepEqual(config.ssl, { rejectUnauthorized: false });
   assert.equal(config.connectionTimeoutMillis, 5000);
@@ -44,15 +45,14 @@ test('createPool instantiates a Pool object with error handler when config is va
 });
 
 test('closeDatabase gracefully drains and resets active pool', async () => {
+  let ended = false;
   const fakePool = {
-    ended: false,
     async end() {
-      this.ended = true;
+      ended = true;
     },
-  };
+  } as unknown as import('pg').Pool;
 
   setPool(fakePool);
   await closeDatabase();
-  assert.equal(fakePool.ended, true);
+  assert.equal(ended, true);
 });
-

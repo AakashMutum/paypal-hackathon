@@ -1,9 +1,13 @@
+import type pg from 'pg';
 import { getPool, closeDatabase } from './connection.js';
+import type { DatabaseHealthInfo } from '@checkout-guardian/contracts';
 
 export { getPool, closeDatabase };
 
-export async function checkDatabase(poolInstance) {
-  const activePool = poolInstance || getPool();
+export type CheckDatabaseResult = DatabaseHealthInfo;
+
+export async function checkDatabase(poolInstance?: pg.Pool | null): Promise<CheckDatabaseResult> {
+  const activePool = poolInstance !== undefined ? poolInstance : getPool();
   if (!activePool) {
     return { status: 'not_configured' };
   }
@@ -17,9 +21,8 @@ export async function checkDatabase(poolInstance) {
       client.release();
     }
   } catch (error) {
-    // Log the actual diagnostic error internally for operators
-    console.error('Database connectivity check failed:', error.message);
-    // Never expose database credentials, host, or SQL errors to public consumers
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('Database connectivity check failed:', message);
     return {
       status: 'unhealthy',
       error: 'Database connection unavailable',

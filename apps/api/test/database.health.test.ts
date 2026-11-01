@@ -1,9 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import request from 'supertest';
+import type pg from 'pg';
 import { checkDatabase } from '../src/database/health.js';
 import { setPool } from '../src/database/connection.js';
 import { createApp } from '../src/app.js';
+import type { HealthData } from '@checkout-guardian/contracts';
 
 test('checkDatabase returns not_configured when no pool is available', async () => {
   const result = await checkDatabase(null);
@@ -14,14 +16,14 @@ test('checkDatabase returns healthy when connection query succeeds', async () =>
   const mockPool = {
     async connect() {
       return {
-        async query(sql) {
+        async query(sql: string) {
           assert.equal(sql, 'SELECT 1 AS health_check');
-          return { rows: [{ health_check: 1 }] };
+          return { rows: [{ health_check: 1 }] } as unknown as pg.QueryResult;
         },
         release() {},
       };
     },
-  };
+  } as unknown as pg.Pool;
 
   const result = await checkDatabase(mockPool);
   assert.deepEqual(result, { status: 'healthy' });
@@ -32,7 +34,7 @@ test('checkDatabase returns unhealthy and masks sensitive details on error', asy
     async connect() {
       throw new Error('password authentication failed for user "postgres_secret_password" at 10.0.0.1:5432');
     },
-  };
+  } as unknown as pg.Pool;
 
   const result = await checkDatabase(mockPool);
   assert.equal(result.status, 'unhealthy');
@@ -47,7 +49,7 @@ test('Express GET /health returns 503 degraded status when database is unhealthy
     async connect() {
       throw new Error('TCP connection refused on port 5432');
     },
-  };
+  } as unknown as pg.Pool;
 
   setPool(mockUnhealthyPool);
   const app = createApp();
@@ -55,9 +57,10 @@ test('Express GET /health returns 503 degraded status when database is unhealthy
   try {
     const response = await request(app).get('/health');
     assert.equal(response.status, 503);
-    assert.equal(response.body.data.status, 'degraded');
-    assert.equal(response.body.data.database.status, 'unhealthy');
-    assert.equal(response.body.data.database.error, 'Database connection unavailable');
+    const data = response.body.data as HealthData;
+    assert.equal(data.status, 'degraded');
+    assert.equal(data.database.status, 'unhealthy');
+    assert.equal(data.database.error, 'Database connection unavailable');
   } finally {
     setPool(null);
   }

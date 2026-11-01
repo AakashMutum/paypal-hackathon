@@ -1,4 +1,6 @@
-export function requestLogger(req, res, next) {
+import type { Request, Response, NextFunction } from 'express';
+
+export function requestLogger(req: Request, res: Response, next: NextFunction): void {
   const start = Date.now();
   res.on('finish', () => {
     if (process.env.NODE_ENV !== 'test') {

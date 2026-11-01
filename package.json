@@ -5,10 +5,13 @@
   "type": "module",
   "scripts": {
     "pretest": "node -e \"import('node:fs').then(fs => { if (!fs.existsSync('node_modules/@checkout-guardian/contracts')) fs.cpSync('packages/contracts', 'node_modules/@checkout-guardian/contracts', { recursive: true }); })\"",
-    "start": "node apps/api/src/server.js",
-    "test": "node --test apps/api/test/**/*.test.js",
-    "migrate": "node apps/api/src/database/migrate.js",
-    "migrate:status": "node apps/api/src/database/migrate.js --status"
+    "dev": "tsx watch apps/api/src/server.ts",
+    "build": "tsc -p packages/contracts && tsc -p apps/api && node -e \"import('node:fs').then(fs => { fs.cpSync('apps/api/src/database/migrations', 'apps/api/dist/src/database/migrations', { recursive: true }); })\"",
+    "typecheck": "tsc --noEmit",
+    "start": "node apps/api/dist/src/server.js",
+    "test": "tsx --test apps/api/test/database.config.test.ts apps/api/test/database.health.test.ts apps/api/test/database.migration.test.ts apps/api/test/database.integration.test.ts apps/api/test/health.test.ts",
+    "migrate": "tsx apps/api/src/database/migrate.ts",
+    "migrate:status": "tsx apps/api/src/database/migrate.ts --status"
   },
   "dependencies": {
     "cors": "^2.8.5",
@@ -19,6 +22,13 @@
     "pg": "^8.13.1"
   },
   "devDependencies": {
-    "supertest": "^7.0.0"
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.10.2",
+    "@types/pg": "^8.11.10",
+    "@types/supertest": "^6.0.2",
+    "supertest": "^7.0.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
   }
 }

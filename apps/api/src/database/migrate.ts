@@ -1,7 +1,7 @@
 import { getPool, closeDatabase } from './connection.js';
 import { applyMigrations, getMigrationStatus } from './migrator.js';
 
-async function run() {
+async function run(): Promise<void> {
   const args = process.argv.slice(2);
   const isStatus = args.includes('--status');
 
@@ -30,14 +30,14 @@ async function run() {
       }
     }
   } catch (err) {
-    console.error('Migration execution failed:', err.message);
+    const message = err instanceof Error ? err.message : String(err);
+    console.error('Migration execution failed:', message);
     process.exitCode = 1;
   } finally {
     await closeDatabase();
   }
 }
 
-if (process.argv[1] && process.argv[1].endsWith('migrate.js')) {
+if (process.argv[1] && (process.argv[1].endsWith('migrate.ts') || process.argv[1].endsWith('migrate.js'))) {
   run();
 }
-
