@@ -4,12 +4,12 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "pretest": "node -e \"import('node:fs').then(fs => { if (!fs.existsSync('node_modules/@checkout-guardian/contracts')) fs.cpSync('packages/contracts', 'node_modules/@checkout-guardian/contracts', { recursive: true }); })\"",
+    "pretest": "node -e \"import('node:fs').then(fs => { fs.cpSync('packages/contracts', 'node_modules/@checkout-guardian/contracts', { recursive: true }); if (fs.existsSync('apps/api/node_modules')) fs.cpSync('packages/contracts', 'apps/api/node_modules/@checkout-guardian/contracts', { recursive: true }); })\"",
     "dev": "tsx watch apps/api/src/server.ts",
-    "build": "tsc -p packages/contracts && tsc -p apps/api && node -e \"import('node:fs').then(fs => { fs.cpSync('apps/api/src/database/migrations', 'apps/api/dist/src/database/migrations', { recursive: true }); })\"",
+    "build": "tsc -p packages/contracts && node -e \"import('node:fs').then(fs => { fs.cpSync('packages/contracts', 'node_modules/@checkout-guardian/contracts', { recursive: true }); if (fs.existsSync('apps/api/node_modules')) fs.cpSync('packages/contracts', 'apps/api/node_modules/@checkout-guardian/contracts', { recursive: true }); fs.cpSync('apps/api/src/database/migrations', 'apps/api/dist/src/database/migrations', { recursive: true }); })\" && tsc -p apps/api",
     "typecheck": "tsc --noEmit",
     "start": "node apps/api/dist/src/server.js",
-    "test": "tsx --test apps/api/test/database.config.test.ts apps/api/test/database.health.test.ts apps/api/test/database.migration.test.ts apps/api/test/database.integration.test.ts apps/api/test/health.test.ts",
+    "test": "tsx --test apps/api/test/database.config.test.ts apps/api/test/database.health.test.ts apps/api/test/database.migration.test.ts apps/api/test/database.integration.test.ts apps/api/test/health.test.ts apps/api/test/paypal.auth.test.ts apps/api/test/paypal.orders.test.ts apps/api/test/merchant.verification.test.ts apps/api/test/risk.enforcement.test.ts apps/api/test/order.orchestration.test.ts apps/api/test/paypal.sandbox.live.test.ts",
     "migrate": "tsx apps/api/src/database/migrate.ts",
     "migrate:status": "tsx apps/api/src/database/migrate.ts --status"
   },
