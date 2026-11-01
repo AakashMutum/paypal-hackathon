@@ -1,10 +1,13 @@
 import pg from 'pg';
-import { env } from '../config/env.js';
+import { env, type EnvConfig } from '../config/env.js';
 
 const { Pool } = pg;
-let pool = null;
 
-export function buildPoolConfig(overrideConfig = {}) {
+export type DatabaseConfigOverrides = Partial<Pick<EnvConfig, 'databaseUrl' | 'databaseSsl' | 'databaseTimeoutMs' | 'databaseMaxConnections'>>;
+
+let pool: pg.Pool | null = null;
+
+export function buildPoolConfig(overrideConfig: DatabaseConfigOverrides = {}): pg.PoolConfig | null {
   const databaseUrl = overrideConfig.databaseUrl !== undefined ? overrideConfig.databaseUrl : env.databaseUrl;
   const databaseSsl = overrideConfig.databaseSsl !== undefined ? overrideConfig.databaseSsl : env.databaseSsl;
   const databaseTimeoutMs = overrideConfig.databaseTimeoutMs !== undefined ? overrideConfig.databaseTimeoutMs : env.databaseTimeoutMs;
@@ -23,21 +26,21 @@ export function buildPoolConfig(overrideConfig = {}) {
   };
 }
 
-export function createPool(overrideConfig = {}) {
+export function createPool(overrideConfig: DatabaseConfigOverrides = {}): pg.Pool | null {
   const config = buildPoolConfig(overrideConfig);
   if (!config) {
     return null;
   }
 
   const newPool = new Pool(config);
-  newPool.on('error', (err) => {
+  newPool.on('error', (err: Error) => {
     console.error('Unexpected PostgreSQL client error on idle connection:', err.message);
   });
 
   return newPool;
 }
 
-export function getPool() {
+export function getPool(): pg.Pool | null {
   if (pool) {
     return pool;
   }
@@ -50,15 +53,18 @@ export function getPool() {
   return pool;
 }
 
-export async function query(text, params = []) {
+export async function query<T extends pg.QueryResultRow = pg.QueryResultRow>(
+  text: string,
+  params: unknown[] = []
+): Promise<pg.QueryResult<T>> {
   const activePool = getPool();
   if (!activePool) {
     throw new Error('Database connection is not configured');
   }
-  return activePool.query(text, params);
+  return activePool.query<T>(text, params);
 }
 
-export async function closeDatabase() {
+export async function closeDatabase(): Promise<void> {
   if (pool) {
     const activePool = pool;
     pool = null;
@@ -66,6 +72,6 @@ export async function closeDatabase() {
   }
 }
 
-export function setPool(newPool) {
+export function setPool(newPool: pg.Pool | null): void {
   pool = newPool;
 }

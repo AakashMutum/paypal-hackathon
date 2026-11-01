@@ -3,11 +3,34 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { getMigrationFiles, applyMigrations, getMigrationStatus } from '../src/database/migrator.js';
+import type pg from 'pg';
+import {
+  getMigrationFiles,
+  applyMigrations,
+  getMigrationStatus,
+  type ConnectablePool,
+  type QueryableClient,
+} from '../src/database/migrator.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const MIGRATIONS_DIR = path.join(__dirname, '../src/database/migrations');
+
+function resolveMigrationsDir(): string {
+  const candidates = [
+    path.join(__dirname, '../src/database/migrations'),
+    path.join(__dirname, '../../src/database/migrations'),
+    path.join(process.cwd(), 'apps/api/src/database/migrations'),
+    path.join(process.cwd(), 'src/database/migrations'),
+  ];
+  for (const candidate of candidates) {
+    if (fs.existsSync(candidate)) {
+      return candidate;
+    }
+  }
+  return candidates[0];
+}
+
+const MIGRATIONS_DIR = resolveMigrationsDir();
 
 test('getMigrationFiles returns migration SQL files sorted alphabetically', () => {
   const files = getMigrationFiles(MIGRATIONS_DIR);
@@ -44,30 +67,33 @@ test('001_initial_schema.sql contains required tables, constraints, and audit co
 });
 
 test('applyMigrations executes pending migrations inside transactions and records them', async () => {
-  const executedStatements = [];
-  const insertedMigrations = [];
+  const executedStatements: Array<{ sql: string; params: unknown[] | undefined }> = [];
+  const insertedMigrations: string[] = [];
   let tableCreated = false;
 
-  const mockClient = {
-    async query(sql, params) {
+  const mockClient: QueryableClient = {
+    async query(sqlOrConfig: string | pg.QueryConfig<unknown[]>, values?: unknown[]) {
+      const sql = typeof sqlOrConfig === 'string' ? sqlOrConfig : sqlOrConfig.text;
+      const params = typeof sqlOrConfig === 'string' ? values : (sqlOrConfig.values as unknown[]);
       executedStatements.push({ sql: sql.trim(), params });
+
       if (sql.includes('CREATE TABLE IF NOT EXISTS schema_migrations')) {
         tableCreated = true;
-        return { rows: [] };
+        return { rows: [] } as unknown as pg.QueryResult;
       }
       if (sql.includes('SELECT name FROM schema_migrations')) {
-        return { rows: [] };
+        return { rows: [] } as unknown as pg.QueryResult;
       }
-      if (sql.includes('INSERT INTO schema_migrations')) {
-        insertedMigrations.push(params[0]);
-        return { rowCount: 1 };
+      if (sql.includes('INSERT INTO schema_migrations') && params && params[0]) {
+        insertedMigrations.push(String(params[0]));
+        return { rowCount: 1 } as unknown as pg.QueryResult;
       }
-      return { rows: [] };
+      return { rows: [] } as unknown as pg.QueryResult;
     },
     release() {},
   };
 
-  const mockPool = {
+  const mockPool: ConnectablePool = {
     async connect() {
       return mockClient;
     },
@@ -87,22 +113,23 @@ test('applyMigrations executes pending migrations inside transactions and record
 test('applyMigrations aborts and rolls back transaction on SQL failure', async () => {
   let rolledBack = false;
 
-  const mockClient = {
-    async query(sql) {
-      if (sql === 'BEGIN') return;
+  const mockClient: QueryableClient = {
+    async query(sqlOrConfig: string | pg.QueryConfig<unknown[]>) {
+      const sql = typeof sqlOrConfig === 'string' ? sqlOrConfig : sqlOrConfig.text;
+      if (sql === 'BEGIN') return {} as unknown as pg.QueryResult;
       if (sql === 'ROLLBACK') {
         rolledBack = true;
-        return;
+        return {} as unknown as pg.QueryResult;
       }
-      if (sql.includes('CREATE TABLE IF NOT EXISTS schema_migrations')) return { rows: [] };
-      if (sql.includes('SELECT name FROM schema_migrations')) return { rows: [] };
+      if (sql.includes('CREATE TABLE IF NOT EXISTS schema_migrations')) return { rows: [] } as unknown as pg.QueryResult;
+      if (sql.includes('SELECT name FROM schema_migrations')) return { rows: [] } as unknown as pg.QueryResult;
       // Simulate DDL failure
       throw new Error('syntax error in migration SQL');
     },
     release() {},
   };
 
-  const mockPool = {
+  const mockPool: ConnectablePool = {
     async connect() {
       return mockClient;
     },
@@ -116,22 +143,23 @@ test('applyMigrations aborts and rolls back transaction on SQL failure', async (
 });
 
 test('getMigrationStatus inspects applied and pending status', async () => {
-  const mockClient = {
-    async query(sql) {
-      if (sql.includes('CREATE TABLE IF NOT EXISTS schema_migrations')) return { rows: [] };
+  const mockClient: QueryableClient = {
+    async query(sqlOrConfig: string | pg.QueryConfig<unknown[]>) {
+      const sql = typeof sqlOrConfig === 'string' ? sqlOrConfig : sqlOrConfig.text;
+      if (sql.includes('CREATE TABLE IF NOT EXISTS schema_migrations')) return { rows: [] } as unknown as pg.QueryResult;
       if (sql.includes('SELECT name, applied_at FROM schema_migrations')) {
         return {
           rows: [
             { name: '001_initial_schema.sql', applied_at: new Date('2026-10-31T12:00:00Z') },
           ],
-        };
+        } as unknown as pg.QueryResult;
       }
-      return { rows: [] };
+      return { rows: [] } as unknown as pg.QueryResult;
     },
     release() {},
   };
 
-  const mockPool = {
+  const mockPool: ConnectablePool = {
     async connect() {
       return mockClient;
     },
@@ -140,7 +168,7 @@ test('getMigrationStatus inspects applied and pending status', async () => {
   const status = await getMigrationStatus(mockPool);
   assert.ok(status.length >= 1);
   const initialMigration = status.find((m) => m.name === '001_initial_schema.sql');
+  assert.ok(initialMigration);
   assert.equal(initialMigration.applied, true);
   assert.ok(initialMigration.appliedAt);
 });
-

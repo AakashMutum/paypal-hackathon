@@ -2,7 +2,20 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-export const env = {
+export interface EnvConfig {
+  nodeEnv: string;
+  host: string;
+  port: number;
+  corsOrigin: string;
+  rateLimitWindowMs: number;
+  rateLimitMax: number;
+  databaseUrl: string;
+  databaseSsl: boolean;
+  databaseTimeoutMs: number;
+  databaseMaxConnections: number;
+}
+
+export const env: EnvConfig = {
   nodeEnv: process.env.NODE_ENV || 'development',
   host: process.env.HOST || '0.0.0.0',
   port: parseInt(process.env.PORT || '3000', 10),

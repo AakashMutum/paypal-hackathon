@@ -7,7 +7,7 @@ import { env } from '../src/config/env.js';
 const { Pool } = pg;
 const testDatabaseUrl = process.env.TEST_DATABASE_URL || env.databaseUrl;
 
-async function isDatabaseAvailable(url) {
+async function isDatabaseAvailable(url: string): Promise<boolean> {
   if (!url) return false;
   const tempPool = new Pool({
     connectionString: url,
@@ -54,7 +54,7 @@ if (!dbAvailable) {
 
     await t.test('persists and retrieves merchant_records', async () => {
       const testDomain = `test-store-${Date.now()}.com`;
-      const insertResult = await testPool.query(
+      const insertResult = await testPool.query<{ id: string; domain: string; claimed_name: string; reputation_score: string }>(
         `INSERT INTO merchant_records (domain, claimed_name, payee_email, verification_status, reputation_score)
          VALUES ($1, $2, $3, $4, $5)
          RETURNING *`,
@@ -66,7 +66,10 @@ if (!dbAvailable) {
       assert.equal(merchant.domain, testDomain);
       assert.equal(merchant.reputation_score, '65.50');
 
-      const selectResult = await testPool.query('SELECT * FROM merchant_records WHERE id = $1', [merchant.id]);
+      const selectResult = await testPool.query<{ claimed_name: string }>(
+        'SELECT * FROM merchant_records WHERE id = $1',
+        [merchant.id]
+      );
       assert.equal(selectResult.rows[0].claimed_name, 'Test Store LLC');
     });
 
@@ -74,7 +77,7 @@ if (!dbAvailable) {
       const sessionId = `chk_sess_${Date.now()}`;
 
       // Insert valid session
-      const insertSession = await testPool.query(
+      const insertSession = await testPool.query<{ id: string }>(
         `INSERT INTO checkout_sessions (id, storefront_url, domain, amount, currency, status)
          VALUES ($1, $2, $3, $4, $5, $6)
          RETURNING *`,
@@ -102,7 +105,11 @@ if (!dbAvailable) {
       );
 
       // Valid risk assessment
-      const insertRisk = await testPool.query(
+      const insertRisk = await testPool.query<{
+        overall_score: string;
+        weights_applied: { domain: number };
+        evidence: { domain_age_days: number };
+      }>(
         `INSERT INTO risk_assessments (
            session_id, overall_score, domain_reputation_score,
            merchant_consistency_score, pricing_anomaly_score, ssl_technical_score,
@@ -149,7 +156,7 @@ if (!dbAvailable) {
       );
 
       // Valid ALLOW
-      const insertDecision = await testPool.query(
+      const insertDecision = await testPool.query<{ decision: string }>(
         `INSERT INTO payment_decisions (session_id, decision, action_taken, reasons)
          VALUES ($1, $2, $3, $4)
          RETURNING *`,
@@ -169,4 +176,3 @@ if (!dbAvailable) {
     });
   });
 }
-
