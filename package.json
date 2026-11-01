@@ -1,0 +1,24 @@
+{
+  "name": "checkout-guardian",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "pretest": "node -e \"import('node:fs').then(fs => { if (!fs.existsSync('node_modules/@checkout-guardian/contracts')) fs.cpSync('packages/contracts', 'node_modules/@checkout-guardian/contracts', { recursive: true }); })\"",
+    "start": "node apps/api/src/server.js",
+    "test": "node --test apps/api/test/**/*.test.js",
+    "migrate": "node apps/api/src/database/migrate.js",
+    "migrate:status": "node apps/api/src/database/migrate.js --status"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "express-rate-limit": "^7.5.0",
+    "helmet": "^8.0.0",
+    "pg": "^8.13.1"
+  },
+  "devDependencies": {
+    "supertest": "^7.0.0"
+  }
+}

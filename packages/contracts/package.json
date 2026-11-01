@@ -1,0 +1,10 @@
+{
+  "name": "@checkout-guardian/contracts",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Checkout Guardian shared API contracts",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.js"
+  }
+}
