@@ -7,7 +7,7 @@ import {
   getCachedTokenForTesting,
   PayPalAuthError,
 } from '../src/services/paypal/paypalAuth.service.js';
-import { env, setPaypalConfig } from '../src/config/env.js';
+import { setPaypalConfig } from '../src/config/env.js';
 
 beforeEach(() => {
   clearTokenCache();

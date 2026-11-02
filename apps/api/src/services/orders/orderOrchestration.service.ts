@@ -8,7 +8,6 @@ import {
   type CaptureOrderRequest,
   type CaptureOrderResponse,
   type OrderDecisionResponse,
-  type DecisionType,
   type SessionStatusType,
   type ActionTakenType,
 } from '@checkout-guardian/contracts';
@@ -17,7 +16,6 @@ import {
   createPayPalOrder,
   getPayPalOrder,
   capturePayPalOrder,
-  type PayPalOrderResponse,
 } from '../paypal/paypalOrders.service.js';
 import {
   verifyMerchantIdentity,
@@ -31,22 +29,27 @@ import { evaluateRisk, type RiskEvaluationResult } from '../risk/riskEngine.serv
 // This lets mock-only integration tests (CI, no credentials) preserve the
 // create → evaluate → capture flow without requiring PostgreSQL.
 // ──────────────────────────────────────────────────────────────────────────────
-interface InMemorySession {
+export interface CheckoutSessionRecord {
   id: string;
   paypal_order_id: string;
   domain: string;
   amount: number;
   currency: string;
   status: SessionStatusType;
-  merchant_id?: string;
+  merchant_id?: string | null;
   storefront_url: string;
-  metadata: Record<string, unknown>;
-  // Flattened merchant fields (mirror the JOIN used in findCheckoutSession)
-  merchant_domain?: string;
-  claimed_name?: string;
+  metadata?: Record<string, unknown> | null;
+  merchant_domain?: string | null;
+  claimed_name?: string | null;
   merchant_payee_email?: string | null;
   merchant_registered_id?: string | null;
-  merchant_status?: string;
+  merchant_status?: string | null;
+  merchant_reputation?: number | string | null;
+  [key: string]: unknown;
+}
+
+interface InMemorySession extends CheckoutSessionRecord {
+  metadata: Record<string, unknown>;
   merchant_reputation?: number;
 }
 
@@ -250,14 +253,13 @@ export async function createCheckoutOrder(req: CreateOrderRequest): Promise<Crea
 }
 
 /**
- * Finds checkout session by either TRUSTORA sessionId or PayPal orderId.
- * Falls back to the in-memory store when no database is configured.
  * Finds checkout session by either Checkout Guardian sessionId or PayPal orderId.
+ * Falls back to the in-memory store when no database is configured.
  */
-export async function findCheckoutSession(orderOrSessionId: string): Promise<Record<string, any> | null> {
+export async function findCheckoutSession(orderOrSessionId: string): Promise<CheckoutSessionRecord | null> {
   const pool = getPool();
   if (pool) {
-    const result = await query(
+    const result = await query<CheckoutSessionRecord>(
       `SELECT cs.*, mr.domain as merchant_domain, mr.claimed_name, mr.payee_email as merchant_payee_email,
               mr.merchant_id as merchant_registered_id, mr.verification_status as merchant_status,
               mr.reputation_score as merchant_reputation
@@ -290,12 +292,12 @@ export async function evaluateOrderRisk(orderOrSessionId: string): Promise<Order
   let expectedMerchant: ExpectedMerchant | null = null;
   if (session) {
     expectedMerchant = {
-      id: session.merchant_id,
-      domain: session.domain || session.merchant_domain,
-      claimed_name: session.claimed_name || session.domain,
-      merchant_id: session.merchant_registered_id,
-      payee_email: session.merchant_payee_email,
-      verification_status: session.merchant_status,
+      id: session.merchant_id || undefined,
+      domain: (session.domain || session.merchant_domain) || '',
+      claimed_name: (session.claimed_name || session.domain) || '',
+      merchant_id: session.merchant_registered_id || undefined,
+      payee_email: session.merchant_payee_email || undefined,
+      verification_status: session.merchant_status || undefined,
     };
   }
 
@@ -431,7 +433,8 @@ export async function captureCheckoutOrder(
 
   // Check if session is already completed (idempotency)
   if (session && session.status === SessionStatus.COMPLETED) {
-    const existingCaptureId = session.metadata?.capture_id || 'ALREADY_COMPLETED';
+    const rawCaptureId = session.metadata?.capture_id;
+    const existingCaptureId = typeof rawCaptureId === 'string' ? rawCaptureId : 'ALREADY_COMPLETED';
     return {
       sessionId: session.id,
       orderId: paypalOrderId,
