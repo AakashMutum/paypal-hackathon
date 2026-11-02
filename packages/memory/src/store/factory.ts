@@ -28,16 +28,16 @@ export interface CreateMemoryStoreOptions extends ElasticMemoryStoreOptions {
  * if ELASTIC_NODE is missing or the Elasticsearch cluster is unreachable.
  */
 export async function createMemoryStore(
-  options: CreateMemoryStoreOptions = {}
+  options: CreateMemoryStoreOptions = {},
 ): Promise<MemoryStore> {
   const logger = options.logger ?? console;
-  const node = options.node ?? process.env.ELASTIC_NODE;
+  const node = options.node ?? process.env.ELASTIC_NODE ?? process.env.ELASTIC_URL;
   const apiKey = options.apiKey ?? process.env.ELASTIC_API_KEY;
   const timeoutMs = options.timeoutMs ?? 1500;
 
   if (!node && !options.client) {
     logger.warn(
-      '[MemoryStore] ELASTIC_NODE environment variable is missing; falling back to InMemoryMemoryStore.'
+      '[MemoryStore] ELASTIC_NODE environment variable is missing; falling back to InMemoryMemoryStore.',
     );
     return new InMemoryMemoryStore();
   }
@@ -59,7 +59,7 @@ export async function createMemoryStore(
       const timeoutPromise = new Promise<never>((_, reject) => {
         timer = setTimeout(
           () => reject(new Error(`Elasticsearch ping timed out after ${timeoutMs}ms`)),
-          timeoutMs
+          timeoutMs,
         );
       });
 
@@ -75,9 +75,8 @@ export async function createMemoryStore(
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     logger.warn(
-      `[MemoryStore] Elasticsearch connection failed (${message}); falling back to InMemoryMemoryStore.`
+      `[MemoryStore] Elasticsearch connection failed (${message}); falling back to InMemoryMemoryStore.`,
     );
     return new InMemoryMemoryStore();
   }
 }
-

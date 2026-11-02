@@ -26,25 +26,30 @@ export class BaselineBClassifier implements BaselineClassifier {
     if (!caseInput.merchantIdentityClaimsConsistent) {
       identityRisk = 45;
       reasons.push(
-        `Inconsistent merchant identity claims for storefront claiming "${caseInput.claimedBrand}"`
+        `Inconsistent merchant identity claims for storefront claiming "${caseInput.claimedBrand}"`,
       );
     } else {
       reasons.push(
-        `Storefront claims for brand "${caseInput.claimedBrand}" are internally consistent`
+        `Storefront claims for brand "${caseInput.claimedBrand}" are internally consistent`,
       );
     }
 
-    // Weight combination: 60% Baseline A components + 40% Identity Claims
-    // domainRisk (max 50) + pricingRisk (max 50) + identityRisk (max 45) -> scaled to 100 max
-    const rawScore = (baseResult.componentScores?.domainRisk ?? 0) * 0.35 +
-      (baseResult.componentScores?.pricingRisk ?? 0) * 0.25 +
-      identityRisk;
+    // Weight combination: Baseline B builds upon Baseline A + Identity Claims
+    // When claims are inconsistent, adds substantial identity risk.
+    // When claims are consistent, preserves Baseline A's evaluation.
+    const rawScore = !caseInput.merchantIdentityClaimsConsistent
+      ? baseResult.score * 0.6 + identityRisk
+      : baseResult.score;
 
     let compositeScore = Math.min(100, Math.round(rawScore));
 
     // Constraint: Never use discount threshold as proof on its own.
     // If identity is consistent and domain is established (> 365 days), discounts alone cannot cause PAUSE
-    if (caseInput.merchantIdentityClaimsConsistent && caseInput.domainAgeDays > 365 && compositeScore >= 75) {
+    if (
+      caseInput.merchantIdentityClaimsConsistent &&
+      caseInput.domainAgeDays > 365 &&
+      compositeScore >= 75
+    ) {
       compositeScore = 65;
       reasons.push('Identity claims consistent on mature domain; capped below block threshold');
     }
@@ -64,4 +69,3 @@ export class BaselineBClassifier implements BaselineClassifier {
     };
   }
 }
-

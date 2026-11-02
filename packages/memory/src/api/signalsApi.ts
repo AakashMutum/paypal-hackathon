@@ -58,7 +58,7 @@ export async function lookupPriorSignals(
   domain?: string,
   payeeMerchantId?: string,
   payeeEmail?: string,
-  store?: MemoryStore
+  store?: MemoryStore,
 ): Promise<PriorSignalsResult> {
   const cleanDomain = domain?.trim();
   const cleanMerchantId = payeeMerchantId?.trim();
@@ -109,9 +109,8 @@ export async function lookupPriorSignals(
  */
 export async function saveInvestigation(
   record: unknown,
-  store?: MemoryStore
+  store?: MemoryStore,
 ): Promise<HistoricalRecord> {
   const activeStore = store ?? (await getDefaultMemoryStore());
   return activeStore.indexInvestigation(record);
 }
-

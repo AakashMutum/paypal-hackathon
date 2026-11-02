@@ -4,10 +4,7 @@
  */
 
 import type { PredictionRecord, FullMetricsReport } from './types.js';
-import {
-  calculateConfusionMatrix,
-  calculateClassificationMetrics,
-} from './confusionMatrix.js';
+import { calculateConfusionMatrix, calculateClassificationMetrics } from './confusionMatrix.js';
 import { calculateLatencyMetrics } from './latency.js';
 
 export class MetricsEngine {
@@ -40,4 +37,3 @@ export class MetricsEngine {
 export function evaluatePredictions(predictions: PredictionRecord[]): FullMetricsReport {
   return new MetricsEngine().evaluate(predictions);
 }
-

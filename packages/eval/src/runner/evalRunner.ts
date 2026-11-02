@@ -20,11 +20,7 @@ import {
   calculateClassificationMetrics,
 } from '../metrics/confusionMatrix.js';
 import { calculateLatencyMetrics } from '../metrics/latency.js';
-import type {
-  EvalReport,
-  BaselineSummaryMetrics,
-  CaseEvaluationResult,
-} from './types.js';
+import type { EvalReport, BaselineSummaryMetrics, CaseEvaluationResult } from './types.js';
 
 export interface RunEvaluationOptions {
   /** Optional custom output file path for eval-report.json */
@@ -44,9 +40,7 @@ export function getDefaultReportPath(): string {
 /**
  * Runs all 3 baselines over the 50 cases in fixed order and generates eval-report.json.
  */
-export async function runEvaluation(
-  options: RunEvaluationOptions = {}
-): Promise<EvalReport> {
+export async function runEvaluation(options: RunEvaluationOptions = {}): Promise<EvalReport> {
   const silent = options.silent ?? false;
   const outputPath = options.outputPath || getDefaultReportPath();
 
@@ -178,16 +172,22 @@ export async function runEvaluation(
 }
 
 function printConsoleTable(report: EvalReport): void {
-  console.log('\n========================================================================================');
-  console.log(`  CHECKOUT GUARDIAN BENCHMARK EVALUATION REPORT (${report.datasetSize} cases, ${report.generatedAt})`);
-  console.log('========================================================================================\n');
+  console.log(
+    '\n========================================================================================',
+  );
+  console.log(
+    `  CHECKOUT GUARDIAN BENCHMARK EVALUATION REPORT (${report.datasetSize} cases, ${report.generatedAt})`,
+  );
+  console.log(
+    '========================================================================================\n',
+  );
 
   const rows = [
     {
-      'Baseline': 'Baseline A (Domain + Discount)',
-      'Accuracy': `${(report.perBaseline.baselineA.accuracy * 100).toFixed(1)}%`,
-      'Precision': `${(report.perBaseline.baselineA.precision * 100).toFixed(1)}%`,
-      'Recall': `${(report.perBaseline.baselineA.recall * 100).toFixed(1)}%`,
+      Baseline: 'Baseline A (Domain + Discount)',
+      Accuracy: `${(report.perBaseline.baselineA.accuracy * 100).toFixed(1)}%`,
+      Precision: `${(report.perBaseline.baselineA.precision * 100).toFixed(1)}%`,
+      Recall: `${(report.perBaseline.baselineA.recall * 100).toFixed(1)}%`,
       'F1 Score': `${(report.perBaseline.baselineA.f1 * 100).toFixed(1)}%`,
       'TP/FP/TN/FN': `${report.perBaseline.baselineA.tp}/${report.perBaseline.baselineA.fp}/${report.perBaseline.baselineA.tn}/${report.perBaseline.baselineA.fn}`,
       'Mean (ms)': `${report.perBaseline.baselineA.latency.mean}ms`,
@@ -195,10 +195,10 @@ function printConsoleTable(report: EvalReport): void {
       'p95 (ms)': `${report.perBaseline.baselineA.latency.p95}ms`,
     },
     {
-      'Baseline': 'Baseline B (A + Identity Claims)',
-      'Accuracy': `${(report.perBaseline.baselineB.accuracy * 100).toFixed(1)}%`,
-      'Precision': `${(report.perBaseline.baselineB.precision * 100).toFixed(1)}%`,
-      'Recall': `${(report.perBaseline.baselineB.recall * 100).toFixed(1)}%`,
+      Baseline: 'Baseline B (A + Identity Claims)',
+      Accuracy: `${(report.perBaseline.baselineB.accuracy * 100).toFixed(1)}%`,
+      Precision: `${(report.perBaseline.baselineB.precision * 100).toFixed(1)}%`,
+      Recall: `${(report.perBaseline.baselineB.recall * 100).toFixed(1)}%`,
       'F1 Score': `${(report.perBaseline.baselineB.f1 * 100).toFixed(1)}%`,
       'TP/FP/TN/FN': `${report.perBaseline.baselineB.tp}/${report.perBaseline.baselineB.fp}/${report.perBaseline.baselineB.tn}/${report.perBaseline.baselineB.fn}`,
       'Mean (ms)': `${report.perBaseline.baselineB.latency.mean}ms`,
@@ -206,10 +206,10 @@ function printConsoleTable(report: EvalReport): void {
       'p95 (ms)': `${report.perBaseline.baselineB.latency.p95}ms`,
     },
     {
-      'Baseline': 'Full (B + Payee + Memory)',
-      'Accuracy': `${(report.perBaseline.full.accuracy * 100).toFixed(1)}%`,
-      'Precision': `${(report.perBaseline.full.precision * 100).toFixed(1)}%`,
-      'Recall': `${(report.perBaseline.full.recall * 100).toFixed(1)}%`,
+      Baseline: 'Full (B + Payee + Memory)',
+      Accuracy: `${(report.perBaseline.full.accuracy * 100).toFixed(1)}%`,
+      Precision: `${(report.perBaseline.full.precision * 100).toFixed(1)}%`,
+      Recall: `${(report.perBaseline.full.recall * 100).toFixed(1)}%`,
       'F1 Score': `${(report.perBaseline.full.f1 * 100).toFixed(1)}%`,
       'TP/FP/TN/FN': `${report.perBaseline.full.tp}/${report.perBaseline.full.fp}/${report.perBaseline.full.tn}/${report.perBaseline.full.fn}`,
       'Mean (ms)': `${report.perBaseline.full.latency.mean}ms`,
@@ -220,4 +220,3 @@ function printConsoleTable(report: EvalReport): void {
 
   console.table(rows);
 }
-

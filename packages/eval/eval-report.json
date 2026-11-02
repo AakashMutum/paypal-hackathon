@@ -1,61 +1,61 @@
 {
-  "generatedAt": "2026-11-02T10:24:35.934Z",
+  "generatedAt": "2026-11-02T11:51:02.685Z",
   "datasetSize": 50,
   "perBaseline": {
     "baselineA": {
       "tp": 25,
-      "fp": 4,
-      "tn": 21,
+      "fp": 5,
+      "tn": 20,
       "fn": 0,
-      "precision": 0.8621,
+      "precision": 0.8333,
       "recall": 1,
-      "f1": 0.9259,
-      "accuracy": 0.92,
+      "f1": 0.9091,
+      "accuracy": 0.9,
       "latency": {
-        "mean": 0.006,
+        "mean": 0.004,
         "p50": 0.001,
-        "p95": 0.021,
-        "p99": 0.08,
+        "p95": 0.011,
+        "p99": 0.048,
         "min": 0.001,
-        "max": 0.13,
+        "max": 0.083,
         "count": 50
       }
     },
     "baselineB": {
       "tp": 25,
-      "fp": 0,
-      "tn": 25,
+      "fp": 5,
+      "tn": 20,
       "fn": 0,
-      "precision": 1,
+      "precision": 0.8333,
       "recall": 1,
-      "f1": 1,
-      "accuracy": 1,
+      "f1": 0.9091,
+      "accuracy": 0.9,
       "latency": {
-        "mean": 0.004,
+        "mean": 0.002,
         "p50": 0.001,
-        "p95": 0.009,
-        "p99": 0.047,
+        "p95": 0.005,
+        "p99": 0.023,
         "min": 0.001,
-        "max": 0.074,
+        "max": 0.04,
         "count": 50
       }
     },
     "full": {
       "tp": 25,
-      "fp": 0,
-      "tn": 25,
+      "fp": 1,
+      "tn": 24,
       "fn": 0,
-      "precision": 1,
+      "precision": 0.9615,
       "recall": 1,
-      "f1": 1,
-      "accuracy": 1,
+      "f1": 0.9804,
+      "accuracy": 0.98,
       "latency": {
-        "mean": 0.025,
-        "p50": 0.005,
-        "p95": 0.058,
-        "p99": 0.358,
+        "mean": 0.015,
+        "p50": 0.003,
+        "p95": 0.023,
+        "p99": 0.25,
         "min": 0.003,
-        "max": 0.595,
+        "max": 0.446,
         "count": 50
       }
     }
@@ -64,56 +64,55 @@
     "baselineA": [
       {
         "id": "case-demo-001",
-        "merchantUrl": "https://acme-audio.com/checkout",
-        "claimedBrand": "Acme Audio",
+        "merchantUrl": "https://www.harborline-outfitters.example/checkout",
+        "claimedBrand": "Harborline Outfitters",
         "actual": "legit",
         "predicted": "legit",
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.13,
+        "latencyMs": 0.0832,
         "reasons": []
       },
       {
         "id": "case-demo-002",
-        "merchantUrl": "https://mega-dealsoutlet.net/checkout",
-        "claimedBrand": "Samsung",
-        "actual": "fraud",
+        "merchantUrl": "https://www.bargainbarn-outlet.example/cart",
+        "claimedBrand": "Bargain Barn Outlet",
+        "actual": "legit",
         "predicted": "fraud",
-        "isCorrect": true,
-        "decision": "PAUSE",
-        "score": 90,
-        "latencyMs": 0.0081,
+        "isCorrect": false,
+        "decision": "WARN",
+        "score": 40,
+        "latencyMs": 0.0067,
         "reasons": [
-          "Recently registered domain (12 days old)",
-          "Extreme discount anomaly of 90%"
+          "High discount anomaly of 72%"
         ]
       },
       {
         "id": "case-demo-003",
-        "merchantUrl": "https://gucci-outletdeals.com/checkout",
-        "claimedBrand": "Gucci",
+        "merchantUrl": "https://www.harborlyne-outfitters-sale.example/checkout",
+        "claimedBrand": "Harborline Outfitters",
         "actual": "fraud",
         "predicted": "fraud",
         "isCorrect": true,
         "decision": "PAUSE",
-        "score": 90,
-        "latencyMs": 0.0135,
+        "score": 75,
+        "latencyMs": 0.0113,
         "reasons": [
-          "Recently registered domain (9 days old)",
-          "Extreme discount anomaly of 93%"
+          "Extremely new domain (6 days old)",
+          "Significant discount of 66%"
         ]
       },
       {
         "id": "case-fraud-001",
-        "merchantUrl": "https://apple-clearance-direct.shop/checkout",
-        "claimedBrand": "Apple",
+        "merchantUrl": "https://auratech-clearance-direct.shop/checkout",
+        "claimedBrand": "AuraTech",
         "actual": "fraud",
         "predicted": "fraud",
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 90,
-        "latencyMs": 0.0026,
+        "latencyMs": 0.0024,
         "reasons": [
           "Extremely new domain (5 days old)",
           "High discount anomaly of 83%"
@@ -121,14 +120,14 @@
       },
       {
         "id": "case-fraud-002",
-        "merchantUrl": "https://rolex-official-discounts.top/checkout",
-        "claimedBrand": "Rolex",
+        "merchantUrl": "https://chronos-official-discounts.top/checkout",
+        "claimedBrand": "Chronos Elite",
         "actual": "fraud",
         "predicted": "fraud",
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 90,
-        "latencyMs": 0.0185,
+        "latencyMs": 0.0036,
         "reasons": [
           "Recently registered domain (7 days old)",
           "Extreme discount anomaly of 98%"
@@ -143,7 +142,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 90,
-        "latencyMs": 0.0019,
+        "latencyMs": 0.0018,
         "reasons": [
           "Recently registered domain (11 days old)",
           "Extreme discount anomaly of 90%"
@@ -151,14 +150,14 @@
       },
       {
         "id": "case-fraud-004",
-        "merchantUrl": "https://nike-dunks-cheap.online/checkout",
-        "claimedBrand": "Nike",
+        "merchantUrl": "https://veloce-kicks-cheap.online/checkout",
+        "claimedBrand": "Veloce Athletics",
         "actual": "fraud",
         "predicted": "fraud",
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 80,
-        "latencyMs": 0.002,
+        "latencyMs": 0.0017,
         "reasons": [
           "Recently registered domain (8 days old)",
           "High discount anomaly of 71%"
@@ -173,7 +172,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 100,
-        "latencyMs": 0.0018,
+        "latencyMs": 0.0017,
         "reasons": [
           "Extremely new domain (4 days old)",
           "Extreme discount anomaly of 85%"
@@ -188,7 +187,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 80,
-        "latencyMs": 0.0197,
+        "latencyMs": 0.0118,
         "reasons": [
           "Recently registered domain (14 days old)",
           "High discount anomaly of 78%"
@@ -203,7 +202,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 90,
-        "latencyMs": 0.028,
+        "latencyMs": 0.0102,
         "reasons": [
           "Recently registered domain (10 days old)",
           "Extreme discount anomaly of 90%"
@@ -218,7 +217,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 100,
-        "latencyMs": 0.0034,
+        "latencyMs": 0.0026,
         "reasons": [
           "Extremely new domain (6 days old)",
           "Extreme discount anomaly of 88%"
@@ -233,7 +232,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 90,
-        "latencyMs": 0.0089,
+        "latencyMs": 0.0012,
         "reasons": [
           "Recently registered domain (15 days old)",
           "Extreme discount anomaly of 89%"
@@ -248,7 +247,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 90,
-        "latencyMs": 0.0013,
+        "latencyMs": 0.0009,
         "reasons": [
           "Extremely new domain (3 days old)",
           "High discount anomaly of 77%"
@@ -263,7 +262,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 90,
-        "latencyMs": 0.001,
+        "latencyMs": 0.0008,
         "reasons": [
           "Recently registered domain (13 days old)",
           "Extreme discount anomaly of 87%"
@@ -278,7 +277,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 90,
-        "latencyMs": 0.0069,
+        "latencyMs": 0.0007,
         "reasons": [
           "Recently registered domain (8 days old)",
           "Extreme discount anomaly of 89%"
@@ -293,7 +292,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 90,
-        "latencyMs": 0.002,
+        "latencyMs": 0.001,
         "reasons": [
           "Recently registered domain (9 days old)",
           "Extreme discount anomaly of 87%"
@@ -308,7 +307,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 90,
-        "latencyMs": 0.0013,
+        "latencyMs": 0.0042,
         "reasons": [
           "Recently registered domain (16 days old)",
           "Extreme discount anomaly of 88%"
@@ -323,7 +322,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 90,
-        "latencyMs": 0.001,
+        "latencyMs": 0.0008,
         "reasons": [
           "Extremely new domain (6 days old)",
           "High discount anomaly of 83%"
@@ -331,14 +330,14 @@
       },
       {
         "id": "case-fraud-016",
-        "merchantUrl": "https://ps5-playstation-wholesale.site/checkout",
-        "claimedBrand": "Sony",
+        "merchantUrl": "https://novaplay-wholesale.site/checkout",
+        "claimedBrand": "NovaPlay",
         "actual": "fraud",
         "predicted": "fraud",
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 90,
-        "latencyMs": 0.0063,
+        "latencyMs": 0.0009,
         "reasons": [
           "Extremely new domain (5 days old)",
           "High discount anomaly of 80%"
@@ -353,7 +352,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 90,
-        "latencyMs": 0.0013,
+        "latencyMs": 0.0009,
         "reasons": [
           "Recently registered domain (11 days old)",
           "Extreme discount anomaly of 90%"
@@ -368,7 +367,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 100,
-        "latencyMs": 0.0009,
+        "latencyMs": 0.0008,
         "reasons": [
           "Extremely new domain (4 days old)",
           "Extreme discount anomaly of 90%"
@@ -383,7 +382,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 80,
-        "latencyMs": 0.0018,
+        "latencyMs": 0.0008,
         "reasons": [
           "Recently registered domain (14 days old)",
           "High discount anomaly of 80%"
@@ -398,7 +397,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 90,
-        "latencyMs": 0.0008,
+        "latencyMs": 0.0009,
         "reasons": [
           "Recently registered domain (7 days old)",
           "Extreme discount anomaly of 86%"
@@ -428,10 +427,25 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 80,
-        "latencyMs": 0.0008,
+        "latencyMs": 0.0007,
         "reasons": [
           "Recently registered domain (8 days old)",
           "High discount anomaly of 82%"
+        ]
+      },
+      {
+        "id": "case-fraud-023",
+        "merchantUrl": "https://peakoptics-clearance-outlet.cc/checkout",
+        "claimedBrand": "Peak Optics",
+        "actual": "fraud",
+        "predicted": "fraud",
+        "isCorrect": true,
+        "decision": "PAUSE",
+        "score": 100,
+        "latencyMs": 0.0008,
+        "reasons": [
+          "Extremely new domain (5 days old)",
+          "Extreme discount anomaly of 86%"
         ]
       },
       {
@@ -457,7 +471,7 @@
         "isCorrect": false,
         "decision": "WARN",
         "score": 40,
-        "latencyMs": 0.0009,
+        "latencyMs": 0.001,
         "reasons": [
           "High discount anomaly of 70%"
         ]
@@ -471,19 +485,19 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.0008,
+        "latencyMs": 0.0009,
         "reasons": []
       },
       {
         "id": "case-hard-004",
         "merchantUrl": "https://antique-clock-restoration.org/checkout",
-        "claimedBrand": "Sony",
+        "claimedBrand": "NovaSound",
         "actual": "fraud",
         "predicted": "fraud",
         "isCorrect": true,
         "decision": "WARN",
         "score": 40,
-        "latencyMs": 0.0008,
+        "latencyMs": 0.0009,
         "reasons": [
           "High discount anomaly of 76%"
         ]
@@ -497,7 +511,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.0007,
+        "latencyMs": 0.001,
         "reasons": []
       },
       {
@@ -521,7 +535,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.0006,
+        "latencyMs": 0.0007,
         "reasons": []
       },
       {
@@ -545,7 +559,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.0016,
+        "latencyMs": 0.0006,
         "reasons": []
       },
       {
@@ -557,7 +571,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.0008,
+        "latencyMs": 0.0034,
         "reasons": []
       },
       {
@@ -569,7 +583,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.0007,
+        "latencyMs": 0.0029,
         "reasons": []
       },
       {
@@ -581,7 +595,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.0007,
+        "latencyMs": 0.0015,
         "reasons": []
       },
       {
@@ -605,7 +619,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.0007,
+        "latencyMs": 0.0006,
         "reasons": []
       },
       {
@@ -629,7 +643,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.0006,
+        "latencyMs": 0.0005,
         "reasons": []
       },
       {
@@ -641,7 +655,7 @@
         "isCorrect": false,
         "decision": "WARN",
         "score": 40,
-        "latencyMs": 0.0008,
+        "latencyMs": 0.001,
         "reasons": [
           "Recently registered domain (22 days old)"
         ]
@@ -655,7 +669,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.0015,
+        "latencyMs": 0.0008,
         "reasons": []
       },
       {
@@ -679,7 +693,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.0006,
+        "latencyMs": 0.0041,
         "reasons": []
       },
       {
@@ -691,7 +705,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 25,
-        "latencyMs": 0.0217,
+        "latencyMs": 0.0015,
         "reasons": [
           "Significant discount of 62%"
         ]
@@ -705,7 +719,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.0025,
+        "latencyMs": 0.0009,
         "reasons": []
       },
       {
@@ -717,7 +731,7 @@
         "isCorrect": false,
         "decision": "WARN",
         "score": 40,
-        "latencyMs": 0.0013,
+        "latencyMs": 0.0007,
         "reasons": [
           "Recently registered domain (16 days old)"
         ]
@@ -731,99 +745,86 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.0073,
-        "reasons": []
-      },
-      {
-        "id": "case-legit-021",
-        "merchantUrl": "https://peak-performance-optics.com/checkout",
-        "claimedBrand": "Peak Optics",
-        "actual": "legit",
-        "predicted": "legit",
-        "isCorrect": true,
-        "decision": "ALLOW",
-        "score": 0,
-        "latencyMs": 0.003,
+        "latencyMs": 0.0006,
         "reasons": []
       }
     ],
     "baselineB": [
       {
         "id": "case-demo-001",
-        "merchantUrl": "https://acme-audio.com/checkout",
-        "claimedBrand": "Acme Audio",
+        "merchantUrl": "https://www.harborline-outfitters.example/checkout",
+        "claimedBrand": "Harborline Outfitters",
         "actual": "legit",
         "predicted": "legit",
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.0745,
+        "latencyMs": 0.0397,
         "reasons": [
-          "Storefront claims for brand \"Acme Audio\" are internally consistent"
+          "Storefront claims for brand \"Harborline Outfitters\" are internally consistent"
         ]
       },
       {
         "id": "case-demo-002",
-        "merchantUrl": "https://mega-dealsoutlet.net/checkout",
-        "claimedBrand": "Samsung",
-        "actual": "fraud",
+        "merchantUrl": "https://www.bargainbarn-outlet.example/cart",
+        "claimedBrand": "Bargain Barn Outlet",
+        "actual": "legit",
         "predicted": "fraud",
-        "isCorrect": true,
+        "isCorrect": false,
         "decision": "WARN",
-        "score": 72,
-        "latencyMs": 0.0058,
+        "score": 40,
+        "latencyMs": 0.0031,
         "reasons": [
-          "Recently registered domain (12 days old)",
-          "Extreme discount anomaly of 90%",
-          "Inconsistent merchant identity claims for storefront claiming \"Samsung\""
+          "High discount anomaly of 72%",
+          "Storefront claims for brand \"Bargain Barn Outlet\" are internally consistent"
         ]
       },
       {
         "id": "case-demo-003",
-        "merchantUrl": "https://gucci-outletdeals.com/checkout",
-        "claimedBrand": "Gucci",
+        "merchantUrl": "https://www.harborlyne-outfitters-sale.example/checkout",
+        "claimedBrand": "Harborline Outfitters",
         "actual": "fraud",
         "predicted": "fraud",
         "isCorrect": true,
-        "decision": "WARN",
-        "score": 72,
-        "latencyMs": 0.0026,
+        "decision": "PAUSE",
+        "score": 90,
+        "latencyMs": 0.0025,
         "reasons": [
-          "Recently registered domain (9 days old)",
-          "Extreme discount anomaly of 93%",
-          "Inconsistent merchant identity claims for storefront claiming \"Gucci\""
+          "Extremely new domain (6 days old)",
+          "Significant discount of 66%",
+          "Inconsistent merchant identity claims for storefront claiming \"Harborline Outfitters\""
         ]
       },
       {
         "id": "case-fraud-001",
-        "merchantUrl": "https://apple-clearance-direct.shop/checkout",
-        "claimedBrand": "Apple",
+        "merchantUrl": "https://auratech-clearance-direct.shop/checkout",
+        "claimedBrand": "AuraTech",
         "actual": "fraud",
         "predicted": "fraud",
         "isCorrect": true,
-        "decision": "WARN",
-        "score": 73,
-        "latencyMs": 0.0031,
+        "decision": "PAUSE",
+        "score": 99,
+        "latencyMs": 0.0017,
         "reasons": [
           "Extremely new domain (5 days old)",
           "High discount anomaly of 83%",
-          "Inconsistent merchant identity claims for storefront claiming \"Apple\""
+          "Inconsistent merchant identity claims for storefront claiming \"AuraTech\""
         ]
       },
       {
         "id": "case-fraud-002",
-        "merchantUrl": "https://rolex-official-discounts.top/checkout",
-        "claimedBrand": "Rolex",
+        "merchantUrl": "https://chronos-official-discounts.top/checkout",
+        "claimedBrand": "Chronos Elite",
         "actual": "fraud",
         "predicted": "fraud",
         "isCorrect": true,
-        "decision": "WARN",
-        "score": 72,
-        "latencyMs": 0.0023,
+        "decision": "PAUSE",
+        "score": 99,
+        "latencyMs": 0.0017,
         "reasons": [
           "Recently registered domain (7 days old)",
           "Extreme discount anomaly of 98%",
-          "Inconsistent merchant identity claims for storefront claiming \"Rolex\""
+          "Inconsistent merchant identity claims for storefront claiming \"Chronos Elite\""
         ]
       },
       {
@@ -833,9 +834,9 @@
         "actual": "fraud",
         "predicted": "fraud",
         "isCorrect": true,
-        "decision": "WARN",
-        "score": 72,
-        "latencyMs": 0.0021,
+        "decision": "PAUSE",
+        "score": 99,
+        "latencyMs": 0.0015,
         "reasons": [
           "Recently registered domain (11 days old)",
           "Extreme discount anomaly of 90%",
@@ -844,18 +845,18 @@
       },
       {
         "id": "case-fraud-004",
-        "merchantUrl": "https://nike-dunks-cheap.online/checkout",
-        "claimedBrand": "Nike",
+        "merchantUrl": "https://veloce-kicks-cheap.online/checkout",
+        "claimedBrand": "Veloce Athletics",
         "actual": "fraud",
         "predicted": "fraud",
         "isCorrect": true,
-        "decision": "WARN",
-        "score": 69,
-        "latencyMs": 0.0025,
+        "decision": "PAUSE",
+        "score": 93,
+        "latencyMs": 0.0016,
         "reasons": [
           "Recently registered domain (8 days old)",
           "High discount anomaly of 71%",
-          "Inconsistent merchant identity claims for storefront claiming \"Nike\""
+          "Inconsistent merchant identity claims for storefront claiming \"Veloce Athletics\""
         ]
       },
       {
@@ -866,8 +867,8 @@
         "predicted": "fraud",
         "isCorrect": true,
         "decision": "PAUSE",
-        "score": 75,
-        "latencyMs": 0.0024,
+        "score": 100,
+        "latencyMs": 0.0016,
         "reasons": [
           "Extremely new domain (4 days old)",
           "Extreme discount anomaly of 85%",
@@ -881,9 +882,9 @@
         "actual": "fraud",
         "predicted": "fraud",
         "isCorrect": true,
-        "decision": "WARN",
-        "score": 69,
-        "latencyMs": 0.0109,
+        "decision": "PAUSE",
+        "score": 93,
+        "latencyMs": 0.0066,
         "reasons": [
           "Recently registered domain (14 days old)",
           "High discount anomaly of 78%",
@@ -897,9 +898,9 @@
         "actual": "fraud",
         "predicted": "fraud",
         "isCorrect": true,
-        "decision": "WARN",
-        "score": 72,
-        "latencyMs": 0.0185,
+        "decision": "PAUSE",
+        "score": 99,
+        "latencyMs": 0.0061,
         "reasons": [
           "Recently registered domain (10 days old)",
           "Extreme discount anomaly of 90%",
@@ -914,8 +915,8 @@
         "predicted": "fraud",
         "isCorrect": true,
         "decision": "PAUSE",
-        "score": 75,
-        "latencyMs": 0.0044,
+        "score": 100,
+        "latencyMs": 0.0027,
         "reasons": [
           "Extremely new domain (6 days old)",
           "Extreme discount anomaly of 88%",
@@ -929,9 +930,9 @@
         "actual": "fraud",
         "predicted": "fraud",
         "isCorrect": true,
-        "decision": "WARN",
-        "score": 72,
-        "latencyMs": 0.0016,
+        "decision": "PAUSE",
+        "score": 99,
+        "latencyMs": 0.0009,
         "reasons": [
           "Recently registered domain (15 days old)",
           "Extreme discount anomaly of 89%",
@@ -945,9 +946,9 @@
         "actual": "fraud",
         "predicted": "fraud",
         "isCorrect": true,
-        "decision": "WARN",
-        "score": 73,
-        "latencyMs": 0.0017,
+        "decision": "PAUSE",
+        "score": 99,
+        "latencyMs": 0.0008,
         "reasons": [
           "Extremely new domain (3 days old)",
           "High discount anomaly of 77%",
@@ -961,9 +962,9 @@
         "actual": "fraud",
         "predicted": "fraud",
         "isCorrect": true,
-        "decision": "WARN",
-        "score": 72,
-        "latencyMs": 0.0027,
+        "decision": "PAUSE",
+        "score": 99,
+        "latencyMs": 0.0009,
         "reasons": [
           "Recently registered domain (13 days old)",
           "Extreme discount anomaly of 87%",
@@ -977,9 +978,9 @@
         "actual": "fraud",
         "predicted": "fraud",
         "isCorrect": true,
-        "decision": "WARN",
-        "score": 72,
-        "latencyMs": 0.0011,
+        "decision": "PAUSE",
+        "score": 99,
+        "latencyMs": 0.0007,
         "reasons": [
           "Recently registered domain (8 days old)",
           "Extreme discount anomaly of 89%",
@@ -993,9 +994,9 @@
         "actual": "fraud",
         "predicted": "fraud",
         "isCorrect": true,
-        "decision": "WARN",
-        "score": 72,
-        "latencyMs": 0.0014,
+        "decision": "PAUSE",
+        "score": 99,
+        "latencyMs": 0.0008,
         "reasons": [
           "Recently registered domain (9 days old)",
           "Extreme discount anomaly of 87%",
@@ -1009,9 +1010,9 @@
         "actual": "fraud",
         "predicted": "fraud",
         "isCorrect": true,
-        "decision": "WARN",
-        "score": 72,
-        "latencyMs": 0.001,
+        "decision": "PAUSE",
+        "score": 99,
+        "latencyMs": 0.0008,
         "reasons": [
           "Recently registered domain (16 days old)",
           "Extreme discount anomaly of 88%",
@@ -1025,9 +1026,9 @@
         "actual": "fraud",
         "predicted": "fraud",
         "isCorrect": true,
-        "decision": "WARN",
-        "score": 73,
-        "latencyMs": 0.0016,
+        "decision": "PAUSE",
+        "score": 99,
+        "latencyMs": 0.0008,
         "reasons": [
           "Extremely new domain (6 days old)",
           "High discount anomaly of 83%",
@@ -1036,18 +1037,18 @@
       },
       {
         "id": "case-fraud-016",
-        "merchantUrl": "https://ps5-playstation-wholesale.site/checkout",
-        "claimedBrand": "Sony",
+        "merchantUrl": "https://novaplay-wholesale.site/checkout",
+        "claimedBrand": "NovaPlay",
         "actual": "fraud",
         "predicted": "fraud",
         "isCorrect": true,
-        "decision": "WARN",
-        "score": 73,
-        "latencyMs": 0.0013,
+        "decision": "PAUSE",
+        "score": 99,
+        "latencyMs": 0.0008,
         "reasons": [
           "Extremely new domain (5 days old)",
           "High discount anomaly of 80%",
-          "Inconsistent merchant identity claims for storefront claiming \"Sony\""
+          "Inconsistent merchant identity claims for storefront claiming \"NovaPlay\""
         ]
       },
       {
@@ -1057,9 +1058,9 @@
         "actual": "fraud",
         "predicted": "fraud",
         "isCorrect": true,
-        "decision": "WARN",
-        "score": 72,
-        "latencyMs": 0.0014,
+        "decision": "PAUSE",
+        "score": 99,
+        "latencyMs": 0.0007,
         "reasons": [
           "Recently registered domain (11 days old)",
           "Extreme discount anomaly of 90%",
@@ -1074,8 +1075,8 @@
         "predicted": "fraud",
         "isCorrect": true,
         "decision": "PAUSE",
-        "score": 75,
-        "latencyMs": 0.0052,
+        "score": 100,
+        "latencyMs": 0.0008,
         "reasons": [
           "Extremely new domain (4 days old)",
           "Extreme discount anomaly of 90%",
@@ -1089,9 +1090,9 @@
         "actual": "fraud",
         "predicted": "fraud",
         "isCorrect": true,
-        "decision": "WARN",
-        "score": 69,
-        "latencyMs": 0.003,
+        "decision": "PAUSE",
+        "score": 93,
+        "latencyMs": 0.0007,
         "reasons": [
           "Recently registered domain (14 days old)",
           "High discount anomaly of 80%",
@@ -1105,9 +1106,9 @@
         "actual": "fraud",
         "predicted": "fraud",
         "isCorrect": true,
-        "decision": "WARN",
-        "score": 72,
-        "latencyMs": 0.0011,
+        "decision": "PAUSE",
+        "score": 99,
+        "latencyMs": 0.0008,
         "reasons": [
           "Recently registered domain (7 days old)",
           "Extreme discount anomaly of 86%",
@@ -1121,9 +1122,9 @@
         "actual": "fraud",
         "predicted": "fraud",
         "isCorrect": true,
-        "decision": "WARN",
-        "score": 72,
-        "latencyMs": 0.0011,
+        "decision": "PAUSE",
+        "score": 99,
+        "latencyMs": 0.0008,
         "reasons": [
           "Recently registered domain (10 days old)",
           "Extreme discount anomaly of 86%",
@@ -1137,9 +1138,9 @@
         "actual": "fraud",
         "predicted": "fraud",
         "isCorrect": true,
-        "decision": "WARN",
-        "score": 69,
-        "latencyMs": 0.0011,
+        "decision": "PAUSE",
+        "score": 93,
+        "latencyMs": 0.0008,
         "reasons": [
           "Recently registered domain (8 days old)",
           "High discount anomaly of 82%",
@@ -1147,15 +1148,31 @@
         ]
       },
       {
+        "id": "case-fraud-023",
+        "merchantUrl": "https://peakoptics-clearance-outlet.cc/checkout",
+        "claimedBrand": "Peak Optics",
+        "actual": "fraud",
+        "predicted": "fraud",
+        "isCorrect": true,
+        "decision": "PAUSE",
+        "score": 100,
+        "latencyMs": 0.0007,
+        "reasons": [
+          "Extremely new domain (5 days old)",
+          "Extreme discount anomaly of 86%",
+          "Inconsistent merchant identity claims for storefront claiming \"Peak Optics\""
+        ]
+      },
+      {
         "id": "case-hard-001",
         "merchantUrl": "https://lumina-coffee-roasters.com/checkout",
         "claimedBrand": "Lumina Coffee",
         "actual": "legit",
-        "predicted": "legit",
-        "isCorrect": true,
-        "decision": "ALLOW",
-        "score": 14,
-        "latencyMs": 0.0023,
+        "predicted": "fraud",
+        "isCorrect": false,
+        "decision": "WARN",
+        "score": 40,
+        "latencyMs": 0.0015,
         "reasons": [
           "Recently registered domain (18 days old)",
           "Storefront claims for brand \"Lumina Coffee\" are internally consistent"
@@ -1166,11 +1183,11 @@
         "merchantUrl": "https://cascade-outdoors-clearance.com/checkout",
         "claimedBrand": "Cascade Outdoors",
         "actual": "legit",
-        "predicted": "legit",
-        "isCorrect": true,
-        "decision": "ALLOW",
-        "score": 10,
-        "latencyMs": 0.002,
+        "predicted": "fraud",
+        "isCorrect": false,
+        "decision": "WARN",
+        "score": 40,
+        "latencyMs": 0.0024,
         "reasons": [
           "High discount anomaly of 70%",
           "Storefront claims for brand \"Cascade Outdoors\" are internally consistent"
@@ -1185,7 +1202,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.0015,
+        "latencyMs": 0.0016,
         "reasons": [
           "Storefront claims for brand \"Elena Handcrafted\" are internally consistent"
         ]
@@ -1193,16 +1210,16 @@
       {
         "id": "case-hard-004",
         "merchantUrl": "https://antique-clock-restoration.org/checkout",
-        "claimedBrand": "Sony",
+        "claimedBrand": "NovaSound",
         "actual": "fraud",
         "predicted": "fraud",
         "isCorrect": true,
         "decision": "WARN",
-        "score": 55,
-        "latencyMs": 0.0015,
+        "score": 69,
+        "latencyMs": 0.0013,
         "reasons": [
           "High discount anomaly of 76%",
-          "Inconsistent merchant identity claims for storefront claiming \"Sony\""
+          "Inconsistent merchant identity claims for storefront claiming \"NovaSound\""
         ]
       },
       {
@@ -1214,7 +1231,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.0011,
+        "latencyMs": 0.0008,
         "reasons": [
           "Storefront claims for brand \"Anker\" are internally consistent"
         ]
@@ -1228,7 +1245,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.001,
+        "latencyMs": 0.0008,
         "reasons": [
           "Storefront claims for brand \"Patagonia\" are internally consistent"
         ]
@@ -1242,7 +1259,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.0069,
+        "latencyMs": 0.0007,
         "reasons": [
           "Storefront claims for brand \"Bose\" are internally consistent"
         ]
@@ -1256,7 +1273,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.001,
+        "latencyMs": 0.0007,
         "reasons": [
           "Storefront claims for brand \"Austin Ceramics Co\" are internally consistent"
         ]
@@ -1270,7 +1287,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.0009,
+        "latencyMs": 0.0007,
         "reasons": [
           "Storefront claims for brand \"Keychron\" are internally consistent"
         ]
@@ -1284,7 +1301,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.0013,
+        "latencyMs": 0.0006,
         "reasons": [
           "Storefront claims for brand \"Vitamix\" are internally consistent"
         ]
@@ -1298,7 +1315,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.001,
+        "latencyMs": 0.0008,
         "reasons": [
           "Storefront claims for brand \"Sol Organics\" are internally consistent"
         ]
@@ -1312,7 +1329,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.0011,
+        "latencyMs": 0.0007,
         "reasons": [
           "Storefront claims for brand \"Nordic Trail\" are internally consistent"
         ]
@@ -1326,7 +1343,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.0013,
+        "latencyMs": 0.0006,
         "reasons": [
           "Storefront claims for brand \"The Independent Reader\" are internally consistent"
         ]
@@ -1340,7 +1357,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.0009,
+        "latencyMs": 0.0006,
         "reasons": [
           "Storefront claims for brand \"Apex Pet\" are internally consistent"
         ]
@@ -1354,7 +1371,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.001,
+        "latencyMs": 0.0007,
         "reasons": [
           "Storefront claims for brand \"Dell\" are internally consistent"
         ]
@@ -1368,7 +1385,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.0014,
+        "latencyMs": 0.0006,
         "reasons": [
           "Storefront claims for brand \"Summit Knives\" are internally consistent"
         ]
@@ -1378,11 +1395,11 @@
         "merchantUrl": "https://brooklyn-roast-works.com/checkout",
         "claimedBrand": "Brooklyn Roast",
         "actual": "legit",
-        "predicted": "legit",
-        "isCorrect": true,
-        "decision": "ALLOW",
-        "score": 14,
-        "latencyMs": 0.0013,
+        "predicted": "fraud",
+        "isCorrect": false,
+        "decision": "WARN",
+        "score": 40,
+        "latencyMs": 0.0009,
         "reasons": [
           "Recently registered domain (22 days old)",
           "Storefront claims for brand \"Brooklyn Roast\" are internally consistent"
@@ -1397,7 +1414,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.0012,
+        "latencyMs": 0.0007,
         "reasons": [
           "Storefront claims for brand \"Rogue Fitness\" are internally consistent"
         ]
@@ -1411,7 +1428,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.0012,
+        "latencyMs": 0.0007,
         "reasons": [
           "Storefront claims for brand \"Kinfolk Weavers\" are internally consistent"
         ]
@@ -1425,7 +1442,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.0013,
+        "latencyMs": 0.0007,
         "reasons": [
           "Storefront claims for brand \"Audio-Technica\" are internally consistent"
         ]
@@ -1438,8 +1455,8 @@
         "predicted": "legit",
         "isCorrect": true,
         "decision": "ALLOW",
-        "score": 6,
-        "latencyMs": 0.0013,
+        "score": 25,
+        "latencyMs": 0.0007,
         "reasons": [
           "Significant discount of 62%",
           "Storefront claims for brand \"Sierra Camp\" are internally consistent"
@@ -1454,7 +1471,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.0011,
+        "latencyMs": 0.0007,
         "reasons": [
           "Storefront claims for brand \"Harbor Lighting\" are internally consistent"
         ]
@@ -1464,11 +1481,11 @@
         "merchantUrl": "https://tabletop-quest-games.com/checkout",
         "claimedBrand": "Tabletop Quest",
         "actual": "legit",
-        "predicted": "legit",
-        "isCorrect": true,
-        "decision": "ALLOW",
-        "score": 14,
-        "latencyMs": 0.0012,
+        "predicted": "fraud",
+        "isCorrect": false,
+        "decision": "WARN",
+        "score": 40,
+        "latencyMs": 0.0008,
         "reasons": [
           "Recently registered domain (16 days old)",
           "Storefront claims for brand \"Tabletop Quest\" are internally consistent"
@@ -1483,110 +1500,95 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.001,
+        "latencyMs": 0.0006,
         "reasons": [
           "Storefront claims for brand \"Pure Botanicals\" are internally consistent"
-        ]
-      },
-      {
-        "id": "case-legit-021",
-        "merchantUrl": "https://peak-performance-optics.com/checkout",
-        "claimedBrand": "Peak Optics",
-        "actual": "legit",
-        "predicted": "legit",
-        "isCorrect": true,
-        "decision": "ALLOW",
-        "score": 0,
-        "latencyMs": 0.0013,
-        "reasons": [
-          "Storefront claims for brand \"Peak Optics\" are internally consistent"
         ]
       }
     ],
     "full": [
       {
         "id": "case-demo-001",
-        "merchantUrl": "https://acme-audio.com/checkout",
-        "claimedBrand": "Acme Audio",
+        "merchantUrl": "https://www.harborline-outfitters.example/checkout",
+        "claimedBrand": "Harborline Outfitters",
         "actual": "legit",
         "predicted": "legit",
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.5946,
+        "latencyMs": 0.446,
         "reasons": [
-          "Storefront claims for brand \"Acme Audio\" are internally consistent",
+          "Storefront claims for brand \"Harborline Outfitters\" are internally consistent",
           "PayPal payee matches storefront domain"
         ]
       },
       {
         "id": "case-demo-002",
-        "merchantUrl": "https://mega-dealsoutlet.net/checkout",
-        "claimedBrand": "Samsung",
-        "actual": "fraud",
+        "merchantUrl": "https://www.bargainbarn-outlet.example/cart",
+        "claimedBrand": "Bargain Barn Outlet",
+        "actual": "legit",
         "predicted": "fraud",
-        "isCorrect": true,
-        "decision": "PAUSE",
-        "score": 78,
-        "latencyMs": 0.051,
+        "isCorrect": false,
+        "decision": "WARN",
+        "score": 50,
+        "latencyMs": 0.045,
         "reasons": [
-          "Recently registered domain (12 days old)",
-          "Extreme discount anomaly of 90%",
-          "Inconsistent merchant identity claims for storefront claiming \"Samsung\"",
-          "Suspicious personal webmail payee \"fastcash9928@gmail.com\" mismatching storefront domain",
-          "Critical risk: Inconsistent identity claims combined with mismatched PayPal payee"
+          "High discount anomaly of 72%",
+          "Storefront claims for brand \"Bargain Barn Outlet\" are internally consistent",
+          "PayPal payee matches storefront domain",
+          "Aggressive pricing anomaly on recent domain warrants cautionary warning"
         ]
       },
       {
         "id": "case-demo-003",
-        "merchantUrl": "https://gucci-outletdeals.com/checkout",
-        "claimedBrand": "Gucci",
+        "merchantUrl": "https://www.harborlyne-outfitters-sale.example/checkout",
+        "claimedBrand": "Harborline Outfitters",
         "actual": "fraud",
         "predicted": "fraud",
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 78,
-        "latencyMs": 0.0171,
+        "latencyMs": 0.0119,
         "reasons": [
-          "Recently registered domain (9 days old)",
-          "Extreme discount anomaly of 93%",
-          "Inconsistent merchant identity claims for storefront claiming \"Gucci\"",
-          "Suspicious personal webmail payee \"luxurypayments44@hotmail.com\" mismatching storefront domain",
+          "Extremely new domain (6 days old)",
+          "Significant discount of 66%",
+          "Inconsistent merchant identity claims for storefront claiming \"Harborline Outfitters\"",
+          "PayPal payee email \"collect@quickpay-holdings.example\" does not match storefront domain",
           "Critical risk: Inconsistent identity claims combined with mismatched PayPal payee"
         ]
       },
       {
         "id": "case-fraud-001",
-        "merchantUrl": "https://apple-clearance-direct.shop/checkout",
-        "claimedBrand": "Apple",
+        "merchantUrl": "https://auratech-clearance-direct.shop/checkout",
+        "claimedBrand": "AuraTech",
         "actual": "fraud",
         "predicted": "fraud",
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 78,
-        "latencyMs": 0.1109,
+        "latencyMs": 0.0093,
         "reasons": [
           "Extremely new domain (5 days old)",
           "High discount anomaly of 83%",
-          "Inconsistent merchant identity claims for storefront claiming \"Apple\"",
+          "Inconsistent merchant identity claims for storefront claiming \"AuraTech\"",
           "Suspicious personal webmail payee \"techdepot882@gmail.com\" mismatching storefront domain",
           "Critical risk: Inconsistent identity claims combined with mismatched PayPal payee"
         ]
       },
       {
         "id": "case-fraud-002",
-        "merchantUrl": "https://rolex-official-discounts.top/checkout",
-        "claimedBrand": "Rolex",
+        "merchantUrl": "https://chronos-official-discounts.top/checkout",
+        "claimedBrand": "Chronos Elite",
         "actual": "fraud",
         "predicted": "fraud",
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 78,
-        "latencyMs": 0.0575,
+        "latencyMs": 0.0076,
         "reasons": [
           "Recently registered domain (7 days old)",
           "Extreme discount anomaly of 98%",
-          "Inconsistent merchant identity claims for storefront claiming \"Rolex\"",
+          "Inconsistent merchant identity claims for storefront claiming \"Chronos Elite\"",
           "Suspicious personal webmail payee \"paymentprocessing771@outlook.com\" mismatching storefront domain",
           "Critical risk: Inconsistent identity claims combined with mismatched PayPal payee"
         ]
@@ -1600,7 +1602,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 78,
-        "latencyMs": 0.0168,
+        "latencyMs": 0.0072,
         "reasons": [
           "Recently registered domain (11 days old)",
           "Extreme discount anomaly of 90%",
@@ -1611,18 +1613,18 @@
       },
       {
         "id": "case-fraud-004",
-        "merchantUrl": "https://nike-dunks-cheap.online/checkout",
-        "claimedBrand": "Nike",
+        "merchantUrl": "https://veloce-kicks-cheap.online/checkout",
+        "claimedBrand": "Veloce Athletics",
         "actual": "fraud",
         "predicted": "fraud",
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 78,
-        "latencyMs": 0.0243,
+        "latencyMs": 0.0072,
         "reasons": [
           "Recently registered domain (8 days old)",
           "High discount anomaly of 71%",
-          "Inconsistent merchant identity claims for storefront claiming \"Nike\"",
+          "Inconsistent merchant identity claims for storefront claiming \"Veloce Athletics\"",
           "Suspicious personal webmail payee \"sneakerhead9938@hotmail.com\" mismatching storefront domain",
           "Critical risk: Inconsistent identity claims combined with mismatched PayPal payee"
         ]
@@ -1636,7 +1638,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 78,
-        "latencyMs": 0.0108,
+        "latencyMs": 0.0178,
         "reasons": [
           "Extremely new domain (4 days old)",
           "Extreme discount anomaly of 85%",
@@ -1654,7 +1656,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 78,
-        "latencyMs": 0.059,
+        "latencyMs": 0.0222,
         "reasons": [
           "Recently registered domain (14 days old)",
           "High discount anomaly of 78%",
@@ -1672,7 +1674,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 78,
-        "latencyMs": 0.0517,
+        "latencyMs": 0.0245,
         "reasons": [
           "Recently registered domain (10 days old)",
           "Extreme discount anomaly of 90%",
@@ -1690,7 +1692,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 78,
-        "latencyMs": 0.0146,
+        "latencyMs": 0.0104,
         "reasons": [
           "Extremely new domain (6 days old)",
           "Extreme discount anomaly of 88%",
@@ -1726,7 +1728,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 78,
-        "latencyMs": 0.0048,
+        "latencyMs": 0.0044,
         "reasons": [
           "Extremely new domain (3 days old)",
           "High discount anomaly of 77%",
@@ -1744,7 +1746,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 78,
-        "latencyMs": 0.033,
+        "latencyMs": 0.0037,
         "reasons": [
           "Recently registered domain (13 days old)",
           "Extreme discount anomaly of 87%",
@@ -1762,7 +1764,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 78,
-        "latencyMs": 0.0079,
+        "latencyMs": 0.0034,
         "reasons": [
           "Recently registered domain (8 days old)",
           "Extreme discount anomaly of 89%",
@@ -1780,7 +1782,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 78,
-        "latencyMs": 0.0049,
+        "latencyMs": 0.0034,
         "reasons": [
           "Recently registered domain (9 days old)",
           "Extreme discount anomaly of 87%",
@@ -1798,7 +1800,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 78,
-        "latencyMs": 0.0052,
+        "latencyMs": 0.0035,
         "reasons": [
           "Recently registered domain (16 days old)",
           "Extreme discount anomaly of 88%",
@@ -1816,7 +1818,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 78,
-        "latencyMs": 0.0048,
+        "latencyMs": 0.0033,
         "reasons": [
           "Extremely new domain (6 days old)",
           "High discount anomaly of 83%",
@@ -1827,18 +1829,18 @@
       },
       {
         "id": "case-fraud-016",
-        "merchantUrl": "https://ps5-playstation-wholesale.site/checkout",
-        "claimedBrand": "Sony",
+        "merchantUrl": "https://novaplay-wholesale.site/checkout",
+        "claimedBrand": "NovaPlay",
         "actual": "fraud",
         "predicted": "fraud",
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 78,
-        "latencyMs": 0.0043,
+        "latencyMs": 0.0033,
         "reasons": [
           "Extremely new domain (5 days old)",
           "High discount anomaly of 80%",
-          "Inconsistent merchant identity claims for storefront claiming \"Sony\"",
+          "Inconsistent merchant identity claims for storefront claiming \"NovaPlay\"",
           "Suspicious personal webmail payee \"gamingdeals2026@gmail.com\" mismatching storefront domain",
           "Critical risk: Inconsistent identity claims combined with mismatched PayPal payee"
         ]
@@ -1852,7 +1854,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 78,
-        "latencyMs": 0.0052,
+        "latencyMs": 0.0041,
         "reasons": [
           "Recently registered domain (11 days old)",
           "Extreme discount anomaly of 90%",
@@ -1870,7 +1872,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 78,
-        "latencyMs": 0.0135,
+        "latencyMs": 0.0083,
         "reasons": [
           "Extremely new domain (4 days old)",
           "Extreme discount anomaly of 90%",
@@ -1888,7 +1890,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 78,
-        "latencyMs": 0.0091,
+        "latencyMs": 0.0057,
         "reasons": [
           "Recently registered domain (14 days old)",
           "High discount anomaly of 80%",
@@ -1906,7 +1908,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 78,
-        "latencyMs": 0.0045,
+        "latencyMs": 0.0039,
         "reasons": [
           "Recently registered domain (7 days old)",
           "Extreme discount anomaly of 86%",
@@ -1924,7 +1926,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 78,
-        "latencyMs": 0.0086,
+        "latencyMs": 0.0033,
         "reasons": [
           "Recently registered domain (10 days old)",
           "Extreme discount anomaly of 86%",
@@ -1942,12 +1944,30 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 78,
-        "latencyMs": 0.0038,
+        "latencyMs": 0.0035,
         "reasons": [
           "Recently registered domain (8 days old)",
           "High discount anomaly of 82%",
           "Inconsistent merchant identity claims for storefront claiming \"Marshall\"",
           "Suspicious personal webmail payee \"rockspeakers882@outlook.com\" mismatching storefront domain",
+          "Critical risk: Inconsistent identity claims combined with mismatched PayPal payee"
+        ]
+      },
+      {
+        "id": "case-fraud-023",
+        "merchantUrl": "https://peakoptics-clearance-outlet.cc/checkout",
+        "claimedBrand": "Peak Optics",
+        "actual": "fraud",
+        "predicted": "fraud",
+        "isCorrect": true,
+        "decision": "PAUSE",
+        "score": 78,
+        "latencyMs": 0.0031,
+        "reasons": [
+          "Extremely new domain (5 days old)",
+          "Extreme discount anomaly of 86%",
+          "Inconsistent merchant identity claims for storefront claiming \"Peak Optics\"",
+          "Suspicious personal webmail payee \"fastcashpayout881@gmail.com\" mismatching storefront domain",
           "Critical risk: Inconsistent identity claims combined with mismatched PayPal payee"
         ]
       },
@@ -1959,8 +1979,8 @@
         "predicted": "legit",
         "isCorrect": true,
         "decision": "ALLOW",
-        "score": 8,
-        "latencyMs": 0.0052,
+        "score": 22,
+        "latencyMs": 0.0049,
         "reasons": [
           "Recently registered domain (18 days old)",
           "Storefront claims for brand \"Lumina Coffee\" are internally consistent",
@@ -1975,8 +1995,8 @@
         "predicted": "legit",
         "isCorrect": true,
         "decision": "ALLOW",
-        "score": 6,
-        "latencyMs": 0.0038,
+        "score": 22,
+        "latencyMs": 0.0037,
         "reasons": [
           "High discount anomaly of 70%",
           "Storefront claims for brand \"Cascade Outdoors\" are internally consistent",
@@ -1992,7 +2012,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 5,
-        "latencyMs": 0.0127,
+        "latencyMs": 0.0041,
         "reasons": [
           "Storefront claims for brand \"Elena Handcrafted\" are internally consistent",
           "Personal payee email observed on storefront with consistent identity claims (potential sole proprietor)"
@@ -2001,16 +2021,16 @@
       {
         "id": "case-hard-004",
         "merchantUrl": "https://antique-clock-restoration.org/checkout",
-        "claimedBrand": "Sony",
+        "claimedBrand": "NovaSound",
         "actual": "fraud",
         "predicted": "fraud",
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 78,
-        "latencyMs": 0.007,
+        "latencyMs": 0.0033,
         "reasons": [
           "High discount anomaly of 76%",
-          "Inconsistent merchant identity claims for storefront claiming \"Sony\"",
+          "Inconsistent merchant identity claims for storefront claiming \"NovaSound\"",
           "Suspicious personal webmail payee \"quickdrop990@protonmail.com\" mismatching storefront domain",
           "Critical risk: Inconsistent identity claims combined with mismatched PayPal payee"
         ]
@@ -2024,7 +2044,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.0046,
+        "latencyMs": 0.0033,
         "reasons": [
           "Storefront claims for brand \"Anker\" are internally consistent",
           "PayPal payee matches storefront domain"
@@ -2039,7 +2059,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.004,
+        "latencyMs": 0.0034,
         "reasons": [
           "Storefront claims for brand \"Patagonia\" are internally consistent",
           "PayPal payee matches storefront domain"
@@ -2054,7 +2074,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.0035,
+        "latencyMs": 0.003,
         "reasons": [
           "Storefront claims for brand \"Bose\" are internally consistent",
           "PayPal payee matches storefront domain"
@@ -2069,7 +2089,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 5,
-        "latencyMs": 0.0039,
+        "latencyMs": 0.0031,
         "reasons": [
           "Storefront claims for brand \"Austin Ceramics Co\" are internally consistent",
           "Personal payee email observed on storefront with consistent identity claims (potential sole proprietor)"
@@ -2084,7 +2104,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.0035,
+        "latencyMs": 0.003,
         "reasons": [
           "Storefront claims for brand \"Keychron\" are internally consistent",
           "PayPal payee matches storefront domain"
@@ -2099,7 +2119,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.0034,
+        "latencyMs": 0.0031,
         "reasons": [
           "Storefront claims for brand \"Vitamix\" are internally consistent",
           "PayPal payee matches storefront domain"
@@ -2114,7 +2134,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.0074,
+        "latencyMs": 0.003,
         "reasons": [
           "Storefront claims for brand \"Sol Organics\" are internally consistent",
           "PayPal payee matches storefront domain"
@@ -2129,7 +2149,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.0034,
+        "latencyMs": 0.0028,
         "reasons": [
           "Storefront claims for brand \"Nordic Trail\" are internally consistent",
           "PayPal payee matches storefront domain"
@@ -2144,7 +2164,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 5,
-        "latencyMs": 0.0037,
+        "latencyMs": 0.0031,
         "reasons": [
           "Storefront claims for brand \"The Independent Reader\" are internally consistent",
           "Personal payee email observed on storefront with consistent identity claims (potential sole proprietor)"
@@ -2159,7 +2179,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.0033,
+        "latencyMs": 0.0029,
         "reasons": [
           "Storefront claims for brand \"Apex Pet\" are internally consistent",
           "PayPal payee matches storefront domain"
@@ -2174,7 +2194,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.0035,
+        "latencyMs": 0.0032,
         "reasons": [
           "Storefront claims for brand \"Dell\" are internally consistent",
           "PayPal payee matches storefront domain"
@@ -2189,7 +2209,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.0034,
+        "latencyMs": 0.0028,
         "reasons": [
           "Storefront claims for brand \"Summit Knives\" are internally consistent",
           "PayPal payee matches storefront domain"
@@ -2203,8 +2223,8 @@
         "predicted": "legit",
         "isCorrect": true,
         "decision": "ALLOW",
-        "score": 8,
-        "latencyMs": 0.0037,
+        "score": 22,
+        "latencyMs": 0.0036,
         "reasons": [
           "Recently registered domain (22 days old)",
           "Storefront claims for brand \"Brooklyn Roast\" are internally consistent",
@@ -2220,7 +2240,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.0037,
+        "latencyMs": 0.0029,
         "reasons": [
           "Storefront claims for brand \"Rogue Fitness\" are internally consistent",
           "PayPal payee matches storefront domain"
@@ -2235,7 +2255,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 5,
-        "latencyMs": 0.0034,
+        "latencyMs": 0.0029,
         "reasons": [
           "Storefront claims for brand \"Kinfolk Weavers\" are internally consistent",
           "Personal payee email observed on storefront with consistent identity claims (potential sole proprietor)"
@@ -2250,7 +2270,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.0039,
+        "latencyMs": 0.0028,
         "reasons": [
           "Storefront claims for brand \"Audio-Technica\" are internally consistent",
           "PayPal payee matches storefront domain"
@@ -2264,8 +2284,8 @@
         "predicted": "legit",
         "isCorrect": true,
         "decision": "ALLOW",
-        "score": 3,
-        "latencyMs": 0.0037,
+        "score": 14,
+        "latencyMs": 0.0031,
         "reasons": [
           "Significant discount of 62%",
           "Storefront claims for brand \"Sierra Camp\" are internally consistent",
@@ -2281,7 +2301,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.0065,
+        "latencyMs": 0.0029,
         "reasons": [
           "Storefront claims for brand \"Harbor Lighting\" are internally consistent",
           "PayPal payee matches storefront domain"
@@ -2295,8 +2315,8 @@
         "predicted": "legit",
         "isCorrect": true,
         "decision": "ALLOW",
-        "score": 8,
-        "latencyMs": 0.0032,
+        "score": 22,
+        "latencyMs": 0.0031,
         "reasons": [
           "Recently registered domain (16 days old)",
           "Storefront claims for brand \"Tabletop Quest\" are internally consistent",
@@ -2312,24 +2332,9 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.0034,
+        "latencyMs": 0.0029,
         "reasons": [
           "Storefront claims for brand \"Pure Botanicals\" are internally consistent",
-          "PayPal payee matches storefront domain"
-        ]
-      },
-      {
-        "id": "case-legit-021",
-        "merchantUrl": "https://peak-performance-optics.com/checkout",
-        "claimedBrand": "Peak Optics",
-        "actual": "legit",
-        "predicted": "legit",
-        "isCorrect": true,
-        "decision": "ALLOW",
-        "score": 0,
-        "latencyMs": 0.0032,
-        "reasons": [
-          "Storefront claims for brand \"Peak Optics\" are internally consistent",
           "PayPal payee matches storefront domain"
         ]
       }

@@ -13,11 +13,7 @@
 import { Client } from '@elastic/elasticsearch';
 import { sanitizeRecord, normalizeDomain, normalizeEmail } from '../sanitizer.js';
 import type { HistoricalRecord } from '../types/historicalRecord.js';
-import type {
-  MemoryStore,
-  HistorySummary,
-  HistorySummaryQuery,
-} from './memoryStore.interface.js';
+import type { MemoryStore, HistorySummary, HistorySummaryQuery } from './memoryStore.interface.js';
 import { parseHistorySummaryQuery, buildHistorySummary } from './summaryUtils.js';
 
 export const ELASTIC_MEMORY_MAPPING = {
@@ -207,4 +203,3 @@ export class ElasticMemoryStore implements MemoryStore {
     await this.client.close();
   }
 }
-

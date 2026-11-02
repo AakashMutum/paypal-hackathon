@@ -1,16 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import type { Client } from '@elastic/elasticsearch';
-import {
-  ElasticMemoryStore,
-  ELASTIC_MEMORY_MAPPING,
-  type HistoricalRecord,
-} from '../src/index.js';
+import { ElasticMemoryStore, ELASTIC_MEMORY_MAPPING, type HistoricalRecord } from '../src/index.js';
 
-function createMockElasticClient(options: {
-  indexExists?: boolean;
-  searchHits?: Array<{ _source: HistoricalRecord }>;
-} = {}) {
+function createMockElasticClient(
+  options: {
+    indexExists?: boolean;
+    searchHits?: Array<{ _source: HistoricalRecord }>;
+  } = {},
+) {
   const calls: {
     exists: Array<Record<string, unknown>>;
     create: Array<Record<string, unknown>>;
@@ -78,8 +76,8 @@ test('ElasticMemoryStore sanitizes PII before calling client.index', async () =>
   const raw = {
     investigationId: 'inv-elastic-pii',
     domain: 'HTTPS://SHOP.TEST-STORE.COM',
-    claimedBrand: 'Apple',
-    payeeMerchantId: 'M-APPLE-99',
+    claimedBrand: 'AuraTech',
+    payeeMerchantId: 'M-AURATECH-99',
     payeeEmail: 'SUPPORT@Test-Store.com',
     riskScore: 35.5,
     decision: 'ALLOW',
@@ -141,4 +139,3 @@ test('ElasticMemoryStore findByDomain and getHistorySummary query Elasticsearch'
   assert.equal(summary.blockCount, 1);
   assert.equal(summary.commonFlaggedEvidenceTypes.length, 2);
 });
-

@@ -6,11 +6,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import {
-  EvaluationDatasetSchema,
-  type EvaluationCase,
-  type EvaluationDataset,
-} from './schema.js';
+import { EvaluationDatasetSchema, type EvaluationCase, type EvaluationDataset } from './schema.js';
 
 export interface LoadDatasetOptions {
   /** Optional custom file path to load cases from */
@@ -64,7 +60,7 @@ export function loadEvaluationDataset(options: LoadDatasetOptions = {}): Evaluat
  * @returns Promise resolving to an array of validated EvaluationCase objects
  */
 export async function loadEvaluationDatasetAsync(
-  options: LoadDatasetOptions = {}
+  options: LoadDatasetOptions = {},
 ): Promise<EvaluationDataset> {
   const filePath = options.filePath || getDefaultDatasetPath();
   if (!fs.existsSync(filePath)) {
@@ -86,9 +82,8 @@ export async function loadEvaluationDatasetAsync(
  */
 export function getEvaluationCaseById(
   id: string,
-  options: LoadDatasetOptions = {}
+  options: LoadDatasetOptions = {},
 ): EvaluationCase | undefined {
   const dataset = loadEvaluationDataset(options);
   return dataset.find((item) => item.id === id);
 }
-

@@ -26,7 +26,7 @@ export class BaselineAClassifier implements BaselineClassifier {
     // 1. Calculate discount ratio
     const discountRatio = Math.max(
       0,
-      (caseInput.referencePrice - caseInput.listedPrice) / caseInput.referencePrice
+      (caseInput.referencePrice - caseInput.listedPrice) / caseInput.referencePrice,
     );
     const discountPercent = Math.round(discountRatio * 100);
 
@@ -52,13 +52,13 @@ export class BaselineAClassifier implements BaselineClassifier {
     if (discountRatio >= 0.85) {
       pricingRisk = 50;
       reasons.push(`Extreme discount anomaly of ${discountPercent}%`);
-    } else if (discountRatio >= 0.70) {
+    } else if (discountRatio >= 0.7) {
       pricingRisk = 40;
       reasons.push(`High discount anomaly of ${discountPercent}%`);
-    } else if (discountRatio >= 0.50) {
+    } else if (discountRatio >= 0.5) {
       pricingRisk = 25;
       reasons.push(`Significant discount of ${discountPercent}%`);
-    } else if (discountRatio >= 0.30) {
+    } else if (discountRatio >= 0.3) {
       pricingRisk = 10;
     } else {
       pricingRisk = 0;
@@ -89,4 +89,3 @@ export class BaselineAClassifier implements BaselineClassifier {
     };
   }
 }
-

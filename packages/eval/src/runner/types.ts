@@ -50,4 +50,3 @@ export interface EvalReport {
     [key: string]: CaseEvaluationResult[];
   };
 }
-

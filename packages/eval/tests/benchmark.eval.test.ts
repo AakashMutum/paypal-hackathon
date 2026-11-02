@@ -1,4 +1,3 @@
-
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -46,7 +45,7 @@ test('runEvaluation generates reproducible eval-report.json with all metrics', a
     // Full classifier should achieve higher accuracy/F1 than Baseline A on this dataset
     assert.ok(
       report.perBaseline.full.accuracy >= report.perBaseline.baselineA.accuracy,
-      `Full classifier (${report.perBaseline.full.accuracy}) should outperform Baseline A (${report.perBaseline.baselineA.accuracy})`
+      `Full classifier (${report.perBaseline.full.accuracy}) should outperform Baseline A (${report.perBaseline.baselineA.accuracy})`,
     );
 
     // 4. perCaseResults

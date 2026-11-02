@@ -17,7 +17,7 @@ test('lookupPriorSignals returns prior matches, block count, evidence types, and
     {
       investigationId: 'inv-prior-1',
       domain: 'outlet-mall.example.com',
-      claimedBrand: 'Prada',
+      claimedBrand: 'Solaria Couture',
       payeeMerchantId: 'M-OUTLET-99',
       payeeEmail: 'billing@outlet-mall.example.com',
       riskScore: 78.5,
@@ -25,14 +25,14 @@ test('lookupPriorSignals returns prior matches, block count, evidence types, and
       flaggedEvidenceTypes: ['MERCHANT_MISMATCH', 'PRICING_ANOMALY'],
       timestamp: '2026-11-01T10:00:00Z',
     },
-    store
+    store,
   );
 
   await saveInvestigation(
     {
       investigationId: 'inv-prior-2',
       domain: 'outlet-mall.example.com',
-      claimedBrand: 'Prada',
+      claimedBrand: 'Solaria Couture',
       payeeMerchantId: 'M-OUTLET-99',
       payeeEmail: 'billing@outlet-mall.example.com',
       riskScore: 62.0,
@@ -40,14 +40,14 @@ test('lookupPriorSignals returns prior matches, block count, evidence types, and
       flaggedEvidenceTypes: ['PRICING_ANOMALY', 'SSL_TECHNICAL'],
       timestamp: '2026-11-01T12:00:00Z',
     },
-    store
+    store,
   );
 
   await saveInvestigation(
     {
       investigationId: 'inv-prior-3',
       domain: 'outlet-mall.example.com',
-      claimedBrand: 'Prada',
+      claimedBrand: 'Solaria Couture',
       payeeMerchantId: 'M-OUTLET-99',
       payeeEmail: 'billing@outlet-mall.example.com',
       riskScore: 20.0,
@@ -55,14 +55,14 @@ test('lookupPriorSignals returns prior matches, block count, evidence types, and
       flaggedEvidenceTypes: [],
       timestamp: '2026-11-01T14:00:00Z',
     },
-    store
+    store,
   );
 
   const result = await lookupPriorSignals(
     'https://OUTLET-MALL.EXAMPLE.COM/checkout',
     'M-OUTLET-99',
     'billing@outlet-mall.example.com',
-    store
+    store,
   );
 
   // Assert match count
@@ -77,10 +77,7 @@ test('lookupPriorSignals returns prior matches, block count, evidence types, and
   assert.ok(result.evidenceTypes.includes('SSL_TECHNICAL'));
 
   // Mandatory note verification: must state that these are historical indicators, not proof
-  assert.match(
-    result.note.toLowerCase(),
-    /these are historical indicators, not proof/
-  );
+  assert.match(result.note.toLowerCase(), /these are historical indicators, not proof/);
   assert.equal(result.note, HISTORICAL_INDICATORS_NOTE);
 });
 
@@ -116,7 +113,7 @@ test('saveInvestigation strips PII before saving to store', async () => {
       shippingAddress: '789 Secret Blvd',
       billingAddress: 'PO Box 999',
     },
-    store
+    store,
   );
 
   assert.equal(saved.investigationId, 'inv-save-pii');
@@ -131,4 +128,3 @@ test('saveInvestigation strips PII before saving to store', async () => {
   assert.equal(records.length, 1);
   assert.equal((records[0] as unknown as Record<string, unknown>).customerName, undefined);
 });
-

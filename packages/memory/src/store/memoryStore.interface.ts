@@ -69,4 +69,3 @@ export interface MemoryStore {
    */
   close?(): Promise<void>;
 }
-

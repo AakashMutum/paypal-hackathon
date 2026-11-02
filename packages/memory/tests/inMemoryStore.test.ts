@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { InMemoryMemoryStore, type HistoricalRecord } from '../src/index.js';
+import { InMemoryMemoryStore } from '../src/index.js';
 
 test('InMemoryMemoryStore sanitizes PII before indexing', async () => {
   const store = new InMemoryMemoryStore();
@@ -42,8 +42,8 @@ test('InMemoryMemoryStore find methods work with normalization', async () => {
   await store.indexInvestigation({
     investigationId: 'inv-1',
     domain: 'shoes.example.com',
-    claimedBrand: 'Nike',
-    payeeMerchantId: 'MERCHANT-NIKE-US',
+    claimedBrand: 'Veloce Athletics',
+    payeeMerchantId: 'MERCHANT-VELOCE-US',
     payeeEmail: 'payee@shoes.example.com',
     riskScore: 12.0,
     decision: 'ALLOW',
@@ -54,8 +54,8 @@ test('InMemoryMemoryStore find methods work with normalization', async () => {
   await store.indexInvestigation({
     investigationId: 'inv-2',
     domain: 'outlet-shoes.example.com',
-    claimedBrand: 'Nike',
-    payeeMerchantId: 'MERCHANT-NIKE-US',
+    claimedBrand: 'Veloce Athletics',
+    payeeMerchantId: 'MERCHANT-VELOCE-US',
     payeeEmail: 'secondary@shoes.example.com',
     riskScore: 65.0,
     decision: 'WARN',
@@ -69,7 +69,7 @@ test('InMemoryMemoryStore find methods work with normalization', async () => {
   assert.equal(byDomain[0].investigationId, 'inv-1');
 
   // Find by merchant ID (case-insensitive)
-  const byMerchant = await store.findByPayeeMerchantId('merchant-nike-us');
+  const byMerchant = await store.findByPayeeMerchantId('merchant-veloce-us');
   assert.equal(byMerchant.length, 2);
 
   // Find by email (case-insensitive)
@@ -78,7 +78,7 @@ test('InMemoryMemoryStore find methods work with normalization', async () => {
   assert.equal(byEmail[0].investigationId, 'inv-1');
 
   // Find by brand
-  const byBrand = await store.findByBrand('nike');
+  const byBrand = await store.findByBrand('veloce athletics');
   assert.equal(byBrand.length, 2);
 });
 
@@ -91,7 +91,7 @@ test('InMemoryMemoryStore getHistorySummary computes WARN/BLOCK and evidence cou
   await store.indexInvestigation({
     investigationId: 'inv-allow',
     domain,
-    claimedBrand: 'Sony',
+    claimedBrand: 'NovaSound',
     payeeMerchantId: 'M-SKETCHY-1',
     payeeEmail: 'billing@sketchy-electronics.net',
     riskScore: 20.0,
@@ -104,7 +104,7 @@ test('InMemoryMemoryStore getHistorySummary computes WARN/BLOCK and evidence cou
   await store.indexInvestigation({
     investigationId: 'inv-warn',
     domain,
-    claimedBrand: 'Sony',
+    claimedBrand: 'NovaSound',
     payeeMerchantId: 'M-SKETCHY-1',
     payeeEmail: 'billing@sketchy-electronics.net',
     riskScore: 55.0,
@@ -117,7 +117,7 @@ test('InMemoryMemoryStore getHistorySummary computes WARN/BLOCK and evidence cou
   await store.indexInvestigation({
     investigationId: 'inv-block',
     domain,
-    claimedBrand: 'Sony',
+    claimedBrand: 'NovaSound',
     payeeMerchantId: 'M-SKETCHY-1',
     payeeEmail: 'billing@sketchy-electronics.net',
     riskScore: 88.0,
@@ -147,4 +147,3 @@ test('InMemoryMemoryStore getHistorySummary computes WARN/BLOCK and evidence cou
   const summaryByMerchant = await store.getHistorySummary({ payeeMerchantId: 'M-SKETCHY-1' });
   assert.equal(summaryByMerchant.totalCount, 3);
 });
-

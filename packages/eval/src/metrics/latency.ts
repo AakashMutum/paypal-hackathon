@@ -43,7 +43,7 @@ export function calculatePercentile(sortedNumbers: number[], percentile: number)
  */
 export function calculateLatencyMetrics(latenciesMs: number[]): LatencyMetrics {
   const validLatencies = latenciesMs.filter(
-    (val) => typeof val === 'number' && Number.isFinite(val) && val >= 0
+    (val) => typeof val === 'number' && Number.isFinite(val) && val >= 0,
   );
 
   if (validLatencies.length === 0) {
@@ -79,4 +79,3 @@ export function calculateLatencyMetrics(latenciesMs: number[]): LatencyMetrics {
     count: sorted.length,
   };
 }
-

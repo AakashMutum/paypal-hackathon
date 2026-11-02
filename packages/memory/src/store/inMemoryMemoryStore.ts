@@ -5,11 +5,7 @@
 
 import { sanitizeRecord, normalizeDomain, normalizeEmail } from '../sanitizer.js';
 import type { HistoricalRecord } from '../types/historicalRecord.js';
-import type {
-  MemoryStore,
-  HistorySummary,
-  HistorySummaryQuery,
-} from './memoryStore.interface.js';
+import type { MemoryStore, HistorySummary, HistorySummaryQuery } from './memoryStore.interface.js';
 import { parseHistorySummaryQuery, buildHistorySummary } from './summaryUtils.js';
 
 export class InMemoryMemoryStore implements MemoryStore {
@@ -94,7 +90,10 @@ export class InMemoryMemoryStore implements MemoryStore {
       if (parsed.domain && record.domain === parsed.domain) {
         isMatch = true;
       }
-      if (parsed.payeeMerchantId && record.payeeMerchantId.toLowerCase() === parsed.payeeMerchantId.toLowerCase()) {
+      if (
+        parsed.payeeMerchantId &&
+        record.payeeMerchantId.toLowerCase() === parsed.payeeMerchantId.toLowerCase()
+      ) {
         isMatch = true;
       }
       if (parsed.payeeEmail && record.payeeEmail === parsed.payeeEmail) {
@@ -116,4 +115,3 @@ export class InMemoryMemoryStore implements MemoryStore {
     this.records.clear();
   }
 }
-

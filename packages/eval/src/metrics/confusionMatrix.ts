@@ -3,11 +3,7 @@
  * @description Computes confusion matrix and classification performance metrics with safe zero-division handling.
  */
 
-import type {
-  ConfusionMatrix,
-  ClassificationMetrics,
-  PredictionRecord,
-} from './types.js';
+import type { ConfusionMatrix, ClassificationMetrics, PredictionRecord } from './types.js';
 
 /**
  * Normalizes input value to boolean representing whether it indicates fraud (positive class).
@@ -68,7 +64,13 @@ export function calculateConfusionMatrix(predictions: PredictionRecord[]): Confu
  * - Accuracy: (TP + TN) / total -> 0 if total == 0
  */
 export function calculateClassificationMetrics(matrix: ConfusionMatrix): ClassificationMetrics {
-  const { truePositives: tp, falsePositives: fp, trueNegatives: tn, falseNegatives: fn, total } = matrix;
+  const {
+    truePositives: tp,
+    falsePositives: fp,
+    trueNegatives: tn,
+    falseNegatives: fn,
+    total,
+  } = matrix;
 
   // Precision = TP / (TP + FP)
   const precisionDenominator = tp + fp;
@@ -93,4 +95,3 @@ export function calculateClassificationMetrics(matrix: ConfusionMatrix): Classif
     accuracy,
   };
 }
-

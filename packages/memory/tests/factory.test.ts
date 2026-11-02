@@ -1,11 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import type { Client } from '@elastic/elasticsearch';
-import {
-  createMemoryStore,
-  InMemoryMemoryStore,
-  ElasticMemoryStore,
-} from '../src/index.js';
+import { createMemoryStore, InMemoryMemoryStore, ElasticMemoryStore } from '../src/index.js';
 
 test('createMemoryStore falls back to InMemoryMemoryStore when ELASTIC_NODE is missing', async () => {
   const originalNode = process.env.ELASTIC_NODE;
@@ -85,7 +81,6 @@ test('createMemoryStore falls back to InMemoryMemoryStore when Elastic ping time
 });
 
 test('createMemoryStore returns ElasticMemoryStore when Elastic ping succeeds', async () => {
-  let indexChecked = false;
   const mockSuccessfulClient = {
     ping: async () => true,
     indices: {
@@ -103,4 +98,3 @@ test('createMemoryStore returns ElasticMemoryStore when Elastic ping succeeds', 
 
   assert.ok(store instanceof ElasticMemoryStore);
 });
-

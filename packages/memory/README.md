@@ -42,14 +42,10 @@ import { lookupPriorSignals } from '@checkout-guardian/memory';
 async function evaluateHistoricalSignals(
   storefrontUrl: string,
   payeeMerchantId?: string,
-  payeeEmail?: string
+  payeeEmail?: string,
 ) {
   // Query prior findings using any combination of domain, merchant ID, or payee email:
-  const signals = await lookupPriorSignals(
-    storefrontUrl,
-    payeeMerchantId,
-    payeeEmail
-  );
+  const signals = await lookupPriorSignals(storefrontUrl, payeeMerchantId, payeeEmail);
 
   console.log(`Prior investigations found: ${signals.priorMatches}`);
   console.log(`Prior blocks/pauses: ${signals.priorBlockCount}`);
@@ -71,12 +67,12 @@ async function evaluateHistoricalSignals(
 
 #### Return Type: `PriorSignalsResult`
 
-| Property | Type | Description |
-|---|---|---|
-| `priorMatches` | `number` | Count of prior investigations matching the domain, merchant ID, or payee email. |
-| `priorBlockCount` | `number` | Count of prior investigations that resulted in a `BLOCK` or `PAUSE` decision. |
-| `evidenceTypes` | `string[]` | Distinct list of flagged evidence types observed across previous investigations. |
-| `note` | `string` | Mandatory disclaimer stating that these are historical indicators, not proof of fraud. |
+| Property          | Type       | Description                                                                            |
+| ----------------- | ---------- | -------------------------------------------------------------------------------------- |
+| `priorMatches`    | `number`   | Count of prior investigations matching the domain, merchant ID, or payee email.        |
+| `priorBlockCount` | `number`   | Count of prior investigations that resulted in a `BLOCK` or `PAUSE` decision.          |
+| `evidenceTypes`   | `string[]` | Distinct list of flagged evidence types observed across previous investigations.       |
+| `note`            | `string`   | Mandatory disclaimer stating that these are historical indicators, not proof of fraud. |
 
 ---
 
@@ -132,9 +128,9 @@ const signals = await lookupPriorSignals('example.com', undefined, undefined, te
 ## Environment Configuration
 
 When using Elasticsearch:
+
 - `ELASTIC_NODE`: Elasticsearch endpoint (e.g. `http://localhost:9200` or Elastic Cloud endpoint).
 - `ELASTIC_API_KEY`: Optional API key for Elastic authentication.
 - `ELASTIC_INDEX`: Optional index name (defaults to `checkout-guardian-memory`).
 
 If `ELASTIC_NODE` is not set or the cluster is unreachable within 1500ms, the system logs a warning and automatically falls back to the in-memory store without breaking.
-

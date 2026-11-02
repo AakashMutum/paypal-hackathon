@@ -14,9 +14,11 @@ import type {
 /**
  * Parses a string or query object into a normalized HistorySummaryQuery.
  */
-export function parseHistorySummaryQuery(
-  rawQuery: string | HistorySummaryQuery
-): { domain?: string; payeeMerchantId?: string; payeeEmail?: string } {
+export function parseHistorySummaryQuery(rawQuery: string | HistorySummaryQuery): {
+  domain?: string;
+  payeeMerchantId?: string;
+  payeeEmail?: string;
+} {
   if (typeof rawQuery === 'string') {
     const trimmed = rawQuery.trim();
     if (trimmed.includes('@')) {
@@ -84,9 +86,7 @@ export function buildHistorySummary(records: HistoricalRecord[]): HistorySummary
     }
   }
 
-  const commonFlaggedEvidenceTypes: EvidenceTypeCount[] = Array.from(
-    evidenceFrequencies.entries()
-  )
+  const commonFlaggedEvidenceTypes: EvidenceTypeCount[] = Array.from(evidenceFrequencies.entries())
     .map(([type, count]) => ({ type, count }))
     .sort((a, b) => b.count - a.count || a.type.localeCompare(b.type));
 
@@ -99,4 +99,3 @@ export function buildHistorySummary(records: HistoricalRecord[]): HistorySummary
     commonFlaggedEvidenceTypes,
   };
 }
-

@@ -6,4 +6,3 @@ test('memory package exports module constants', () => {
   assert.equal(MEMORY_PACKAGE_NAME, '@checkout-guardian/memory');
   assert.equal(MEMORY_VERSION, '0.1.0');
 });
-

@@ -59,4 +59,3 @@ export interface PredictionRecord {
 export interface FullMetricsReport extends ClassificationMetrics {
   latency: LatencyMetrics;
 }
-

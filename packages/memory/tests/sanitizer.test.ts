@@ -1,18 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {
-  sanitizeRecord,
-  RecordSanitizationError,
-  HISTORICAL_RECORD_ALLOWED_KEYS,
-  type HistoricalRecord,
-} from '../src/index.js';
+import { sanitizeRecord, HISTORICAL_RECORD_ALLOWED_KEYS } from '../src/index.js';
 
 test('sanitizeRecord strips all PII fields (customer name, card, CVV, shipping address)', () => {
   const contaminatedInput = {
     // Legitimate fields
     investigationId: 'inv-12345',
     domain: 'luxury-store.example.com',
-    claimedBrand: 'Rolex',
+    claimedBrand: 'Chronos Elite',
     payeeMerchantId: 'M-998877',
     payeeEmail: 'billing@luxury-store.example.com',
     riskScore: 82.5,
@@ -71,7 +66,7 @@ test('sanitizeRecord normalizes domain and email to lowercase', () => {
   const input = {
     investigationId: 'inv-abc',
     domain: 'HTTPS://WWW.CHECKOUT-DEALS.COM/shop?id=1',
-    claimedBrand: 'Adidas',
+    claimedBrand: 'AuraTech',
     payeeMerchantId: 'MERCHANT-XYZ',
     payeeEmail: 'SUPPORT@Checkout-Deals.COM',
     riskScore: 25.0,
@@ -93,7 +88,7 @@ test('sanitizeRecord validates and formats timestamps into ISO 8601 strings', ()
   const inputWithDateObj = {
     investigationId: 'inv-date-test',
     domain: 'example.com',
-    claimedBrand: 'Nike',
+    claimedBrand: 'Veloce Athletics',
     payeeMerchantId: 'M1',
     payeeEmail: 'pay@example.com',
     riskScore: 10.5,
@@ -117,10 +112,7 @@ test('sanitizeRecord rejects invalid decisions', () => {
     timestamp: '2026-11-02T12:00:00Z',
   };
 
-  assert.throws(
-    () => sanitizeRecord(invalidInput),
-    /Invalid decision: "APPROVE_AUTOMATICALLY"/
-  );
+  assert.throws(() => sanitizeRecord(invalidInput), /Invalid decision: "APPROVE_AUTOMATICALLY"/);
 });
 
 test('sanitizeRecord rejects invalid risk score and non-object inputs', () => {

@@ -40,7 +40,7 @@ export interface BaselineClassifier {
   /** Classifies a single evaluation case */
   classify(
     caseInput: EvaluationCase,
-    config?: ClassifierConfig
+    config?: ClassifierConfig,
   ): Promise<ClassifierResult> | ClassifierResult;
 }
 
@@ -51,7 +51,7 @@ export interface BaselineClassifier {
 export function isPredictedFraud(
   decision: Decision,
   score: number,
-  config?: ClassifierConfig
+  config?: ClassifierConfig,
 ): boolean {
   if (config?.mapDecisionToFraud) {
     return config.mapDecisionToFraud(decision, score);
@@ -76,4 +76,3 @@ export function scoreToDecision(score: number): Decision {
   }
   return 'ALLOW';
 }
-

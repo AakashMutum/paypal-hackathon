@@ -41,4 +41,3 @@ export const HISTORICAL_RECORD_ALLOWED_KEYS: ReadonlyArray<keyof HistoricalRecor
   'flaggedEvidenceTypes',
   'timestamp',
 ] as const;
-

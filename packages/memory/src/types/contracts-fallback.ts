@@ -46,4 +46,3 @@ export interface DecisionAudit {
   decision: Decision;
   verdict: Verdict;
 }
-

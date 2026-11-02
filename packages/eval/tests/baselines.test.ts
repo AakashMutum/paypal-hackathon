@@ -16,7 +16,7 @@ test('Baseline A: scores domain age and price discount ratio only', () => {
   const freshScamCase: EvaluationCase = {
     id: 'test-a-1',
     merchantUrl: 'https://fake-deals.xyz/checkout',
-    claimedBrand: 'Apple',
+    claimedBrand: 'AuraTech',
     domainAgeDays: 5,
     listedPrice: 100,
     referencePrice: 1000, // 90% discount
@@ -69,36 +69,34 @@ test('Baseline B: catches merchant identity claim inconsistencies on aged domain
   // Baseline B should assess higher risk due to identity inconsistency
   assert.ok(
     resB.score > resA.score,
-    `Baseline B (${resB.score}) should catch identity inconsistency missed by Baseline A (${resA.score})`
+    `Baseline B (${resB.score}) should catch identity inconsistency missed by Baseline A (${resA.score})`,
   );
-  assert.ok(
-    resB.reasons.some((r) => r.includes('Inconsistent merchant identity claims'))
-  );
+  assert.ok(resB.reasons.some((r) => r.includes('Inconsistent merchant identity claims')));
 });
 
-test('Full Classifier: accurately evaluates demo stores from Person 4 guide', async () => {
+test('Full Classifier: accurately evaluates demo stores aligned with fixtures', async () => {
   const fullClassifier = new FullClassifier();
 
-  // 1. acme-audio.com (Legit demo store)
-  const acmeCase = getEvaluationCaseById('case-demo-001');
-  assert.ok(acmeCase);
-  const acmeResult = await fullClassifier.classify(acmeCase);
-  assert.equal(acmeResult.decision, 'ALLOW');
-  assert.equal(acmeResult.predictedFraud, false);
+  // 1. Harborline Outfitters (genuine-store.json - ALLOW)
+  const genuineCase = getEvaluationCaseById('case-demo-001');
+  assert.ok(genuineCase);
+  const genuineResult = await fullClassifier.classify(genuineCase);
+  assert.equal(genuineResult.decision, 'ALLOW');
+  assert.equal(genuineResult.predictedFraud, false);
 
-  // 2. mega-dealsoutlet.net (Fraud demo store)
-  const megaCase = getEvaluationCaseById('case-demo-002');
-  assert.ok(megaCase);
-  const megaResult = await fullClassifier.classify(megaCase);
-  assert.equal(megaResult.decision, 'PAUSE');
-  assert.equal(megaResult.predictedFraud, true);
+  // 2. Bargain Barn Outlet (discount-store.json - WARN)
+  const discountCase = getEvaluationCaseById('case-demo-002');
+  assert.ok(discountCase);
+  const discountResult = await fullClassifier.classify(discountCase);
+  assert.equal(discountResult.decision, 'WARN');
+  assert.equal(discountResult.predictedFraud, true);
 
-  // 3. gucci-outletdeals.com (Fraud demo store)
-  const gucciCase = getEvaluationCaseById('case-demo-003');
-  assert.ok(gucciCase);
-  const gucciResult = await fullClassifier.classify(gucciCase);
-  assert.equal(gucciResult.decision, 'PAUSE');
-  assert.equal(gucciResult.predictedFraud, true);
+  // 3. Harborline Impersonator (impersonator-store.json - PAUSE)
+  const impersonatorCase = getEvaluationCaseById('case-demo-003');
+  assert.ok(impersonatorCase);
+  const impersonatorResult = await fullClassifier.classify(impersonatorCase);
+  assert.equal(impersonatorResult.decision, 'PAUSE');
+  assert.equal(impersonatorResult.predictedFraud, true);
 });
 
 test('Full Classifier: handles hard cases appropriately', async () => {
@@ -192,4 +190,3 @@ test('Full Classifier: supports pluggable SignalsAgentProvider interface', async
   assert.ok(providerCalled, 'Plugged-in provider should be invoked');
   assert.ok(result.reasons.includes('Mock agent flagged critical entity risks'));
 });
-

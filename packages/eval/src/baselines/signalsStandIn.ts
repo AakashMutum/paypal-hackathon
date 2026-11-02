@@ -30,7 +30,7 @@ export interface SignalsAgentProvider {
   readonly name: string;
   evaluate(
     caseInput: EvaluationCase,
-    memoryStore?: MemoryStore
+    memoryStore?: MemoryStore,
   ): Promise<SignalsEvaluationResult> | SignalsEvaluationResult;
 }
 
@@ -43,14 +43,14 @@ export class RuleBasedSignalsStandIn implements SignalsAgentProvider {
 
   async evaluate(
     caseInput: EvaluationCase,
-    memoryStore?: MemoryStore
+    memoryStore?: MemoryStore,
   ): Promise<SignalsEvaluationResult> {
     const findings: string[] = [];
 
     // 1. PayPal Payee Binding Analysis
     let payeeBindingScore = 0;
     const isPersonalEmail = /@(gmail|yahoo|hotmail|outlook|protonmail|tutanota)\.com$/i.test(
-      caseInput.payeeEmail
+      caseInput.payeeEmail,
     );
 
     if (caseInput.payeeMatchesDomain) {
@@ -63,19 +63,19 @@ export class RuleBasedSignalsStandIn implements SignalsAgentProvider {
           // Hard case: Legit sole proprietor/artisan using a personal PayPal email
           payeeBindingScore = 15;
           findings.push(
-            'Personal payee email observed on storefront with consistent identity claims (potential sole proprietor)'
+            'Personal payee email observed on storefront with consistent identity claims (potential sole proprietor)',
           );
         } else {
           // Personal/disposable email with inconsistent claims or brand new domain
           payeeBindingScore = 50;
           findings.push(
-            `Suspicious personal webmail payee "${caseInput.payeeEmail}" mismatching storefront domain`
+            `Suspicious personal webmail payee "${caseInput.payeeEmail}" mismatching storefront domain`,
           );
         }
       } else {
         payeeBindingScore = 35;
         findings.push(
-          `PayPal payee email "${caseInput.payeeEmail}" does not match storefront domain`
+          `PayPal payee email "${caseInput.payeeEmail}" does not match storefront domain`,
         );
       }
     }
@@ -96,19 +96,19 @@ export class RuleBasedSignalsStandIn implements SignalsAgentProvider {
         domain,
         caseInput.payeeMerchantId,
         caseInput.payeeEmail,
-        memoryStore
+        memoryStore,
       );
 
       if (priorSignals.priorBlockCount > 0) {
         historicalMemoryScore = Math.min(40, priorSignals.priorBlockCount * 20);
         findings.push(
-          `Historical memory indicates ${priorSignals.priorBlockCount} prior blocked session(s). Types: ${priorSignals.evidenceTypes.join(', ')}. (${priorSignals.note})`
+          `Historical memory indicates ${priorSignals.priorBlockCount} prior blocked session(s). Types: ${priorSignals.evidenceTypes.join(', ')}. (${priorSignals.note})`,
         );
       } else if (priorSignals.priorMatches > 0) {
         // Known clean merchant history provides mild mitigation
         historicalMemoryScore = -5;
         findings.push(
-          `Historical memory shows ${priorSignals.priorMatches} prior benign session(s)`
+          `Historical memory shows ${priorSignals.priorMatches} prior benign session(s)`,
         );
       }
     } catch {
@@ -124,4 +124,3 @@ export class RuleBasedSignalsStandIn implements SignalsAgentProvider {
     };
   }
 }
-

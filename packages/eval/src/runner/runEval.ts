@@ -10,4 +10,3 @@ runEvaluation().catch((err) => {
   console.error('Fatal error during evaluation run:', err);
   process.exit(1);
 });
-

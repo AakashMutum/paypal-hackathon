@@ -65,59 +65,59 @@ export interface EvalReport {
 }
 
 export interface BaselineSummaryMetrics {
-  tp: number;         // True Positives (actual fraud, predicted fraud)
-  fp: number;         // False Positives (actual legit, predicted fraud)
-  tn: number;         // True Negatives (actual legit, predicted legit)
-  fn: number;         // False Negatives (actual fraud, predicted legit)
-  precision: number;  // TP / (TP + FP) [0.0 - 1.0]
-  recall: number;     // TP / (TP + FN) [0.0 - 1.0]
-  f1: number;         // 2 * (P * R) / (P + R) [0.0 - 1.0]
-  accuracy: number;   // (TP + TN) / Total [0.0 - 1.0]
+  tp: number; // True Positives (actual fraud, predicted fraud)
+  fp: number; // False Positives (actual legit, predicted fraud)
+  tn: number; // True Negatives (actual legit, predicted legit)
+  fn: number; // False Negatives (actual fraud, predicted legit)
+  precision: number; // TP / (TP + FP) [0.0 - 1.0]
+  recall: number; // TP / (TP + FN) [0.0 - 1.0]
+  f1: number; // 2 * (P * R) / (P + R) [0.0 - 1.0]
+  accuracy: number; // (TP + TN) / Total [0.0 - 1.0]
   latency: {
-    mean: number;     // Average execution latency in milliseconds
-    p50: number;      // Median (50th percentile) latency in milliseconds
-    p95: number;      // 95th percentile latency in milliseconds
-    p99: number;      // 99th percentile latency in milliseconds
-    min: number;      // Minimum observed latency in milliseconds
-    max: number;      // Maximum observed latency in milliseconds
-    count: number;    // Sample count
+    mean: number; // Average execution latency in milliseconds
+    p50: number; // Median (50th percentile) latency in milliseconds
+    p95: number; // 95th percentile latency in milliseconds
+    p99: number; // 99th percentile latency in milliseconds
+    min: number; // Minimum observed latency in milliseconds
+    max: number; // Maximum observed latency in milliseconds
+    count: number; // Sample count
   };
 }
 
 export interface CaseEvaluationResult {
-  id: string;          // e.g. "case-demo-001"
+  id: string; // e.g. "case-demo-001"
   merchantUrl: string; // Storefront checkout URL
-  claimedBrand: string;// Brand name claimed on storefront
+  claimedBrand: string; // Brand name claimed on storefront
   actual: 'fraud' | 'legit';
   predicted: 'fraud' | 'legit';
-  isCorrect: boolean;  // actual === predicted
-  decision: string;    // 'ALLOW' | 'WARN' | 'PAUSE'
-  score: number;       // Risk score [0.0 - 100.0]
-  latencyMs: number;   // Measured execution duration in ms
-  reasons: string[];   // Decision explanation notes
+  isCorrect: boolean; // actual === predicted
+  decision: string; // 'ALLOW' | 'WARN' | 'PAUSE'
+  score: number; // Risk score [0.0 - 100.0]
+  latencyMs: number; // Measured execution duration in ms
+  reasons: string[]; // Decision explanation notes
 }
 ```
 
 ### Charting Recommendations for Analyst Console
 
 1. **Model Comparison Bar Chart:**
-   * Plot `f1`, `precision`, `recall`, and `accuracy` side-by-side for `baselineA`, `baselineB`, and `full`.
+   - Plot `f1`, `precision`, `recall`, and `accuracy` side-by-side for `baselineA`, `baselineB`, and `full`.
 2. **Confusion Matrix Cards:**
-   * Render a $2 \times 2$ grid for each baseline displaying `tp`, `fp`, `tn`, and `fn`.
+   - Render a $2 \times 2$ grid for each baseline displaying `tp`, `fp`, `tn`, and `fn`.
 3. **Latency Percentile Comparison:**
-   * Render a grouped bar chart comparing `p50` vs `p95` response times across the models.
+   - Render a grouped bar chart comparing `p50` vs `p95` response times across the models.
 4. **Drill-down Diagnostic Table:**
-   * Table displaying `perCaseResults.full` with filter toggles for `isCorrect: false` to highlight edge cases or misclassifications for manual review.
+   - Table displaying `perCaseResults.full` with filter toggles for `isCorrect: false` to highlight edge cases or misclassifications for manual review.
 
 ---
 
 ## Dataset Description
 
 The evaluation dataset in `src/dataset/cases.json` contains **50 labeled cases** (25 fraud, 25 legit) covering:
-- **Person 4 Demo Stores:** `acme-audio.com` (legit), `mega-dealsoutlet.net` (fraud), `gucci-outletdeals.com` (fraud).
+
+- **Fictional Demo Stores (aligned with `tests/fixtures/`):** `harborline-outfitters.example` (legit / ALLOW), `bargainbarn-outlet.example` (discount store / WARN), `harborlyne-outfitters-sale.example` (lookalike impersonator / PAUSE).
 - **Hard Cases:**
   - New-but-legit domains (< 30 days old with verified identity).
   - Clearance sales on mature domains (> 60% discounts).
   - Independent artisans/sole proprietors using personal PayPal accounts.
   - Fraudulent storefronts using aged/hijacked domains.
-

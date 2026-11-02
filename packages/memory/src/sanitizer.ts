@@ -9,10 +9,7 @@
  */
 
 import { DecisionTypes, type Decision } from './types/contracts-fallback.js';
-import {
-  HISTORICAL_RECORD_ALLOWED_KEYS,
-  type HistoricalRecord,
-} from './types/historicalRecord.js';
+import { HISTORICAL_RECORD_ALLOWED_KEYS, type HistoricalRecord } from './types/historicalRecord.js';
 
 export class RecordSanitizationError extends Error {
   constructor(message: string) {
@@ -92,7 +89,7 @@ export function validateDecision(rawDecision: unknown): Decision {
   }
 
   throw new RecordSanitizationError(
-    `Invalid decision: "${String(rawDecision)}". Must be one of: ALLOW, WARN, PAUSE.`
+    `Invalid decision: "${String(rawDecision)}". Must be one of: ALLOW, WARN, PAUSE.`,
   );
 }
 
@@ -102,7 +99,9 @@ export function validateDecision(rawDecision: unknown): Decision {
 export function validateRiskScore(rawScore: unknown): number {
   const score = typeof rawScore === 'number' ? rawScore : parseFloat(String(rawScore));
   if (Number.isNaN(score) || !Number.isFinite(score)) {
-    throw new RecordSanitizationError(`Risk score must be a finite float number, got: ${String(rawScore)}`);
+    throw new RecordSanitizationError(
+      `Risk score must be a finite float number, got: ${String(rawScore)}`,
+    );
   }
   return score;
 }
@@ -198,4 +197,3 @@ export function sanitizeRecord(input: unknown): HistoricalRecord {
 
   return Object.freeze(sanitized);
 }
-

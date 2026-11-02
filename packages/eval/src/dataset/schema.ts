@@ -38,4 +38,3 @@ export type EvaluationCase = z.infer<typeof EvaluationCaseSchema>;
 
 export const EvaluationDatasetSchema = z.array(EvaluationCaseSchema);
 export type EvaluationDataset = EvaluationCase[];
-
