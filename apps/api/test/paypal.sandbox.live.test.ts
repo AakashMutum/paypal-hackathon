@@ -42,7 +42,7 @@ if (!hasSandboxCredentials) {
         const order = await createPayPalOrder({
           amount: 15.50,
           currency: 'USD',
-          description: 'TRUSTORA Automated Sandbox Test Order',
+          description: 'Checkout Guardian Automated Sandbox Test Order',
           requestId: `sandbox_test_${Date.now()}`,
         });
 
