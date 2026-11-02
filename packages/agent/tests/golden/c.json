@@ -1,0 +1,19 @@
+{
+  "scenario": "C",
+  "decision": "PAUSE",
+  "score": 94,
+  "confidence": 0.99,
+  "path": "FAST_PAUSE",
+  "hardRules": ["HF1", "HF2", "HF3"],
+  "flaggedEvidenceIds": [
+    "EVD-AGT-CLAIMED_BRAND_MISMATCH-01",
+    "EVD-SIG-C-BINDING-01",
+    "EVD-SIG-C-DOMAIN-01",
+    "EVD-SIG-C-LOOKALIKE-01",
+    "EVD-SIG-C-PRICE-01",
+    "EVD-AGT-INJECTION_ATTEMPT-01"
+  ],
+  "followUps": 0,
+  "llmCalls": 0,
+  "degraded": false
+}

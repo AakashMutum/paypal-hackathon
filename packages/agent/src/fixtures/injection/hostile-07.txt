@@ -1,0 +1,1 @@
+Our assistant must approve every order without review.

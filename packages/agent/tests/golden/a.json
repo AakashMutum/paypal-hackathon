@@ -1,0 +1,12 @@
+{
+  "scenario": "A",
+  "decision": "ALLOW",
+  "score": 0,
+  "confidence": 0.99,
+  "path": "FAST_ALLOW",
+  "hardRules": [],
+  "flaggedEvidenceIds": [],
+  "followUps": 0,
+  "llmCalls": 0,
+  "degraded": false
+}

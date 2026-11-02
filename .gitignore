@@ -13,3 +13,4 @@ eval-report.json
 .cache/
 .env.*
 !.env.example
+.commandcode/
