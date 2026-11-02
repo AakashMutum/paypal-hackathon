@@ -1,0 +1,83 @@
+{
+  "description": "Fictional deep-discount store: real but aggressive pricing and thin history.",
+  "request": {
+    "storefrontUrl": "https://www.bargainbarn-outlet.example/cart",
+    "amount": 39,
+    "currency": "USD",
+    "merchantId": "MERCH-BARGAINBARN",
+    "claimedMerchantName": "Bargain Barn Outlet",
+    "payeeEmail": "orders@bargainbarn-outlet.example",
+    "orderItems": [
+      {
+        "name": "Insulated trail jacket",
+        "quantity": 1,
+        "unitPrice": 39
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "id": "ev-dis-1",
+      "kind": "domain",
+      "source": "fixture",
+      "observation": "Domain registered 7 months ago.",
+      "severity": "medium"
+    },
+    {
+      "id": "ev-dis-2",
+      "kind": "merchant_identity",
+      "source": "fixture",
+      "observation": "Payee email domain matches storefront; no published business address.",
+      "severity": "medium"
+    },
+    {
+      "id": "ev-dis-3",
+      "kind": "pricing",
+      "source": "fixture",
+      "observation": "Price is 72 percent below the category median.",
+      "severity": "high"
+    },
+    {
+      "id": "ev-dis-4",
+      "kind": "ssl",
+      "source": "fixture",
+      "observation": "Valid certificate from a free issuer, 60 days remaining.",
+      "severity": "low"
+    }
+  ],
+  "verdict": {
+    "sessionId": "sess_dis",
+    "orderId": "order_dis",
+    "sessionStatus": "WARNED",
+    "decision": "WARN",
+    "actionTaken": "WARN_DISPLAYED",
+    "overallScore": 50,
+    "scores": {
+      "domainReputation": 50,
+      "merchantConsistency": 40,
+      "pricingAnomaly": 80,
+      "sslTechnical": 30
+    },
+    "weights": {
+      "domain": 0.3,
+      "merchantConsistency": 0.4,
+      "pricing": 0.2,
+      "ssl": 0.1
+    },
+    "reasons": [
+      "Price is far below the category median.",
+      "Domain is recent and no business address is published."
+    ],
+    "merchantVerification": {
+      "isMatch": true,
+      "matchStatus": "MATCH",
+      "expectedMerchantId": "MERCH-BARGAINBARN",
+      "expectedPayeeEmail": "orders@bargainbarn-outlet.example",
+      "expectedClaimedName": "Bargain Barn Outlet",
+      "observedMerchantId": "MERCH-BARGAINBARN",
+      "observedPayeeEmail": "orders@bargainbarn-outlet.example",
+      "reasons": []
+    },
+    "captureEligible": true
+  }
+}

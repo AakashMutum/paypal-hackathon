@@ -1,0 +1,84 @@
+{
+  "description": "Fictional lookalike of Harborline Outfitters collecting payment to an unrelated payee.",
+  "request": {
+    "storefrontUrl": "https://www.harborlyne-outfitters-sale.example/checkout",
+    "amount": 29,
+    "currency": "USD",
+    "merchantId": "MERCH-HARBORLINE",
+    "claimedMerchantName": "Harborline Outfitters",
+    "payeeEmail": "collect@quickpay-holdings.example",
+    "orderItems": [
+      {
+        "name": "Canvas weekender bag",
+        "quantity": 1,
+        "unitPrice": 29
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "id": "ev-imp-1",
+      "kind": "domain",
+      "source": "fixture",
+      "observation": "Domain registered 6 days ago; name is one character off from a known store.",
+      "severity": "high"
+    },
+    {
+      "id": "ev-imp-2",
+      "kind": "merchant_identity",
+      "source": "fixture",
+      "observation": "Page claims to be Harborline Outfitters but payee email domain is unrelated.",
+      "severity": "high"
+    },
+    {
+      "id": "ev-imp-3",
+      "kind": "pricing",
+      "source": "fixture",
+      "observation": "Price is 66 percent below the genuine store for the same item.",
+      "severity": "high"
+    },
+    {
+      "id": "ev-imp-4",
+      "kind": "ssl",
+      "source": "fixture",
+      "observation": "Certificate issued 5 days ago to a different organisation.",
+      "severity": "high"
+    }
+  ],
+  "verdict": {
+    "sessionId": "sess_imp",
+    "orderId": "order_imp",
+    "sessionStatus": "PAUSED",
+    "decision": "PAUSE",
+    "actionTaken": "CAPTURE_PAUSED",
+    "overallScore": 87,
+    "scores": {
+      "domainReputation": 90,
+      "merchantConsistency": 95,
+      "pricingAnomaly": 70,
+      "sslTechnical": 80
+    },
+    "weights": {
+      "domain": 0.3,
+      "merchantConsistency": 0.4,
+      "pricing": 0.2,
+      "ssl": 0.1
+    },
+    "reasons": [
+      "Payee does not match the merchant the page claims to be.",
+      "Lookalike domain registered days ago."
+    ],
+    "merchantVerification": {
+      "isMatch": false,
+      "matchStatus": "MISMATCH",
+      "expectedMerchantId": "MERCH-HARBORLINE",
+      "expectedPayeeEmail": "payments@harborline-outfitters.example",
+      "expectedClaimedName": "Harborline Outfitters",
+      "observedPayeeEmail": "collect@quickpay-holdings.example",
+      "reasons": [
+        "Payee email domain differs from the claimed merchant."
+      ]
+    },
+    "captureEligible": false
+  }
+}
