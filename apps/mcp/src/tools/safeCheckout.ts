@@ -79,10 +79,23 @@ export const SafeCheckoutInputSchema = z
     }
   });
 
-export type SafeCheckoutInput = z.infer<typeof SafeCheckoutInputSchema>;
+// Explicit interface avoids Zod v4 ShapeOutput<...> inference issues in MCP SDK handler params
+export interface SafeCheckoutInput {
+  phase?: 'create' | 'finalize' | undefined;
+  checkoutId?: string | undefined;
+  merchantUrl?: string | undefined;
+  amount?: number | undefined;
+  currency?: string | undefined;
+  merchantId?: string | undefined;
+  payeeEmail?: string | undefined;
+  claimedBrand?: string | undefined;
+  agentId?: string | undefined;
+  items?: Array<{ name: string; quantity: number; unitPrice: number }> | undefined;
+  humanDecision?: 'proceed' | 'abort' | undefined;
+}
 
 export function registerSafeCheckout(server: McpServer, api: GuardianApiClient): void {
-  server.registerTool(
+  (server as any).registerTool(
     'safe_checkout',
     {
       title: 'Run a guarded checkout',
@@ -90,7 +103,7 @@ export function registerSafeCheckout(server: McpServer, api: GuardianApiClient):
         'Run a guarded checkout. Use phase=create with merchant details to hold an order, then phase=finalize with its checkoutId after human approval. Omitting phase creates and finalizes in one call. A PAUSE never pays. A WARN needs humanDecision proceed. Returns CAPTURED, NEEDS_HUMAN_DECISION or PAUSED.',
       inputSchema: SafeCheckoutInputSchema,
     },
-    async (input) => {
+    async (input: SafeCheckoutInput) => {
       try {
         if (input.phase === 'finalize' || input.checkoutId !== undefined) {
           if (input.checkoutId === undefined) {

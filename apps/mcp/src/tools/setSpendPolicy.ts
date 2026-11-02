@@ -20,10 +20,17 @@ export const SetSpendPolicyInputSchema = z
     path: ['perOrderCap'],
   });
 
-export type SetSpendPolicyInput = z.infer<typeof SetSpendPolicyInputSchema>;
+// Explicit interface avoids Zod v4 ShapeOutput<...> inference issues in MCP SDK handler params
+export interface SetSpendPolicyInput {
+  agentId: string;
+  perOrderCap: number;
+  dailyCap: number;
+  firstPurchaseCap?: number | undefined;
+  currency: string;
+}
 
 export function registerSetSpendPolicy(server: McpServer, api: GuardianApiClient): void {
-  server.registerTool(
+  (server as any).registerTool(
     'set_spend_policy',
     {
       title: 'Set a spend policy',
@@ -31,7 +38,7 @@ export function registerSetSpendPolicy(server: McpServer, api: GuardianApiClient
         'Set per-order, daily and first-purchase spending caps for an agent. The guardian enforces these caps when an order is created and finalized.',
       inputSchema: SetSpendPolicyInputSchema,
     },
-    async (input) => {
+    async (input: SetSpendPolicyInput) => {
       try {
         const data = await api.setSpendPolicy(input.agentId, {
           perOrderCap: input.perOrderCap,

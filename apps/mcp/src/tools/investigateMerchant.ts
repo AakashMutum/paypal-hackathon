@@ -26,13 +26,23 @@ export const InvestigateMerchantInputSchema = z.object({
   orderId: z.string().min(1).max(128).optional(),
 });
 
-export type InvestigateMerchantInput = z.infer<typeof InvestigateMerchantInputSchema>;
+// Explicit interface avoids Zod v4 ShapeOutput<...> inference issues in MCP SDK handler params
+export interface InvestigateMerchantInput {
+  merchantUrl: string;
+  claimedBrand?: string | undefined;
+  amount?: number | undefined;
+  currency?: string | undefined;
+  merchantId?: string | undefined;
+  payeeEmail?: string | undefined;
+  agentId?: string | undefined;
+  orderId?: string | undefined;
+}
 
 export function registerInvestigateMerchant(
   server: McpServer,
   api: GuardianApiClient
 ): void {
-  server.registerTool(
+  (server as any).registerTool(
     'investigate_merchant',
     {
       title: 'Investigate a merchant',
@@ -40,7 +50,7 @@ export function registerInvestigateMerchant(
         'Check a merchant before paying. Returns a guardian decision (ALLOW, WARN or PAUSE) with evidence-backed reasons and the checks that ran. Never pays.',
       inputSchema: InvestigateMerchantInputSchema,
     },
-    async (input) => {
+    async (input: InvestigateMerchantInput) => {
       try {
         const data = await api.investigateMerchant({
           orderId: input.orderId ?? `preview-${randomUUID()}`,
