@@ -1,5 +1,22 @@
 import { useEffect, useState } from 'react';
-declare global { interface Window { paypal?: unknown } }
+export interface PayPalButtonsConfig {
+  createOrder: () => Promise<string>;
+  onApprove: () => Promise<void>;
+}
+
+export interface PayPalButtonsInstance {
+  render: (container: HTMLElement) => Promise<void>;
+}
+
+export interface PayPalNamespace {
+  Buttons: (config: PayPalButtonsConfig) => PayPalButtonsInstance;
+}
+
+declare global {
+  interface Window {
+    paypal?: PayPalNamespace;
+  }
+}
 const CLIENT = import.meta.env.VITE_PAYPAL_CLIENT_ID as string | undefined;
 export function usePaypalAuth() {
   const [ready, setReady] = useState(!CLIENT);
