@@ -1,0 +1,2343 @@
+{
+  "generatedAt": "2026-11-02T13:41:39.466Z",
+  "datasetSize": 50,
+  "perBaseline": {
+    "baselineA": {
+      "tp": 25,
+      "fp": 5,
+      "tn": 20,
+      "fn": 0,
+      "precision": 0.8333,
+      "recall": 1,
+      "f1": 0.9091,
+      "accuracy": 0.9,
+      "latency": {
+        "mean": 0.006,
+        "p50": 0.002,
+        "p95": 0.014,
+        "p99": 0.085,
+        "min": 0.001,
+        "max": 0.149,
+        "count": 50
+      }
+    },
+    "baselineB": {
+      "tp": 25,
+      "fp": 5,
+      "tn": 20,
+      "fn": 0,
+      "precision": 0.8333,
+      "recall": 1,
+      "f1": 0.9091,
+      "accuracy": 0.9,
+      "latency": {
+        "mean": 0.004,
+        "p50": 0.002,
+        "p95": 0.008,
+        "p99": 0.042,
+        "min": 0.001,
+        "max": 0.07,
+        "count": 50
+      }
+    },
+    "full": {
+      "tp": 25,
+      "fp": 1,
+      "tn": 24,
+      "fn": 0,
+      "precision": 0.9615,
+      "recall": 1,
+      "f1": 0.9804,
+      "accuracy": 0.98,
+      "latency": {
+        "mean": 0.019,
+        "p50": 0.004,
+        "p95": 0.029,
+        "p99": 0.33,
+        "min": 0.003,
+        "max": 0.572,
+        "count": 50
+      }
+    }
+  },
+  "perCaseResults": {
+    "baselineA": [
+      {
+        "id": "case-demo-001",
+        "merchantUrl": "https://www.harborline-outfitters.example/checkout",
+        "claimedBrand": "Harborline Outfitters",
+        "actual": "legit",
+        "predicted": "legit",
+        "isCorrect": true,
+        "decision": "ALLOW",
+        "score": 0,
+        "latencyMs": 0.1491,
+        "reasons": []
+      },
+      {
+        "id": "case-demo-002",
+        "merchantUrl": "https://www.bargainbarn-outlet.example/cart",
+        "claimedBrand": "Bargain Barn Outlet",
+        "actual": "legit",
+        "predicted": "fraud",
+        "isCorrect": false,
+        "decision": "WARN",
+        "score": 40,
+        "latencyMs": 0.0121,
+        "reasons": [
+          "High discount anomaly of 72%"
+        ]
+      },
+      {
+        "id": "case-demo-003",
+        "merchantUrl": "https://www.harborlyne-outfitters-sale.example/checkout",
+        "claimedBrand": "Harborline Outfitters",
+        "actual": "fraud",
+        "predicted": "fraud",
+        "isCorrect": true,
+        "decision": "PAUSE",
+        "score": 75,
+        "latencyMs": 0.0193,
+        "reasons": [
+          "Extremely new domain (6 days old)",
+          "Significant discount of 66%"
+        ]
+      },
+      {
+        "id": "case-fraud-001",
+        "merchantUrl": "https://auratech-clearance-direct.shop/checkout",
+        "claimedBrand": "AuraTech",
+        "actual": "fraud",
+        "predicted": "fraud",
+        "isCorrect": true,
+        "decision": "PAUSE",
+        "score": 90,
+        "latencyMs": 0.0047,
+        "reasons": [
+          "Extremely new domain (5 days old)",
+          "High discount anomaly of 83%"
+        ]
+      },
+      {
+        "id": "case-fraud-002",
+        "merchantUrl": "https://chronos-official-discounts.top/checkout",
+        "claimedBrand": "Chronos Elite",
+        "actual": "fraud",
+        "predicted": "fraud",
+        "isCorrect": true,
+        "decision": "PAUSE",
+        "score": 90,
+        "latencyMs": 0.0066,
+        "reasons": [
+          "Recently registered domain (7 days old)",
+          "Extreme discount anomaly of 98%"
+        ]
+      },
+      {
+        "id": "case-fraud-003",
+        "merchantUrl": "https://www.aerocyclone-blowout.example/checkout",
+        "claimedBrand": "AeroCyclone",
+        "actual": "fraud",
+        "predicted": "fraud",
+        "isCorrect": true,
+        "decision": "PAUSE",
+        "score": 90,
+        "latencyMs": 0.0039,
+        "reasons": [
+          "Recently registered domain (11 days old)",
+          "Extreme discount anomaly of 90%"
+        ]
+      },
+      {
+        "id": "case-fraud-004",
+        "merchantUrl": "https://veloce-kicks-cheap.online/checkout",
+        "claimedBrand": "Veloce Athletics",
+        "actual": "fraud",
+        "predicted": "fraud",
+        "isCorrect": true,
+        "decision": "PAUSE",
+        "score": 80,
+        "latencyMs": 0.0038,
+        "reasons": [
+          "Recently registered domain (8 days old)",
+          "High discount anomaly of 71%"
+        ]
+      },
+      {
+        "id": "case-fraud-005",
+        "merchantUrl": "https://www.omnicore-gpu-outlet.example/checkout",
+        "claimedBrand": "OmniCore Graphics",
+        "actual": "fraud",
+        "predicted": "fraud",
+        "isCorrect": true,
+        "decision": "PAUSE",
+        "score": 100,
+        "latencyMs": 0.0038,
+        "reasons": [
+          "Extremely new domain (4 days old)",
+          "Extreme discount anomaly of 85%"
+        ]
+      },
+      {
+        "id": "case-fraud-006",
+        "merchantUrl": "https://www.thermovessel-wholesale.example/checkout",
+        "claimedBrand": "ThermoVessel",
+        "actual": "fraud",
+        "predicted": "fraud",
+        "isCorrect": true,
+        "decision": "PAUSE",
+        "score": 80,
+        "latencyMs": 0.0132,
+        "reasons": [
+          "Recently registered domain (14 days old)",
+          "High discount anomaly of 78%"
+        ]
+      },
+      {
+        "id": "case-fraud-007",
+        "merchantUrl": "https://www.arctictundra-discount.example/checkout",
+        "claimedBrand": "ArcticTundra Parkas",
+        "actual": "fraud",
+        "predicted": "fraud",
+        "isCorrect": true,
+        "decision": "PAUSE",
+        "score": 90,
+        "latencyMs": 0.0147,
+        "reasons": [
+          "Recently registered domain (10 days old)",
+          "Extreme discount anomaly of 90%"
+        ]
+      },
+      {
+        "id": "case-fraud-008",
+        "merchantUrl": "https://www.brickworld-clearance.example/checkout",
+        "claimedBrand": "BrickWorld",
+        "actual": "fraud",
+        "predicted": "fraud",
+        "isCorrect": true,
+        "decision": "PAUSE",
+        "score": 100,
+        "latencyMs": 0.0036,
+        "reasons": [
+          "Extremely new domain (6 days old)",
+          "Extreme discount anomaly of 88%"
+        ]
+      },
+      {
+        "id": "case-fraud-009",
+        "merchantUrl": "https://www.ergosphere-outlet.example/checkout",
+        "claimedBrand": "ErgoSphere Chairs",
+        "actual": "fraud",
+        "predicted": "fraud",
+        "isCorrect": true,
+        "decision": "PAUSE",
+        "score": 90,
+        "latencyMs": 0.0019,
+        "reasons": [
+          "Recently registered domain (15 days old)",
+          "Extreme discount anomaly of 89%"
+        ]
+      },
+      {
+        "id": "case-fraud-010",
+        "merchantUrl": "https://www.questbox-flashsale.example/checkout",
+        "claimedBrand": "QuestBox",
+        "actual": "fraud",
+        "predicted": "fraud",
+        "isCorrect": true,
+        "decision": "PAUSE",
+        "score": 90,
+        "latencyMs": 0.0015,
+        "reasons": [
+          "Extremely new domain (3 days old)",
+          "High discount anomaly of 77%"
+        ]
+      },
+      {
+        "id": "case-fraud-011",
+        "merchantUrl": "https://www.skyrotor-superdeals.example/checkout",
+        "claimedBrand": "SkyRotor Drones",
+        "actual": "fraud",
+        "predicted": "fraud",
+        "isCorrect": true,
+        "decision": "PAUSE",
+        "score": 90,
+        "latencyMs": 0.0015,
+        "reasons": [
+          "Recently registered domain (13 days old)",
+          "Extreme discount anomaly of 87%"
+        ]
+      },
+      {
+        "id": "case-fraud-012",
+        "merchantUrl": "https://www.luminashades-90off.example/checkout",
+        "claimedBrand": "LuminaShades",
+        "actual": "fraud",
+        "predicted": "fraud",
+        "isCorrect": true,
+        "decision": "PAUSE",
+        "score": 90,
+        "latencyMs": 0.0015,
+        "reasons": [
+          "Recently registered domain (8 days old)",
+          "Extreme discount anomaly of 89%"
+        ]
+      },
+      {
+        "id": "case-fraud-013",
+        "merchantUrl": "https://www.chefmaster-cookware.example/checkout",
+        "claimedBrand": "ChefMaster Appliance",
+        "actual": "fraud",
+        "predicted": "fraud",
+        "isCorrect": true,
+        "decision": "PAUSE",
+        "score": 90,
+        "latencyMs": 0.0019,
+        "reasons": [
+          "Recently registered domain (9 days old)",
+          "Extreme discount anomaly of 87%"
+        ]
+      },
+      {
+        "id": "case-fraud-014",
+        "merchantUrl": "https://www.frostvault-clearance.example/checkout",
+        "claimedBrand": "FrostVault Coolers",
+        "actual": "fraud",
+        "predicted": "fraud",
+        "isCorrect": true,
+        "decision": "PAUSE",
+        "score": 90,
+        "latencyMs": 0.0017,
+        "reasons": [
+          "Recently registered domain (16 days old)",
+          "Extreme discount anomaly of 88%"
+        ]
+      },
+      {
+        "id": "case-fraud-015",
+        "merchantUrl": "https://www.aurayoga-overstock.example/checkout",
+        "claimedBrand": "AuraYoga Active",
+        "actual": "fraud",
+        "predicted": "fraud",
+        "isCorrect": true,
+        "decision": "PAUSE",
+        "score": 90,
+        "latencyMs": 0.0014,
+        "reasons": [
+          "Extremely new domain (6 days old)",
+          "High discount anomaly of 83%"
+        ]
+      },
+      {
+        "id": "case-fraud-016",
+        "merchantUrl": "https://novaplay-wholesale.site/checkout",
+        "claimedBrand": "NovaPlay",
+        "actual": "fraud",
+        "predicted": "fraud",
+        "isCorrect": true,
+        "decision": "PAUSE",
+        "score": 90,
+        "latencyMs": 0.0019,
+        "reasons": [
+          "Extremely new domain (5 days old)",
+          "High discount anomaly of 80%"
+        ]
+      },
+      {
+        "id": "case-fraud-017",
+        "merchantUrl": "https://www.celestia-jewels-warehouse.example/checkout",
+        "claimedBrand": "Celestia Jewels",
+        "actual": "fraud",
+        "predicted": "fraud",
+        "isCorrect": true,
+        "decision": "PAUSE",
+        "score": 90,
+        "latencyMs": 0.0015,
+        "reasons": [
+          "Recently registered domain (11 days old)",
+          "Extreme discount anomaly of 90%"
+        ]
+      },
+      {
+        "id": "case-fraud-018",
+        "merchantUrl": "https://www.vanguard-couture-sale.example/checkout",
+        "claimedBrand": "Vanguard Couture",
+        "actual": "fraud",
+        "predicted": "fraud",
+        "isCorrect": true,
+        "decision": "PAUSE",
+        "score": 100,
+        "latencyMs": 0.0016,
+        "reasons": [
+          "Extremely new domain (4 days old)",
+          "Extreme discount anomaly of 90%"
+        ]
+      },
+      {
+        "id": "case-fraud-019",
+        "merchantUrl": "https://www.irondrill-tools-clearance.example/checkout",
+        "claimedBrand": "IronDrill Tools",
+        "actual": "fraud",
+        "predicted": "fraud",
+        "isCorrect": true,
+        "decision": "PAUSE",
+        "score": 80,
+        "latencyMs": 0.0057,
+        "reasons": [
+          "Recently registered domain (14 days old)",
+          "High discount anomaly of 80%"
+        ]
+      },
+      {
+        "id": "case-fraud-020",
+        "merchantUrl": "https://www.apexridge-winter-jackets.example/checkout",
+        "claimedBrand": "ApexRidge Outerwear",
+        "actual": "fraud",
+        "predicted": "fraud",
+        "isCorrect": true,
+        "decision": "PAUSE",
+        "score": 90,
+        "latencyMs": 0.0019,
+        "reasons": [
+          "Recently registered domain (7 days old)",
+          "Extreme discount anomaly of 86%"
+        ]
+      },
+      {
+        "id": "case-fraud-021",
+        "merchantUrl": "https://www.pulseaudio-closeout.example/checkout",
+        "claimedBrand": "PulseAudio",
+        "actual": "fraud",
+        "predicted": "fraud",
+        "isCorrect": true,
+        "decision": "PAUSE",
+        "score": 90,
+        "latencyMs": 0.0015,
+        "reasons": [
+          "Recently registered domain (10 days old)",
+          "Extreme discount anomaly of 86%"
+        ]
+      },
+      {
+        "id": "case-fraud-022",
+        "merchantUrl": "https://www.retrorock-amps-discount.example/checkout",
+        "claimedBrand": "RetroRock Amplifiers",
+        "actual": "fraud",
+        "predicted": "fraud",
+        "isCorrect": true,
+        "decision": "PAUSE",
+        "score": 80,
+        "latencyMs": 0.0016,
+        "reasons": [
+          "Recently registered domain (8 days old)",
+          "High discount anomaly of 82%"
+        ]
+      },
+      {
+        "id": "case-fraud-023",
+        "merchantUrl": "https://peakoptics-clearance-outlet.cc/checkout",
+        "claimedBrand": "Peak Optics",
+        "actual": "fraud",
+        "predicted": "fraud",
+        "isCorrect": true,
+        "decision": "PAUSE",
+        "score": 100,
+        "latencyMs": 0.0016,
+        "reasons": [
+          "Extremely new domain (5 days old)",
+          "Extreme discount anomaly of 86%"
+        ]
+      },
+      {
+        "id": "case-hard-001",
+        "merchantUrl": "https://lumina-coffee-roasters.com/checkout",
+        "claimedBrand": "Lumina Coffee",
+        "actual": "legit",
+        "predicted": "fraud",
+        "isCorrect": false,
+        "decision": "WARN",
+        "score": 40,
+        "latencyMs": 0.0016,
+        "reasons": [
+          "Recently registered domain (18 days old)"
+        ]
+      },
+      {
+        "id": "case-hard-002",
+        "merchantUrl": "https://cascade-outdoors-clearance.com/checkout",
+        "claimedBrand": "Cascade Outdoors",
+        "actual": "legit",
+        "predicted": "fraud",
+        "isCorrect": false,
+        "decision": "WARN",
+        "score": 40,
+        "latencyMs": 0.0016,
+        "reasons": [
+          "High discount anomaly of 70%"
+        ]
+      },
+      {
+        "id": "case-hard-003",
+        "merchantUrl": "https://elena-handcrafted-leather.com/checkout",
+        "claimedBrand": "Elena Handcrafted",
+        "actual": "legit",
+        "predicted": "legit",
+        "isCorrect": true,
+        "decision": "ALLOW",
+        "score": 0,
+        "latencyMs": 0.0015,
+        "reasons": []
+      },
+      {
+        "id": "case-hard-004",
+        "merchantUrl": "https://antique-clock-restoration.org/checkout",
+        "claimedBrand": "NovaSound",
+        "actual": "fraud",
+        "predicted": "fraud",
+        "isCorrect": true,
+        "decision": "WARN",
+        "score": 40,
+        "latencyMs": 0.0013,
+        "reasons": [
+          "High discount anomaly of 76%"
+        ]
+      },
+      {
+        "id": "case-legit-001",
+        "merchantUrl": "https://www.voltvault-direct.example/checkout",
+        "claimedBrand": "VoltVault",
+        "actual": "legit",
+        "predicted": "legit",
+        "isCorrect": true,
+        "decision": "ALLOW",
+        "score": 0,
+        "latencyMs": 0.0014,
+        "reasons": []
+      },
+      {
+        "id": "case-legit-002",
+        "merchantUrl": "https://www.terraridge-apparel.example/checkout",
+        "claimedBrand": "TerraRidge",
+        "actual": "legit",
+        "predicted": "legit",
+        "isCorrect": true,
+        "decision": "ALLOW",
+        "score": 0,
+        "latencyMs": 0.0012,
+        "reasons": []
+      },
+      {
+        "id": "case-legit-003",
+        "merchantUrl": "https://www.acoustiwave-audio.example/checkout",
+        "claimedBrand": "AcoustiWave",
+        "actual": "legit",
+        "predicted": "legit",
+        "isCorrect": true,
+        "decision": "ALLOW",
+        "score": 0,
+        "latencyMs": 0.0013,
+        "reasons": []
+      },
+      {
+        "id": "case-legit-004",
+        "merchantUrl": "https://artisanal-ceramics-austin.com/checkout",
+        "claimedBrand": "Austin Ceramics Co",
+        "actual": "legit",
+        "predicted": "legit",
+        "isCorrect": true,
+        "decision": "ALLOW",
+        "score": 0,
+        "latencyMs": 0.0012,
+        "reasons": []
+      },
+      {
+        "id": "case-legit-005",
+        "merchantUrl": "https://www.tactilekeebs-store.example/checkout",
+        "claimedBrand": "TactileKeebs",
+        "actual": "legit",
+        "predicted": "legit",
+        "isCorrect": true,
+        "decision": "ALLOW",
+        "score": 0,
+        "latencyMs": 0.0013,
+        "reasons": []
+      },
+      {
+        "id": "case-legit-006",
+        "merchantUrl": "https://www.vortexblend-kitchen.example/checkout",
+        "claimedBrand": "VortexBlend",
+        "actual": "legit",
+        "predicted": "legit",
+        "isCorrect": true,
+        "decision": "ALLOW",
+        "score": 0,
+        "latencyMs": 0.0013,
+        "reasons": []
+      },
+      {
+        "id": "case-legit-007",
+        "merchantUrl": "https://sol-organics-bedding.com/checkout",
+        "claimedBrand": "Sol Organics",
+        "actual": "legit",
+        "predicted": "legit",
+        "isCorrect": true,
+        "decision": "ALLOW",
+        "score": 0,
+        "latencyMs": 0.0014,
+        "reasons": []
+      },
+      {
+        "id": "case-legit-008",
+        "merchantUrl": "https://nordic-trail-cycling.com/checkout",
+        "claimedBrand": "Nordic Trail",
+        "actual": "legit",
+        "predicted": "legit",
+        "isCorrect": true,
+        "decision": "ALLOW",
+        "score": 0,
+        "latencyMs": 0.0013,
+        "reasons": []
+      },
+      {
+        "id": "case-legit-009",
+        "merchantUrl": "https://independent-reader-books.com/checkout",
+        "claimedBrand": "The Independent Reader",
+        "actual": "legit",
+        "predicted": "legit",
+        "isCorrect": true,
+        "decision": "ALLOW",
+        "score": 0,
+        "latencyMs": 0.0014,
+        "reasons": []
+      },
+      {
+        "id": "case-legit-010",
+        "merchantUrl": "https://apex-pet-nutrition.com/checkout",
+        "claimedBrand": "Apex Pet",
+        "actual": "legit",
+        "predicted": "legit",
+        "isCorrect": true,
+        "decision": "ALLOW",
+        "score": 0,
+        "latencyMs": 0.0013,
+        "reasons": []
+      },
+      {
+        "id": "case-legit-011",
+        "merchantUrl": "https://www.compura-systems.example/checkout",
+        "claimedBrand": "Compura Systems",
+        "actual": "legit",
+        "predicted": "legit",
+        "isCorrect": true,
+        "decision": "ALLOW",
+        "score": 0,
+        "latencyMs": 0.0013,
+        "reasons": []
+      },
+      {
+        "id": "case-legit-012",
+        "merchantUrl": "https://summit-knife-works.com/checkout",
+        "claimedBrand": "Summit Knives",
+        "actual": "legit",
+        "predicted": "legit",
+        "isCorrect": true,
+        "decision": "ALLOW",
+        "score": 0,
+        "latencyMs": 0.0013,
+        "reasons": []
+      },
+      {
+        "id": "case-legit-013",
+        "merchantUrl": "https://brooklyn-roast-works.com/checkout",
+        "claimedBrand": "Brooklyn Roast",
+        "actual": "legit",
+        "predicted": "fraud",
+        "isCorrect": false,
+        "decision": "WARN",
+        "score": 40,
+        "latencyMs": 0.0014,
+        "reasons": [
+          "Recently registered domain (22 days old)"
+        ]
+      },
+      {
+        "id": "case-legit-014",
+        "merchantUrl": "https://www.irontitan-gear.example/checkout",
+        "claimedBrand": "IronTitan Athletics",
+        "actual": "legit",
+        "predicted": "legit",
+        "isCorrect": true,
+        "decision": "ALLOW",
+        "score": 0,
+        "latencyMs": 0.0013,
+        "reasons": []
+      },
+      {
+        "id": "case-legit-015",
+        "merchantUrl": "https://kinfolk-handwoven-rugs.com/checkout",
+        "claimedBrand": "Kinfolk Weavers",
+        "actual": "legit",
+        "predicted": "legit",
+        "isCorrect": true,
+        "decision": "ALLOW",
+        "score": 0,
+        "latencyMs": 0.0014,
+        "reasons": []
+      },
+      {
+        "id": "case-legit-016",
+        "merchantUrl": "https://www.soundstudio-pro.example/checkout",
+        "claimedBrand": "SoundStudio Lab",
+        "actual": "legit",
+        "predicted": "legit",
+        "isCorrect": true,
+        "decision": "ALLOW",
+        "score": 0,
+        "latencyMs": 0.0075,
+        "reasons": []
+      },
+      {
+        "id": "case-legit-017",
+        "merchantUrl": "https://sierra-camp-gear-surplus.com/checkout",
+        "claimedBrand": "Sierra Camp",
+        "actual": "legit",
+        "predicted": "legit",
+        "isCorrect": true,
+        "decision": "ALLOW",
+        "score": 25,
+        "latencyMs": 0.0029,
+        "reasons": [
+          "Significant discount of 62%"
+        ]
+      },
+      {
+        "id": "case-legit-018",
+        "merchantUrl": "https://harbor-lighting-design.com/checkout",
+        "claimedBrand": "Harbor Lighting",
+        "actual": "legit",
+        "predicted": "legit",
+        "isCorrect": true,
+        "decision": "ALLOW",
+        "score": 0,
+        "latencyMs": 0.0018,
+        "reasons": []
+      },
+      {
+        "id": "case-legit-019",
+        "merchantUrl": "https://tabletop-quest-games.com/checkout",
+        "claimedBrand": "Tabletop Quest",
+        "actual": "legit",
+        "predicted": "fraud",
+        "isCorrect": false,
+        "decision": "WARN",
+        "score": 40,
+        "latencyMs": 0.0014,
+        "reasons": [
+          "Recently registered domain (16 days old)"
+        ]
+      },
+      {
+        "id": "case-legit-020",
+        "merchantUrl": "https://pure-botanicals-skincare.com/checkout",
+        "claimedBrand": "Pure Botanicals",
+        "actual": "legit",
+        "predicted": "legit",
+        "isCorrect": true,
+        "decision": "ALLOW",
+        "score": 0,
+        "latencyMs": 0.0013,
+        "reasons": []
+      }
+    ],
+    "baselineB": [
+      {
+        "id": "case-demo-001",
+        "merchantUrl": "https://www.harborline-outfitters.example/checkout",
+        "claimedBrand": "Harborline Outfitters",
+        "actual": "legit",
+        "predicted": "legit",
+        "isCorrect": true,
+        "decision": "ALLOW",
+        "score": 0,
+        "latencyMs": 0.07,
+        "reasons": [
+          "Storefront claims for brand \"Harborline Outfitters\" are internally consistent"
+        ]
+      },
+      {
+        "id": "case-demo-002",
+        "merchantUrl": "https://www.bargainbarn-outlet.example/cart",
+        "claimedBrand": "Bargain Barn Outlet",
+        "actual": "legit",
+        "predicted": "fraud",
+        "isCorrect": false,
+        "decision": "WARN",
+        "score": 40,
+        "latencyMs": 0.0056,
+        "reasons": [
+          "High discount anomaly of 72%",
+          "Storefront claims for brand \"Bargain Barn Outlet\" are internally consistent"
+        ]
+      },
+      {
+        "id": "case-demo-003",
+        "merchantUrl": "https://www.harborlyne-outfitters-sale.example/checkout",
+        "claimedBrand": "Harborline Outfitters",
+        "actual": "fraud",
+        "predicted": "fraud",
+        "isCorrect": true,
+        "decision": "PAUSE",
+        "score": 90,
+        "latencyMs": 0.0047,
+        "reasons": [
+          "Extremely new domain (6 days old)",
+          "Significant discount of 66%",
+          "Inconsistent merchant identity claims for storefront claiming \"Harborline Outfitters\""
+        ]
+      },
+      {
+        "id": "case-fraud-001",
+        "merchantUrl": "https://auratech-clearance-direct.shop/checkout",
+        "claimedBrand": "AuraTech",
+        "actual": "fraud",
+        "predicted": "fraud",
+        "isCorrect": true,
+        "decision": "PAUSE",
+        "score": 99,
+        "latencyMs": 0.0035,
+        "reasons": [
+          "Extremely new domain (5 days old)",
+          "High discount anomaly of 83%",
+          "Inconsistent merchant identity claims for storefront claiming \"AuraTech\""
+        ]
+      },
+      {
+        "id": "case-fraud-002",
+        "merchantUrl": "https://chronos-official-discounts.top/checkout",
+        "claimedBrand": "Chronos Elite",
+        "actual": "fraud",
+        "predicted": "fraud",
+        "isCorrect": true,
+        "decision": "PAUSE",
+        "score": 99,
+        "latencyMs": 0.0034,
+        "reasons": [
+          "Recently registered domain (7 days old)",
+          "Extreme discount anomaly of 98%",
+          "Inconsistent merchant identity claims for storefront claiming \"Chronos Elite\""
+        ]
+      },
+      {
+        "id": "case-fraud-003",
+        "merchantUrl": "https://www.aerocyclone-blowout.example/checkout",
+        "claimedBrand": "AeroCyclone",
+        "actual": "fraud",
+        "predicted": "fraud",
+        "isCorrect": true,
+        "decision": "PAUSE",
+        "score": 99,
+        "latencyMs": 0.0032,
+        "reasons": [
+          "Recently registered domain (11 days old)",
+          "Extreme discount anomaly of 90%",
+          "Inconsistent merchant identity claims for storefront claiming \"AeroCyclone\""
+        ]
+      },
+      {
+        "id": "case-fraud-004",
+        "merchantUrl": "https://veloce-kicks-cheap.online/checkout",
+        "claimedBrand": "Veloce Athletics",
+        "actual": "fraud",
+        "predicted": "fraud",
+        "isCorrect": true,
+        "decision": "PAUSE",
+        "score": 93,
+        "latencyMs": 0.0033,
+        "reasons": [
+          "Recently registered domain (8 days old)",
+          "High discount anomaly of 71%",
+          "Inconsistent merchant identity claims for storefront claiming \"Veloce Athletics\""
+        ]
+      },
+      {
+        "id": "case-fraud-005",
+        "merchantUrl": "https://www.omnicore-gpu-outlet.example/checkout",
+        "claimedBrand": "OmniCore Graphics",
+        "actual": "fraud",
+        "predicted": "fraud",
+        "isCorrect": true,
+        "decision": "PAUSE",
+        "score": 100,
+        "latencyMs": 0.0033,
+        "reasons": [
+          "Extremely new domain (4 days old)",
+          "Extreme discount anomaly of 85%",
+          "Inconsistent merchant identity claims for storefront claiming \"OmniCore Graphics\""
+        ]
+      },
+      {
+        "id": "case-fraud-006",
+        "merchantUrl": "https://www.thermovessel-wholesale.example/checkout",
+        "claimedBrand": "ThermoVessel",
+        "actual": "fraud",
+        "predicted": "fraud",
+        "isCorrect": true,
+        "decision": "PAUSE",
+        "score": 93,
+        "latencyMs": 0.0138,
+        "reasons": [
+          "Recently registered domain (14 days old)",
+          "High discount anomaly of 78%",
+          "Inconsistent merchant identity claims for storefront claiming \"ThermoVessel\""
+        ]
+      },
+      {
+        "id": "case-fraud-007",
+        "merchantUrl": "https://www.arctictundra-discount.example/checkout",
+        "claimedBrand": "ArcticTundra Parkas",
+        "actual": "fraud",
+        "predicted": "fraud",
+        "isCorrect": true,
+        "decision": "PAUSE",
+        "score": 99,
+        "latencyMs": 0.0107,
+        "reasons": [
+          "Recently registered domain (10 days old)",
+          "Extreme discount anomaly of 90%",
+          "Inconsistent merchant identity claims for storefront claiming \"ArcticTundra Parkas\""
+        ]
+      },
+      {
+        "id": "case-fraud-008",
+        "merchantUrl": "https://www.brickworld-clearance.example/checkout",
+        "claimedBrand": "BrickWorld",
+        "actual": "fraud",
+        "predicted": "fraud",
+        "isCorrect": true,
+        "decision": "PAUSE",
+        "score": 100,
+        "latencyMs": 0.0043,
+        "reasons": [
+          "Extremely new domain (6 days old)",
+          "Extreme discount anomaly of 88%",
+          "Inconsistent merchant identity claims for storefront claiming \"BrickWorld\""
+        ]
+      },
+      {
+        "id": "case-fraud-009",
+        "merchantUrl": "https://www.ergosphere-outlet.example/checkout",
+        "claimedBrand": "ErgoSphere Chairs",
+        "actual": "fraud",
+        "predicted": "fraud",
+        "isCorrect": true,
+        "decision": "PAUSE",
+        "score": 99,
+        "latencyMs": 0.0018,
+        "reasons": [
+          "Recently registered domain (15 days old)",
+          "Extreme discount anomaly of 89%",
+          "Inconsistent merchant identity claims for storefront claiming \"ErgoSphere Chairs\""
+        ]
+      },
+      {
+        "id": "case-fraud-010",
+        "merchantUrl": "https://www.questbox-flashsale.example/checkout",
+        "claimedBrand": "QuestBox",
+        "actual": "fraud",
+        "predicted": "fraud",
+        "isCorrect": true,
+        "decision": "PAUSE",
+        "score": 99,
+        "latencyMs": 0.0017,
+        "reasons": [
+          "Extremely new domain (3 days old)",
+          "High discount anomaly of 77%",
+          "Inconsistent merchant identity claims for storefront claiming \"QuestBox\""
+        ]
+      },
+      {
+        "id": "case-fraud-011",
+        "merchantUrl": "https://www.skyrotor-superdeals.example/checkout",
+        "claimedBrand": "SkyRotor Drones",
+        "actual": "fraud",
+        "predicted": "fraud",
+        "isCorrect": true,
+        "decision": "PAUSE",
+        "score": 99,
+        "latencyMs": 0.0017,
+        "reasons": [
+          "Recently registered domain (13 days old)",
+          "Extreme discount anomaly of 87%",
+          "Inconsistent merchant identity claims for storefront claiming \"SkyRotor Drones\""
+        ]
+      },
+      {
+        "id": "case-fraud-012",
+        "merchantUrl": "https://www.luminashades-90off.example/checkout",
+        "claimedBrand": "LuminaShades",
+        "actual": "fraud",
+        "predicted": "fraud",
+        "isCorrect": true,
+        "decision": "PAUSE",
+        "score": 99,
+        "latencyMs": 0.0016,
+        "reasons": [
+          "Recently registered domain (8 days old)",
+          "Extreme discount anomaly of 89%",
+          "Inconsistent merchant identity claims for storefront claiming \"LuminaShades\""
+        ]
+      },
+      {
+        "id": "case-fraud-013",
+        "merchantUrl": "https://www.chefmaster-cookware.example/checkout",
+        "claimedBrand": "ChefMaster Appliance",
+        "actual": "fraud",
+        "predicted": "fraud",
+        "isCorrect": true,
+        "decision": "PAUSE",
+        "score": 99,
+        "latencyMs": 0.0018,
+        "reasons": [
+          "Recently registered domain (9 days old)",
+          "Extreme discount anomaly of 87%",
+          "Inconsistent merchant identity claims for storefront claiming \"ChefMaster Appliance\""
+        ]
+      },
+      {
+        "id": "case-fraud-014",
+        "merchantUrl": "https://www.frostvault-clearance.example/checkout",
+        "claimedBrand": "FrostVault Coolers",
+        "actual": "fraud",
+        "predicted": "fraud",
+        "isCorrect": true,
+        "decision": "PAUSE",
+        "score": 99,
+        "latencyMs": 0.0016,
+        "reasons": [
+          "Recently registered domain (16 days old)",
+          "Extreme discount anomaly of 88%",
+          "Inconsistent merchant identity claims for storefront claiming \"FrostVault Coolers\""
+        ]
+      },
+      {
+        "id": "case-fraud-015",
+        "merchantUrl": "https://www.aurayoga-overstock.example/checkout",
+        "claimedBrand": "AuraYoga Active",
+        "actual": "fraud",
+        "predicted": "fraud",
+        "isCorrect": true,
+        "decision": "PAUSE",
+        "score": 99,
+        "latencyMs": 0.0016,
+        "reasons": [
+          "Extremely new domain (6 days old)",
+          "High discount anomaly of 83%",
+          "Inconsistent merchant identity claims for storefront claiming \"AuraYoga Active\""
+        ]
+      },
+      {
+        "id": "case-fraud-016",
+        "merchantUrl": "https://novaplay-wholesale.site/checkout",
+        "claimedBrand": "NovaPlay",
+        "actual": "fraud",
+        "predicted": "fraud",
+        "isCorrect": true,
+        "decision": "PAUSE",
+        "score": 99,
+        "latencyMs": 0.0017,
+        "reasons": [
+          "Extremely new domain (5 days old)",
+          "High discount anomaly of 80%",
+          "Inconsistent merchant identity claims for storefront claiming \"NovaPlay\""
+        ]
+      },
+      {
+        "id": "case-fraud-017",
+        "merchantUrl": "https://www.celestia-jewels-warehouse.example/checkout",
+        "claimedBrand": "Celestia Jewels",
+        "actual": "fraud",
+        "predicted": "fraud",
+        "isCorrect": true,
+        "decision": "PAUSE",
+        "score": 99,
+        "latencyMs": 0.0017,
+        "reasons": [
+          "Recently registered domain (11 days old)",
+          "Extreme discount anomaly of 90%",
+          "Inconsistent merchant identity claims for storefront claiming \"Celestia Jewels\""
+        ]
+      },
+      {
+        "id": "case-fraud-018",
+        "merchantUrl": "https://www.vanguard-couture-sale.example/checkout",
+        "claimedBrand": "Vanguard Couture",
+        "actual": "fraud",
+        "predicted": "fraud",
+        "isCorrect": true,
+        "decision": "PAUSE",
+        "score": 100,
+        "latencyMs": 0.0017,
+        "reasons": [
+          "Extremely new domain (4 days old)",
+          "Extreme discount anomaly of 90%",
+          "Inconsistent merchant identity claims for storefront claiming \"Vanguard Couture\""
+        ]
+      },
+      {
+        "id": "case-fraud-019",
+        "merchantUrl": "https://www.irondrill-tools-clearance.example/checkout",
+        "claimedBrand": "IronDrill Tools",
+        "actual": "fraud",
+        "predicted": "fraud",
+        "isCorrect": true,
+        "decision": "PAUSE",
+        "score": 93,
+        "latencyMs": 0.0016,
+        "reasons": [
+          "Recently registered domain (14 days old)",
+          "High discount anomaly of 80%",
+          "Inconsistent merchant identity claims for storefront claiming \"IronDrill Tools\""
+        ]
+      },
+      {
+        "id": "case-fraud-020",
+        "merchantUrl": "https://www.apexridge-winter-jackets.example/checkout",
+        "claimedBrand": "ApexRidge Outerwear",
+        "actual": "fraud",
+        "predicted": "fraud",
+        "isCorrect": true,
+        "decision": "PAUSE",
+        "score": 99,
+        "latencyMs": 0.0015,
+        "reasons": [
+          "Recently registered domain (7 days old)",
+          "Extreme discount anomaly of 86%",
+          "Inconsistent merchant identity claims for storefront claiming \"ApexRidge Outerwear\""
+        ]
+      },
+      {
+        "id": "case-fraud-021",
+        "merchantUrl": "https://www.pulseaudio-closeout.example/checkout",
+        "claimedBrand": "PulseAudio",
+        "actual": "fraud",
+        "predicted": "fraud",
+        "isCorrect": true,
+        "decision": "PAUSE",
+        "score": 99,
+        "latencyMs": 0.0015,
+        "reasons": [
+          "Recently registered domain (10 days old)",
+          "Extreme discount anomaly of 86%",
+          "Inconsistent merchant identity claims for storefront claiming \"PulseAudio\""
+        ]
+      },
+      {
+        "id": "case-fraud-022",
+        "merchantUrl": "https://www.retrorock-amps-discount.example/checkout",
+        "claimedBrand": "RetroRock Amplifiers",
+        "actual": "fraud",
+        "predicted": "fraud",
+        "isCorrect": true,
+        "decision": "PAUSE",
+        "score": 93,
+        "latencyMs": 0.0017,
+        "reasons": [
+          "Recently registered domain (8 days old)",
+          "High discount anomaly of 82%",
+          "Inconsistent merchant identity claims for storefront claiming \"RetroRock Amplifiers\""
+        ]
+      },
+      {
+        "id": "case-fraud-023",
+        "merchantUrl": "https://peakoptics-clearance-outlet.cc/checkout",
+        "claimedBrand": "Peak Optics",
+        "actual": "fraud",
+        "predicted": "fraud",
+        "isCorrect": true,
+        "decision": "PAUSE",
+        "score": 100,
+        "latencyMs": 0.0016,
+        "reasons": [
+          "Extremely new domain (5 days old)",
+          "Extreme discount anomaly of 86%",
+          "Inconsistent merchant identity claims for storefront claiming \"Peak Optics\""
+        ]
+      },
+      {
+        "id": "case-hard-001",
+        "merchantUrl": "https://lumina-coffee-roasters.com/checkout",
+        "claimedBrand": "Lumina Coffee",
+        "actual": "legit",
+        "predicted": "fraud",
+        "isCorrect": false,
+        "decision": "WARN",
+        "score": 40,
+        "latencyMs": 0.0025,
+        "reasons": [
+          "Recently registered domain (18 days old)",
+          "Storefront claims for brand \"Lumina Coffee\" are internally consistent"
+        ]
+      },
+      {
+        "id": "case-hard-002",
+        "merchantUrl": "https://cascade-outdoors-clearance.com/checkout",
+        "claimedBrand": "Cascade Outdoors",
+        "actual": "legit",
+        "predicted": "fraud",
+        "isCorrect": false,
+        "decision": "WARN",
+        "score": 40,
+        "latencyMs": 0.0019,
+        "reasons": [
+          "High discount anomaly of 70%",
+          "Storefront claims for brand \"Cascade Outdoors\" are internally consistent"
+        ]
+      },
+      {
+        "id": "case-hard-003",
+        "merchantUrl": "https://elena-handcrafted-leather.com/checkout",
+        "claimedBrand": "Elena Handcrafted",
+        "actual": "legit",
+        "predicted": "legit",
+        "isCorrect": true,
+        "decision": "ALLOW",
+        "score": 0,
+        "latencyMs": 0.002,
+        "reasons": [
+          "Storefront claims for brand \"Elena Handcrafted\" are internally consistent"
+        ]
+      },
+      {
+        "id": "case-hard-004",
+        "merchantUrl": "https://antique-clock-restoration.org/checkout",
+        "claimedBrand": "NovaSound",
+        "actual": "fraud",
+        "predicted": "fraud",
+        "isCorrect": true,
+        "decision": "WARN",
+        "score": 69,
+        "latencyMs": 0.0018,
+        "reasons": [
+          "High discount anomaly of 76%",
+          "Inconsistent merchant identity claims for storefront claiming \"NovaSound\""
+        ]
+      },
+      {
+        "id": "case-legit-001",
+        "merchantUrl": "https://www.voltvault-direct.example/checkout",
+        "claimedBrand": "VoltVault",
+        "actual": "legit",
+        "predicted": "legit",
+        "isCorrect": true,
+        "decision": "ALLOW",
+        "score": 0,
+        "latencyMs": 0.0015,
+        "reasons": [
+          "Storefront claims for brand \"VoltVault\" are internally consistent"
+        ]
+      },
+      {
+        "id": "case-legit-002",
+        "merchantUrl": "https://www.terraridge-apparel.example/checkout",
+        "claimedBrand": "TerraRidge",
+        "actual": "legit",
+        "predicted": "legit",
+        "isCorrect": true,
+        "decision": "ALLOW",
+        "score": 0,
+        "latencyMs": 0.0035,
+        "reasons": [
+          "Storefront claims for brand \"TerraRidge\" are internally consistent"
+        ]
+      },
+      {
+        "id": "case-legit-003",
+        "merchantUrl": "https://www.acoustiwave-audio.example/checkout",
+        "claimedBrand": "AcoustiWave",
+        "actual": "legit",
+        "predicted": "legit",
+        "isCorrect": true,
+        "decision": "ALLOW",
+        "score": 0,
+        "latencyMs": 0.0024,
+        "reasons": [
+          "Storefront claims for brand \"AcoustiWave\" are internally consistent"
+        ]
+      },
+      {
+        "id": "case-legit-004",
+        "merchantUrl": "https://artisanal-ceramics-austin.com/checkout",
+        "claimedBrand": "Austin Ceramics Co",
+        "actual": "legit",
+        "predicted": "legit",
+        "isCorrect": true,
+        "decision": "ALLOW",
+        "score": 0,
+        "latencyMs": 0.0014,
+        "reasons": [
+          "Storefront claims for brand \"Austin Ceramics Co\" are internally consistent"
+        ]
+      },
+      {
+        "id": "case-legit-005",
+        "merchantUrl": "https://www.tactilekeebs-store.example/checkout",
+        "claimedBrand": "TactileKeebs",
+        "actual": "legit",
+        "predicted": "legit",
+        "isCorrect": true,
+        "decision": "ALLOW",
+        "score": 0,
+        "latencyMs": 0.0011,
+        "reasons": [
+          "Storefront claims for brand \"TactileKeebs\" are internally consistent"
+        ]
+      },
+      {
+        "id": "case-legit-006",
+        "merchantUrl": "https://www.vortexblend-kitchen.example/checkout",
+        "claimedBrand": "VortexBlend",
+        "actual": "legit",
+        "predicted": "legit",
+        "isCorrect": true,
+        "decision": "ALLOW",
+        "score": 0,
+        "latencyMs": 0.0013,
+        "reasons": [
+          "Storefront claims for brand \"VortexBlend\" are internally consistent"
+        ]
+      },
+      {
+        "id": "case-legit-007",
+        "merchantUrl": "https://sol-organics-bedding.com/checkout",
+        "claimedBrand": "Sol Organics",
+        "actual": "legit",
+        "predicted": "legit",
+        "isCorrect": true,
+        "decision": "ALLOW",
+        "score": 0,
+        "latencyMs": 0.0012,
+        "reasons": [
+          "Storefront claims for brand \"Sol Organics\" are internally consistent"
+        ]
+      },
+      {
+        "id": "case-legit-008",
+        "merchantUrl": "https://nordic-trail-cycling.com/checkout",
+        "claimedBrand": "Nordic Trail",
+        "actual": "legit",
+        "predicted": "legit",
+        "isCorrect": true,
+        "decision": "ALLOW",
+        "score": 0,
+        "latencyMs": 0.0012,
+        "reasons": [
+          "Storefront claims for brand \"Nordic Trail\" are internally consistent"
+        ]
+      },
+      {
+        "id": "case-legit-009",
+        "merchantUrl": "https://independent-reader-books.com/checkout",
+        "claimedBrand": "The Independent Reader",
+        "actual": "legit",
+        "predicted": "legit",
+        "isCorrect": true,
+        "decision": "ALLOW",
+        "score": 0,
+        "latencyMs": 0.0013,
+        "reasons": [
+          "Storefront claims for brand \"The Independent Reader\" are internally consistent"
+        ]
+      },
+      {
+        "id": "case-legit-010",
+        "merchantUrl": "https://apex-pet-nutrition.com/checkout",
+        "claimedBrand": "Apex Pet",
+        "actual": "legit",
+        "predicted": "legit",
+        "isCorrect": true,
+        "decision": "ALLOW",
+        "score": 0,
+        "latencyMs": 0.0014,
+        "reasons": [
+          "Storefront claims for brand \"Apex Pet\" are internally consistent"
+        ]
+      },
+      {
+        "id": "case-legit-011",
+        "merchantUrl": "https://www.compura-systems.example/checkout",
+        "claimedBrand": "Compura Systems",
+        "actual": "legit",
+        "predicted": "legit",
+        "isCorrect": true,
+        "decision": "ALLOW",
+        "score": 0,
+        "latencyMs": 0.0013,
+        "reasons": [
+          "Storefront claims for brand \"Compura Systems\" are internally consistent"
+        ]
+      },
+      {
+        "id": "case-legit-012",
+        "merchantUrl": "https://summit-knife-works.com/checkout",
+        "claimedBrand": "Summit Knives",
+        "actual": "legit",
+        "predicted": "legit",
+        "isCorrect": true,
+        "decision": "ALLOW",
+        "score": 0,
+        "latencyMs": 0.0012,
+        "reasons": [
+          "Storefront claims for brand \"Summit Knives\" are internally consistent"
+        ]
+      },
+      {
+        "id": "case-legit-013",
+        "merchantUrl": "https://brooklyn-roast-works.com/checkout",
+        "claimedBrand": "Brooklyn Roast",
+        "actual": "legit",
+        "predicted": "fraud",
+        "isCorrect": false,
+        "decision": "WARN",
+        "score": 40,
+        "latencyMs": 0.0016,
+        "reasons": [
+          "Recently registered domain (22 days old)",
+          "Storefront claims for brand \"Brooklyn Roast\" are internally consistent"
+        ]
+      },
+      {
+        "id": "case-legit-014",
+        "merchantUrl": "https://www.irontitan-gear.example/checkout",
+        "claimedBrand": "IronTitan Athletics",
+        "actual": "legit",
+        "predicted": "legit",
+        "isCorrect": true,
+        "decision": "ALLOW",
+        "score": 0,
+        "latencyMs": 0.0013,
+        "reasons": [
+          "Storefront claims for brand \"IronTitan Athletics\" are internally consistent"
+        ]
+      },
+      {
+        "id": "case-legit-015",
+        "merchantUrl": "https://kinfolk-handwoven-rugs.com/checkout",
+        "claimedBrand": "Kinfolk Weavers",
+        "actual": "legit",
+        "predicted": "legit",
+        "isCorrect": true,
+        "decision": "ALLOW",
+        "score": 0,
+        "latencyMs": 0.0011,
+        "reasons": [
+          "Storefront claims for brand \"Kinfolk Weavers\" are internally consistent"
+        ]
+      },
+      {
+        "id": "case-legit-016",
+        "merchantUrl": "https://www.soundstudio-pro.example/checkout",
+        "claimedBrand": "SoundStudio Lab",
+        "actual": "legit",
+        "predicted": "legit",
+        "isCorrect": true,
+        "decision": "ALLOW",
+        "score": 0,
+        "latencyMs": 0.0011,
+        "reasons": [
+          "Storefront claims for brand \"SoundStudio Lab\" are internally consistent"
+        ]
+      },
+      {
+        "id": "case-legit-017",
+        "merchantUrl": "https://sierra-camp-gear-surplus.com/checkout",
+        "claimedBrand": "Sierra Camp",
+        "actual": "legit",
+        "predicted": "legit",
+        "isCorrect": true,
+        "decision": "ALLOW",
+        "score": 25,
+        "latencyMs": 0.0013,
+        "reasons": [
+          "Significant discount of 62%",
+          "Storefront claims for brand \"Sierra Camp\" are internally consistent"
+        ]
+      },
+      {
+        "id": "case-legit-018",
+        "merchantUrl": "https://harbor-lighting-design.com/checkout",
+        "claimedBrand": "Harbor Lighting",
+        "actual": "legit",
+        "predicted": "legit",
+        "isCorrect": true,
+        "decision": "ALLOW",
+        "score": 0,
+        "latencyMs": 0.0013,
+        "reasons": [
+          "Storefront claims for brand \"Harbor Lighting\" are internally consistent"
+        ]
+      },
+      {
+        "id": "case-legit-019",
+        "merchantUrl": "https://tabletop-quest-games.com/checkout",
+        "claimedBrand": "Tabletop Quest",
+        "actual": "legit",
+        "predicted": "fraud",
+        "isCorrect": false,
+        "decision": "WARN",
+        "score": 40,
+        "latencyMs": 0.0014,
+        "reasons": [
+          "Recently registered domain (16 days old)",
+          "Storefront claims for brand \"Tabletop Quest\" are internally consistent"
+        ]
+      },
+      {
+        "id": "case-legit-020",
+        "merchantUrl": "https://pure-botanicals-skincare.com/checkout",
+        "claimedBrand": "Pure Botanicals",
+        "actual": "legit",
+        "predicted": "legit",
+        "isCorrect": true,
+        "decision": "ALLOW",
+        "score": 0,
+        "latencyMs": 0.0011,
+        "reasons": [
+          "Storefront claims for brand \"Pure Botanicals\" are internally consistent"
+        ]
+      }
+    ],
+    "full": [
+      {
+        "id": "case-demo-001",
+        "merchantUrl": "https://www.harborline-outfitters.example/checkout",
+        "claimedBrand": "Harborline Outfitters",
+        "actual": "legit",
+        "predicted": "legit",
+        "isCorrect": true,
+        "decision": "ALLOW",
+        "score": 0,
+        "latencyMs": 0.5721,
+        "reasons": [
+          "Storefront claims for brand \"Harborline Outfitters\" are internally consistent",
+          "PayPal payee matches storefront domain"
+        ]
+      },
+      {
+        "id": "case-demo-002",
+        "merchantUrl": "https://www.bargainbarn-outlet.example/cart",
+        "claimedBrand": "Bargain Barn Outlet",
+        "actual": "legit",
+        "predicted": "fraud",
+        "isCorrect": false,
+        "decision": "WARN",
+        "score": 50,
+        "latencyMs": 0.0777,
+        "reasons": [
+          "High discount anomaly of 72%",
+          "Storefront claims for brand \"Bargain Barn Outlet\" are internally consistent",
+          "PayPal payee matches storefront domain",
+          "Aggressive pricing anomaly on recent domain warrants cautionary warning"
+        ]
+      },
+      {
+        "id": "case-demo-003",
+        "merchantUrl": "https://www.harborlyne-outfitters-sale.example/checkout",
+        "claimedBrand": "Harborline Outfitters",
+        "actual": "fraud",
+        "predicted": "fraud",
+        "isCorrect": true,
+        "decision": "PAUSE",
+        "score": 78,
+        "latencyMs": 0.0161,
+        "reasons": [
+          "Extremely new domain (6 days old)",
+          "Significant discount of 66%",
+          "Inconsistent merchant identity claims for storefront claiming \"Harborline Outfitters\"",
+          "PayPal payee email \"collect@quickpay-holdings.example\" does not match storefront domain",
+          "Critical risk: Inconsistent identity claims combined with mismatched PayPal payee"
+        ]
+      },
+      {
+        "id": "case-fraud-001",
+        "merchantUrl": "https://auratech-clearance-direct.shop/checkout",
+        "claimedBrand": "AuraTech",
+        "actual": "fraud",
+        "predicted": "fraud",
+        "isCorrect": true,
+        "decision": "PAUSE",
+        "score": 78,
+        "latencyMs": 0.0107,
+        "reasons": [
+          "Extremely new domain (5 days old)",
+          "High discount anomaly of 83%",
+          "Inconsistent merchant identity claims for storefront claiming \"AuraTech\"",
+          "Suspicious personal webmail payee \"techdepot882@gmail.com\" mismatching storefront domain",
+          "Critical risk: Inconsistent identity claims combined with mismatched PayPal payee"
+        ]
+      },
+      {
+        "id": "case-fraud-002",
+        "merchantUrl": "https://chronos-official-discounts.top/checkout",
+        "claimedBrand": "Chronos Elite",
+        "actual": "fraud",
+        "predicted": "fraud",
+        "isCorrect": true,
+        "decision": "PAUSE",
+        "score": 78,
+        "latencyMs": 0.0089,
+        "reasons": [
+          "Recently registered domain (7 days old)",
+          "Extreme discount anomaly of 98%",
+          "Inconsistent merchant identity claims for storefront claiming \"Chronos Elite\"",
+          "Suspicious personal webmail payee \"paymentprocessing771@outlook.com\" mismatching storefront domain",
+          "Critical risk: Inconsistent identity claims combined with mismatched PayPal payee"
+        ]
+      },
+      {
+        "id": "case-fraud-003",
+        "merchantUrl": "https://www.aerocyclone-blowout.example/checkout",
+        "claimedBrand": "AeroCyclone",
+        "actual": "fraud",
+        "predicted": "fraud",
+        "isCorrect": true,
+        "decision": "PAUSE",
+        "score": 78,
+        "latencyMs": 0.0086,
+        "reasons": [
+          "Recently registered domain (11 days old)",
+          "Extreme discount anomaly of 90%",
+          "Inconsistent merchant identity claims for storefront claiming \"AeroCyclone\"",
+          "Suspicious personal webmail payee \"cleanairsupplies@yahoo.com\" mismatching storefront domain",
+          "Critical risk: Inconsistent identity claims combined with mismatched PayPal payee"
+        ]
+      },
+      {
+        "id": "case-fraud-004",
+        "merchantUrl": "https://veloce-kicks-cheap.online/checkout",
+        "claimedBrand": "Veloce Athletics",
+        "actual": "fraud",
+        "predicted": "fraud",
+        "isCorrect": true,
+        "decision": "PAUSE",
+        "score": 78,
+        "latencyMs": 0.0082,
+        "reasons": [
+          "Recently registered domain (8 days old)",
+          "High discount anomaly of 71%",
+          "Inconsistent merchant identity claims for storefront claiming \"Veloce Athletics\"",
+          "Suspicious personal webmail payee \"sneakerhead9938@hotmail.com\" mismatching storefront domain",
+          "Critical risk: Inconsistent identity claims combined with mismatched PayPal payee"
+        ]
+      },
+      {
+        "id": "case-fraud-005",
+        "merchantUrl": "https://www.omnicore-gpu-outlet.example/checkout",
+        "claimedBrand": "OmniCore Graphics",
+        "actual": "fraud",
+        "predicted": "fraud",
+        "isCorrect": true,
+        "decision": "PAUSE",
+        "score": 78,
+        "latencyMs": 0.0162,
+        "reasons": [
+          "Extremely new domain (4 days old)",
+          "Extreme discount anomaly of 85%",
+          "Inconsistent merchant identity claims for storefront claiming \"OmniCore Graphics\"",
+          "Suspicious personal webmail payee \"cryptominingdirect@tutanota.com\" mismatching storefront domain",
+          "Critical risk: Inconsistent identity claims combined with mismatched PayPal payee"
+        ]
+      },
+      {
+        "id": "case-fraud-006",
+        "merchantUrl": "https://www.thermovessel-wholesale.example/checkout",
+        "claimedBrand": "ThermoVessel",
+        "actual": "fraud",
+        "predicted": "fraud",
+        "isCorrect": true,
+        "decision": "PAUSE",
+        "score": 78,
+        "latencyMs": 0.0287,
+        "reasons": [
+          "Recently registered domain (14 days old)",
+          "High discount anomaly of 78%",
+          "Inconsistent merchant identity claims for storefront claiming \"ThermoVessel\"",
+          "Suspicious personal webmail payee \"cupwarehouse1928@gmail.com\" mismatching storefront domain",
+          "Critical risk: Inconsistent identity claims combined with mismatched PayPal payee"
+        ]
+      },
+      {
+        "id": "case-fraud-007",
+        "merchantUrl": "https://www.arctictundra-discount.example/checkout",
+        "claimedBrand": "ArcticTundra Parkas",
+        "actual": "fraud",
+        "predicted": "fraud",
+        "isCorrect": true,
+        "decision": "PAUSE",
+        "score": 78,
+        "latencyMs": 0.0286,
+        "reasons": [
+          "Recently registered domain (10 days old)",
+          "Extreme discount anomaly of 90%",
+          "Inconsistent merchant identity claims for storefront claiming \"ArcticTundra Parkas\"",
+          "Suspicious personal webmail payee \"wintercoatseller88@protonmail.com\" mismatching storefront domain",
+          "Critical risk: Inconsistent identity claims combined with mismatched PayPal payee"
+        ]
+      },
+      {
+        "id": "case-fraud-008",
+        "merchantUrl": "https://www.brickworld-clearance.example/checkout",
+        "claimedBrand": "BrickWorld",
+        "actual": "fraud",
+        "predicted": "fraud",
+        "isCorrect": true,
+        "decision": "PAUSE",
+        "score": 78,
+        "latencyMs": 0.0126,
+        "reasons": [
+          "Extremely new domain (6 days old)",
+          "Extreme discount anomaly of 88%",
+          "Inconsistent merchant identity claims for storefront claiming \"BrickWorld\"",
+          "Suspicious personal webmail payee \"brickdepot442@gmail.com\" mismatching storefront domain",
+          "Critical risk: Inconsistent identity claims combined with mismatched PayPal payee"
+        ]
+      },
+      {
+        "id": "case-fraud-009",
+        "merchantUrl": "https://www.ergosphere-outlet.example/checkout",
+        "claimedBrand": "ErgoSphere Chairs",
+        "actual": "fraud",
+        "predicted": "fraud",
+        "isCorrect": true,
+        "decision": "PAUSE",
+        "score": 78,
+        "latencyMs": 0.0063,
+        "reasons": [
+          "Recently registered domain (15 days old)",
+          "Extreme discount anomaly of 89%",
+          "Inconsistent merchant identity claims for storefront claiming \"ErgoSphere Chairs\"",
+          "Suspicious personal webmail payee \"chairwholesale@outlook.com\" mismatching storefront domain",
+          "Critical risk: Inconsistent identity claims combined with mismatched PayPal payee"
+        ]
+      },
+      {
+        "id": "case-fraud-010",
+        "merchantUrl": "https://www.questbox-flashsale.example/checkout",
+        "claimedBrand": "QuestBox",
+        "actual": "fraud",
+        "predicted": "fraud",
+        "isCorrect": true,
+        "decision": "PAUSE",
+        "score": 78,
+        "latencyMs": 0.0047,
+        "reasons": [
+          "Extremely new domain (3 days old)",
+          "High discount anomaly of 77%",
+          "Inconsistent merchant identity claims for storefront claiming \"QuestBox\"",
+          "Suspicious personal webmail payee \"switchseller2026@gmail.com\" mismatching storefront domain",
+          "Critical risk: Inconsistent identity claims combined with mismatched PayPal payee"
+        ]
+      },
+      {
+        "id": "case-fraud-011",
+        "merchantUrl": "https://www.skyrotor-superdeals.example/checkout",
+        "claimedBrand": "SkyRotor Drones",
+        "actual": "fraud",
+        "predicted": "fraud",
+        "isCorrect": true,
+        "decision": "PAUSE",
+        "score": 78,
+        "latencyMs": 0.0043,
+        "reasons": [
+          "Recently registered domain (13 days old)",
+          "Extreme discount anomaly of 87%",
+          "Inconsistent merchant identity claims for storefront claiming \"SkyRotor Drones\"",
+          "Suspicious personal webmail payee \"skycamdirect@yahoo.com\" mismatching storefront domain",
+          "Critical risk: Inconsistent identity claims combined with mismatched PayPal payee"
+        ]
+      },
+      {
+        "id": "case-fraud-012",
+        "merchantUrl": "https://www.luminashades-90off.example/checkout",
+        "claimedBrand": "LuminaShades",
+        "actual": "fraud",
+        "predicted": "fraud",
+        "isCorrect": true,
+        "decision": "PAUSE",
+        "score": 78,
+        "latencyMs": 0.0038,
+        "reasons": [
+          "Recently registered domain (8 days old)",
+          "Extreme discount anomaly of 89%",
+          "Inconsistent merchant identity claims for storefront claiming \"LuminaShades\"",
+          "Suspicious personal webmail payee \"opticsdiscount992@gmail.com\" mismatching storefront domain",
+          "Critical risk: Inconsistent identity claims combined with mismatched PayPal payee"
+        ]
+      },
+      {
+        "id": "case-fraud-013",
+        "merchantUrl": "https://www.chefmaster-cookware.example/checkout",
+        "claimedBrand": "ChefMaster Appliance",
+        "actual": "fraud",
+        "predicted": "fraud",
+        "isCorrect": true,
+        "decision": "PAUSE",
+        "score": 78,
+        "latencyMs": 0.0037,
+        "reasons": [
+          "Recently registered domain (9 days old)",
+          "Extreme discount anomaly of 87%",
+          "Inconsistent merchant identity claims for storefront claiming \"ChefMaster Appliance\"",
+          "Suspicious personal webmail payee \"bakersupplydirect@hotmail.com\" mismatching storefront domain",
+          "Critical risk: Inconsistent identity claims combined with mismatched PayPal payee"
+        ]
+      },
+      {
+        "id": "case-fraud-014",
+        "merchantUrl": "https://www.frostvault-clearance.example/checkout",
+        "claimedBrand": "FrostVault Coolers",
+        "actual": "fraud",
+        "predicted": "fraud",
+        "isCorrect": true,
+        "decision": "PAUSE",
+        "score": 78,
+        "latencyMs": 0.0037,
+        "reasons": [
+          "Recently registered domain (16 days old)",
+          "Extreme discount anomaly of 88%",
+          "Inconsistent merchant identity claims for storefront claiming \"FrostVault Coolers\"",
+          "Suspicious personal webmail payee \"coolerguy774@gmail.com\" mismatching storefront domain",
+          "Critical risk: Inconsistent identity claims combined with mismatched PayPal payee"
+        ]
+      },
+      {
+        "id": "case-fraud-015",
+        "merchantUrl": "https://www.aurayoga-overstock.example/checkout",
+        "claimedBrand": "AuraYoga Active",
+        "actual": "fraud",
+        "predicted": "fraud",
+        "isCorrect": true,
+        "decision": "PAUSE",
+        "score": 78,
+        "latencyMs": 0.0037,
+        "reasons": [
+          "Extremely new domain (6 days old)",
+          "High discount anomaly of 83%",
+          "Inconsistent merchant identity claims for storefront claiming \"AuraYoga Active\"",
+          "Suspicious personal webmail payee \"yogagear9901@outlook.com\" mismatching storefront domain",
+          "Critical risk: Inconsistent identity claims combined with mismatched PayPal payee"
+        ]
+      },
+      {
+        "id": "case-fraud-016",
+        "merchantUrl": "https://novaplay-wholesale.site/checkout",
+        "claimedBrand": "NovaPlay",
+        "actual": "fraud",
+        "predicted": "fraud",
+        "isCorrect": true,
+        "decision": "PAUSE",
+        "score": 78,
+        "latencyMs": 0.0041,
+        "reasons": [
+          "Extremely new domain (5 days old)",
+          "High discount anomaly of 80%",
+          "Inconsistent merchant identity claims for storefront claiming \"NovaPlay\"",
+          "Suspicious personal webmail payee \"gamingdeals2026@gmail.com\" mismatching storefront domain",
+          "Critical risk: Inconsistent identity claims combined with mismatched PayPal payee"
+        ]
+      },
+      {
+        "id": "case-fraud-017",
+        "merchantUrl": "https://www.celestia-jewels-warehouse.example/checkout",
+        "claimedBrand": "Celestia Jewels",
+        "actual": "fraud",
+        "predicted": "fraud",
+        "isCorrect": true,
+        "decision": "PAUSE",
+        "score": 78,
+        "latencyMs": 0.004,
+        "reasons": [
+          "Recently registered domain (11 days old)",
+          "Extreme discount anomaly of 90%",
+          "Inconsistent merchant identity claims for storefront claiming \"Celestia Jewels\"",
+          "Suspicious personal webmail payee \"silverjewels441@yahoo.com\" mismatching storefront domain",
+          "Critical risk: Inconsistent identity claims combined with mismatched PayPal payee"
+        ]
+      },
+      {
+        "id": "case-fraud-018",
+        "merchantUrl": "https://www.vanguard-couture-sale.example/checkout",
+        "claimedBrand": "Vanguard Couture",
+        "actual": "fraud",
+        "predicted": "fraud",
+        "isCorrect": true,
+        "decision": "PAUSE",
+        "score": 78,
+        "latencyMs": 0.0041,
+        "reasons": [
+          "Extremely new domain (4 days old)",
+          "Extreme discount anomaly of 90%",
+          "Inconsistent merchant identity claims for storefront claiming \"Vanguard Couture\"",
+          "Suspicious personal webmail payee \"streetwearliquidate@protonmail.com\" mismatching storefront domain",
+          "Critical risk: Inconsistent identity claims combined with mismatched PayPal payee"
+        ]
+      },
+      {
+        "id": "case-fraud-019",
+        "merchantUrl": "https://www.irondrill-tools-clearance.example/checkout",
+        "claimedBrand": "IronDrill Tools",
+        "actual": "fraud",
+        "predicted": "fraud",
+        "isCorrect": true,
+        "decision": "PAUSE",
+        "score": 78,
+        "latencyMs": 0.0038,
+        "reasons": [
+          "Recently registered domain (14 days old)",
+          "High discount anomaly of 80%",
+          "Inconsistent merchant identity claims for storefront claiming \"IronDrill Tools\"",
+          "Suspicious personal webmail payee \"toolclearance994@gmail.com\" mismatching storefront domain",
+          "Critical risk: Inconsistent identity claims combined with mismatched PayPal payee"
+        ]
+      },
+      {
+        "id": "case-fraud-020",
+        "merchantUrl": "https://www.apexridge-winter-jackets.example/checkout",
+        "claimedBrand": "ApexRidge Outerwear",
+        "actual": "fraud",
+        "predicted": "fraud",
+        "isCorrect": true,
+        "decision": "PAUSE",
+        "score": 78,
+        "latencyMs": 0.0053,
+        "reasons": [
+          "Recently registered domain (7 days old)",
+          "Extreme discount anomaly of 86%",
+          "Inconsistent merchant identity claims for storefront claiming \"ApexRidge Outerwear\"",
+          "Suspicious personal webmail payee \"outerweardirect@hotmail.com\" mismatching storefront domain",
+          "Critical risk: Inconsistent identity claims combined with mismatched PayPal payee"
+        ]
+      },
+      {
+        "id": "case-fraud-021",
+        "merchantUrl": "https://www.pulseaudio-closeout.example/checkout",
+        "claimedBrand": "PulseAudio",
+        "actual": "fraud",
+        "predicted": "fraud",
+        "isCorrect": true,
+        "decision": "PAUSE",
+        "score": 78,
+        "latencyMs": 0.0059,
+        "reasons": [
+          "Recently registered domain (10 days old)",
+          "Extreme discount anomaly of 86%",
+          "Inconsistent merchant identity claims for storefront claiming \"PulseAudio\"",
+          "Suspicious personal webmail payee \"sounddistributor77@gmail.com\" mismatching storefront domain",
+          "Critical risk: Inconsistent identity claims combined with mismatched PayPal payee"
+        ]
+      },
+      {
+        "id": "case-fraud-022",
+        "merchantUrl": "https://www.retrorock-amps-discount.example/checkout",
+        "claimedBrand": "RetroRock Amplifiers",
+        "actual": "fraud",
+        "predicted": "fraud",
+        "isCorrect": true,
+        "decision": "PAUSE",
+        "score": 78,
+        "latencyMs": 0.014,
+        "reasons": [
+          "Recently registered domain (8 days old)",
+          "High discount anomaly of 82%",
+          "Inconsistent merchant identity claims for storefront claiming \"RetroRock Amplifiers\"",
+          "Suspicious personal webmail payee \"rockspeakers882@outlook.com\" mismatching storefront domain",
+          "Critical risk: Inconsistent identity claims combined with mismatched PayPal payee"
+        ]
+      },
+      {
+        "id": "case-fraud-023",
+        "merchantUrl": "https://peakoptics-clearance-outlet.cc/checkout",
+        "claimedBrand": "Peak Optics",
+        "actual": "fraud",
+        "predicted": "fraud",
+        "isCorrect": true,
+        "decision": "PAUSE",
+        "score": 78,
+        "latencyMs": 0.0058,
+        "reasons": [
+          "Extremely new domain (5 days old)",
+          "Extreme discount anomaly of 86%",
+          "Inconsistent merchant identity claims for storefront claiming \"Peak Optics\"",
+          "Suspicious personal webmail payee \"fastcashpayout881@gmail.com\" mismatching storefront domain",
+          "Critical risk: Inconsistent identity claims combined with mismatched PayPal payee"
+        ]
+      },
+      {
+        "id": "case-hard-001",
+        "merchantUrl": "https://lumina-coffee-roasters.com/checkout",
+        "claimedBrand": "Lumina Coffee",
+        "actual": "legit",
+        "predicted": "legit",
+        "isCorrect": true,
+        "decision": "ALLOW",
+        "score": 22,
+        "latencyMs": 0.0065,
+        "reasons": [
+          "Recently registered domain (18 days old)",
+          "Storefront claims for brand \"Lumina Coffee\" are internally consistent",
+          "PayPal payee matches storefront domain"
+        ]
+      },
+      {
+        "id": "case-hard-002",
+        "merchantUrl": "https://cascade-outdoors-clearance.com/checkout",
+        "claimedBrand": "Cascade Outdoors",
+        "actual": "legit",
+        "predicted": "legit",
+        "isCorrect": true,
+        "decision": "ALLOW",
+        "score": 22,
+        "latencyMs": 0.0044,
+        "reasons": [
+          "High discount anomaly of 70%",
+          "Storefront claims for brand \"Cascade Outdoors\" are internally consistent",
+          "PayPal payee matches storefront domain"
+        ]
+      },
+      {
+        "id": "case-hard-003",
+        "merchantUrl": "https://elena-handcrafted-leather.com/checkout",
+        "claimedBrand": "Elena Handcrafted",
+        "actual": "legit",
+        "predicted": "legit",
+        "isCorrect": true,
+        "decision": "ALLOW",
+        "score": 5,
+        "latencyMs": 0.01,
+        "reasons": [
+          "Storefront claims for brand \"Elena Handcrafted\" are internally consistent",
+          "Personal payee email observed on storefront with consistent identity claims (potential sole proprietor)"
+        ]
+      },
+      {
+        "id": "case-hard-004",
+        "merchantUrl": "https://antique-clock-restoration.org/checkout",
+        "claimedBrand": "NovaSound",
+        "actual": "fraud",
+        "predicted": "fraud",
+        "isCorrect": true,
+        "decision": "PAUSE",
+        "score": 78,
+        "latencyMs": 0.0044,
+        "reasons": [
+          "High discount anomaly of 76%",
+          "Inconsistent merchant identity claims for storefront claiming \"NovaSound\"",
+          "Suspicious personal webmail payee \"quickdrop990@protonmail.com\" mismatching storefront domain",
+          "Critical risk: Inconsistent identity claims combined with mismatched PayPal payee"
+        ]
+      },
+      {
+        "id": "case-legit-001",
+        "merchantUrl": "https://www.voltvault-direct.example/checkout",
+        "claimedBrand": "VoltVault",
+        "actual": "legit",
+        "predicted": "legit",
+        "isCorrect": true,
+        "decision": "ALLOW",
+        "score": 0,
+        "latencyMs": 0.004,
+        "reasons": [
+          "Storefront claims for brand \"VoltVault\" are internally consistent",
+          "PayPal payee matches storefront domain"
+        ]
+      },
+      {
+        "id": "case-legit-002",
+        "merchantUrl": "https://www.terraridge-apparel.example/checkout",
+        "claimedBrand": "TerraRidge",
+        "actual": "legit",
+        "predicted": "legit",
+        "isCorrect": true,
+        "decision": "ALLOW",
+        "score": 0,
+        "latencyMs": 0.0036,
+        "reasons": [
+          "Storefront claims for brand \"TerraRidge\" are internally consistent",
+          "PayPal payee matches storefront domain"
+        ]
+      },
+      {
+        "id": "case-legit-003",
+        "merchantUrl": "https://www.acoustiwave-audio.example/checkout",
+        "claimedBrand": "AcoustiWave",
+        "actual": "legit",
+        "predicted": "legit",
+        "isCorrect": true,
+        "decision": "ALLOW",
+        "score": 0,
+        "latencyMs": 0.0033,
+        "reasons": [
+          "Storefront claims for brand \"AcoustiWave\" are internally consistent",
+          "PayPal payee matches storefront domain"
+        ]
+      },
+      {
+        "id": "case-legit-004",
+        "merchantUrl": "https://artisanal-ceramics-austin.com/checkout",
+        "claimedBrand": "Austin Ceramics Co",
+        "actual": "legit",
+        "predicted": "legit",
+        "isCorrect": true,
+        "decision": "ALLOW",
+        "score": 5,
+        "latencyMs": 0.0038,
+        "reasons": [
+          "Storefront claims for brand \"Austin Ceramics Co\" are internally consistent",
+          "Personal payee email observed on storefront with consistent identity claims (potential sole proprietor)"
+        ]
+      },
+      {
+        "id": "case-legit-005",
+        "merchantUrl": "https://www.tactilekeebs-store.example/checkout",
+        "claimedBrand": "TactileKeebs",
+        "actual": "legit",
+        "predicted": "legit",
+        "isCorrect": true,
+        "decision": "ALLOW",
+        "score": 0,
+        "latencyMs": 0.0036,
+        "reasons": [
+          "Storefront claims for brand \"TactileKeebs\" are internally consistent",
+          "PayPal payee matches storefront domain"
+        ]
+      },
+      {
+        "id": "case-legit-006",
+        "merchantUrl": "https://www.vortexblend-kitchen.example/checkout",
+        "claimedBrand": "VortexBlend",
+        "actual": "legit",
+        "predicted": "legit",
+        "isCorrect": true,
+        "decision": "ALLOW",
+        "score": 0,
+        "latencyMs": 0.0035,
+        "reasons": [
+          "Storefront claims for brand \"VortexBlend\" are internally consistent",
+          "PayPal payee matches storefront domain"
+        ]
+      },
+      {
+        "id": "case-legit-007",
+        "merchantUrl": "https://sol-organics-bedding.com/checkout",
+        "claimedBrand": "Sol Organics",
+        "actual": "legit",
+        "predicted": "legit",
+        "isCorrect": true,
+        "decision": "ALLOW",
+        "score": 0,
+        "latencyMs": 0.0032,
+        "reasons": [
+          "Storefront claims for brand \"Sol Organics\" are internally consistent",
+          "PayPal payee matches storefront domain"
+        ]
+      },
+      {
+        "id": "case-legit-008",
+        "merchantUrl": "https://nordic-trail-cycling.com/checkout",
+        "claimedBrand": "Nordic Trail",
+        "actual": "legit",
+        "predicted": "legit",
+        "isCorrect": true,
+        "decision": "ALLOW",
+        "score": 0,
+        "latencyMs": 0.0033,
+        "reasons": [
+          "Storefront claims for brand \"Nordic Trail\" are internally consistent",
+          "PayPal payee matches storefront domain"
+        ]
+      },
+      {
+        "id": "case-legit-009",
+        "merchantUrl": "https://independent-reader-books.com/checkout",
+        "claimedBrand": "The Independent Reader",
+        "actual": "legit",
+        "predicted": "legit",
+        "isCorrect": true,
+        "decision": "ALLOW",
+        "score": 5,
+        "latencyMs": 0.0037,
+        "reasons": [
+          "Storefront claims for brand \"The Independent Reader\" are internally consistent",
+          "Personal payee email observed on storefront with consistent identity claims (potential sole proprietor)"
+        ]
+      },
+      {
+        "id": "case-legit-010",
+        "merchantUrl": "https://apex-pet-nutrition.com/checkout",
+        "claimedBrand": "Apex Pet",
+        "actual": "legit",
+        "predicted": "legit",
+        "isCorrect": true,
+        "decision": "ALLOW",
+        "score": 0,
+        "latencyMs": 0.0036,
+        "reasons": [
+          "Storefront claims for brand \"Apex Pet\" are internally consistent",
+          "PayPal payee matches storefront domain"
+        ]
+      },
+      {
+        "id": "case-legit-011",
+        "merchantUrl": "https://www.compura-systems.example/checkout",
+        "claimedBrand": "Compura Systems",
+        "actual": "legit",
+        "predicted": "legit",
+        "isCorrect": true,
+        "decision": "ALLOW",
+        "score": 0,
+        "latencyMs": 0.0034,
+        "reasons": [
+          "Storefront claims for brand \"Compura Systems\" are internally consistent",
+          "PayPal payee matches storefront domain"
+        ]
+      },
+      {
+        "id": "case-legit-012",
+        "merchantUrl": "https://summit-knife-works.com/checkout",
+        "claimedBrand": "Summit Knives",
+        "actual": "legit",
+        "predicted": "legit",
+        "isCorrect": true,
+        "decision": "ALLOW",
+        "score": 0,
+        "latencyMs": 0.0032,
+        "reasons": [
+          "Storefront claims for brand \"Summit Knives\" are internally consistent",
+          "PayPal payee matches storefront domain"
+        ]
+      },
+      {
+        "id": "case-legit-013",
+        "merchantUrl": "https://brooklyn-roast-works.com/checkout",
+        "claimedBrand": "Brooklyn Roast",
+        "actual": "legit",
+        "predicted": "legit",
+        "isCorrect": true,
+        "decision": "ALLOW",
+        "score": 22,
+        "latencyMs": 0.0038,
+        "reasons": [
+          "Recently registered domain (22 days old)",
+          "Storefront claims for brand \"Brooklyn Roast\" are internally consistent",
+          "PayPal payee matches storefront domain"
+        ]
+      },
+      {
+        "id": "case-legit-014",
+        "merchantUrl": "https://www.irontitan-gear.example/checkout",
+        "claimedBrand": "IronTitan Athletics",
+        "actual": "legit",
+        "predicted": "legit",
+        "isCorrect": true,
+        "decision": "ALLOW",
+        "score": 0,
+        "latencyMs": 0.0034,
+        "reasons": [
+          "Storefront claims for brand \"IronTitan Athletics\" are internally consistent",
+          "PayPal payee matches storefront domain"
+        ]
+      },
+      {
+        "id": "case-legit-015",
+        "merchantUrl": "https://kinfolk-handwoven-rugs.com/checkout",
+        "claimedBrand": "Kinfolk Weavers",
+        "actual": "legit",
+        "predicted": "legit",
+        "isCorrect": true,
+        "decision": "ALLOW",
+        "score": 5,
+        "latencyMs": 0.0035,
+        "reasons": [
+          "Storefront claims for brand \"Kinfolk Weavers\" are internally consistent",
+          "Personal payee email observed on storefront with consistent identity claims (potential sole proprietor)"
+        ]
+      },
+      {
+        "id": "case-legit-016",
+        "merchantUrl": "https://www.soundstudio-pro.example/checkout",
+        "claimedBrand": "SoundStudio Lab",
+        "actual": "legit",
+        "predicted": "legit",
+        "isCorrect": true,
+        "decision": "ALLOW",
+        "score": 0,
+        "latencyMs": 0.0034,
+        "reasons": [
+          "Storefront claims for brand \"SoundStudio Lab\" are internally consistent",
+          "PayPal payee matches storefront domain"
+        ]
+      },
+      {
+        "id": "case-legit-017",
+        "merchantUrl": "https://sierra-camp-gear-surplus.com/checkout",
+        "claimedBrand": "Sierra Camp",
+        "actual": "legit",
+        "predicted": "legit",
+        "isCorrect": true,
+        "decision": "ALLOW",
+        "score": 14,
+        "latencyMs": 0.0038,
+        "reasons": [
+          "Significant discount of 62%",
+          "Storefront claims for brand \"Sierra Camp\" are internally consistent",
+          "PayPal payee matches storefront domain"
+        ]
+      },
+      {
+        "id": "case-legit-018",
+        "merchantUrl": "https://harbor-lighting-design.com/checkout",
+        "claimedBrand": "Harbor Lighting",
+        "actual": "legit",
+        "predicted": "legit",
+        "isCorrect": true,
+        "decision": "ALLOW",
+        "score": 0,
+        "latencyMs": 0.0036,
+        "reasons": [
+          "Storefront claims for brand \"Harbor Lighting\" are internally consistent",
+          "PayPal payee matches storefront domain"
+        ]
+      },
+      {
+        "id": "case-legit-019",
+        "merchantUrl": "https://tabletop-quest-games.com/checkout",
+        "claimedBrand": "Tabletop Quest",
+        "actual": "legit",
+        "predicted": "legit",
+        "isCorrect": true,
+        "decision": "ALLOW",
+        "score": 22,
+        "latencyMs": 0.0036,
+        "reasons": [
+          "Recently registered domain (16 days old)",
+          "Storefront claims for brand \"Tabletop Quest\" are internally consistent",
+          "PayPal payee matches storefront domain"
+        ]
+      },
+      {
+        "id": "case-legit-020",
+        "merchantUrl": "https://pure-botanicals-skincare.com/checkout",
+        "claimedBrand": "Pure Botanicals",
+        "actual": "legit",
+        "predicted": "legit",
+        "isCorrect": true,
+        "decision": "ALLOW",
+        "score": 0,
+        "latencyMs": 0.0034,
+        "reasons": [
+          "Storefront claims for brand \"Pure Botanicals\" are internally consistent",
+          "PayPal payee matches storefront domain"
+        ]
+      }
+    ]
+  }
+}
