@@ -5,7 +5,7 @@ import {
   type CreateOrderResponse,
   type CaptureOrderResponse,
   type OrderDecisionResponse,
-} from '@TRUSTORA/contracts';
+} from '@checkout-guardian/contracts';
 import { validateCreateOrderInput, validateCaptureOrderInput } from '../validators/order.validator.js';
 import {
   createCheckoutOrder,

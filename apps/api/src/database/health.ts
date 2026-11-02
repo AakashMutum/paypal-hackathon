@@ -1,6 +1,6 @@
 import type pg from 'pg';
 import { getPool, closeDatabase } from './connection.js';
-import type { DatabaseHealthInfo } from '@TRUSTORA/contracts';
+import type { DatabaseHealthInfo } from '@checkout-guardian/contracts';
 
 export { getPool, closeDatabase };
 

@@ -1,4 +1,4 @@
-import type { CreateOrderRequest, CaptureOrderRequest } from '@TRUSTORA/contracts';
+import type { CreateOrderRequest, CaptureOrderRequest } from '@checkout-guardian/contracts';
 import { OrchestrationError } from '../services/orders/orderOrchestration.service.js';
 
 export function validateCreateOrderInput(body: unknown): CreateOrderRequest {

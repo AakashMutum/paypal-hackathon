@@ -50,7 +50,7 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npm run build -w @TRUSTORA/contracts
+      - run: npm run build -w @checkout-guardian/contracts
       - run: npm run test:contracts
 
   integration-mocks:
@@ -63,7 +63,7 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npm run build -w @TRUSTORA/contracts
+      - run: npm run build -w @checkout-guardian/contracts
       - run: npm run test:integration
 
   brands:
