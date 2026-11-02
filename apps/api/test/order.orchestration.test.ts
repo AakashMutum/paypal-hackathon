@@ -170,7 +170,7 @@ test('POST /api/v1/orders/:orderId/capture enforces ALLOW decision and captures 
   const orderId = createRes.body.data.orderId;
 
   // Mock PayPal order fetch (matching payee) and capture
-  setCustomOrdersFetch(async (url, init) => {
+  setCustomOrdersFetch(async (url, _init) => {
     const urlStr = String(url);
     if (urlStr.endsWith('/capture')) {
       return new Response(

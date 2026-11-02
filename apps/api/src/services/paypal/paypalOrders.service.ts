@@ -1,5 +1,5 @@
 import { env } from '../../config/env.js';
-import { getAccessToken, PayPalAuthError } from './paypalAuth.service.js';
+import { getAccessToken } from './paypalAuth.service.js';
 
 export interface PayPalAmount {
   currency_code: string;
@@ -280,7 +280,11 @@ export async function capturePayPalOrder(orderId: string, requestId?: string): P
   }
 
   if (!response.ok) {
-    let errorJson: { name?: string; message?: string; details?: unknown[] } = {};
+    let errorJson: {
+      name?: string;
+      message?: string;
+      details?: Array<{ issue?: string; description?: string; [key: string]: unknown }>;
+    } = {};
     try {
       errorJson = (await response.json()) as typeof errorJson;
     } catch {
@@ -291,7 +295,7 @@ export async function capturePayPalOrder(orderId: string, requestId?: string): P
       response.status === 422 &&
       (errorJson.name === 'ORDER_ALREADY_CAPTURED' ||
         (Array.isArray(errorJson.details) &&
-          errorJson.details.some((d: any) => d?.issue === 'ORDER_ALREADY_CAPTURED')))
+          errorJson.details.some((d) => d?.issue === 'ORDER_ALREADY_CAPTURED')))
     ) {
       throw new PayPalOrderError('Order has already been captured', 'ALREADY_CAPTURED', 422, errorJson);
     }
