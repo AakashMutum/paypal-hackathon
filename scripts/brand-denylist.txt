@@ -1,0 +1,40 @@
+# Real brand names that must never appear in demo content.
+# One name per line, matched case-insensitively as whole words. Lines starting with # are ignored.
+Gucci
+Nike
+Adidas
+Rolex
+Prada
+Chanel
+Louis Vuitton
+Apple
+Samsung
+Sony
+Amazon
+Walmart
+Dyson
+NVIDIA
+Nintendo
+Stanley
+Canada Goose
+LEGO
+Herman Miller
+DJI
+Ray-Ban
+KitchenAid
+Yeti
+Lululemon
+Tiffany
+Balenciaga
+DeWalt
+North Face
+Sonos
+Marshall
+Anker
+Patagonia
+Bose
+Vitamix
+Dell
+Keychron
+Rogue Fitness
+Audio-Technica

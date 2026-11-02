@@ -1,0 +1,20 @@
+# Ownership by area. Replace the @TODO-* placeholders with real GitHub handles.
+# Later matches take precedence over earlier ones.
+
+# Root config (default)
+*                          @AakashMutum
+
+/apps/api/                 @TODO-api
+/packages/contracts/       @TODO-api @TODO-agent
+/packages/agent/           @TODO-agent
+/apps/mcp/                 @TODO-agent
+/packages/signals/         @TODO-signals
+/apps/web/                 @TODO-web
+/demo-sites/               @TODO-web
+/packages/memory/          @TODO-memory
+/packages/eval/            @TODO-memory
+
+/infra/                    @AakashMutum
+/tests/                    @AakashMutum
+/.github/                  @AakashMutum
+/scripts/                  @AakashMutum

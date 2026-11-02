@@ -1,0 +1,28 @@
+name: PayPal sandbox tests (LIVE network, manual only)
+
+# Calls the real PayPal sandbox using repository secrets.
+# Never runs automatically. The mock-based tests live in ci.yml.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  paypal-sandbox-live:
+    name: PayPal sandbox (LIVE, not mocks)
+    runs-on: ubuntu-latest
+    env:
+      PAYPAL_MODE: sandbox
+      PAYPAL_CLIENT_ID: ${{ secrets.PAYPAL_SANDBOX_CLIENT_ID }}
+      PAYPAL_CLIENT_SECRET: ${{ secrets.PAYPAL_SANDBOX_CLIENT_SECRET }}
+      PAYPAL_WEBHOOK_ID: ${{ secrets.PAYPAL_SANDBOX_WEBHOOK_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build -w @checkout-guardian/contracts
+      - run: npm run test:sandbox
