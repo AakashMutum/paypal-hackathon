@@ -1,0 +1,16 @@
+{
+  "scenario": "D2",
+  "decision": "PAUSE",
+  "score": 75,
+  "confidence": 0.95,
+  "path": "FAST_PAUSE",
+  "hardRules": ["HF2"],
+  "flaggedEvidenceIds": [
+    "EVD-AGT-CLAIMED_BRAND_MISMATCH-01",
+    "EVD-SIG-D2-DOMAIN-01",
+    "EVD-SIG-D2-LOOKALIKE-01"
+  ],
+  "followUps": 0,
+  "llmCalls": 0,
+  "degraded": false
+}

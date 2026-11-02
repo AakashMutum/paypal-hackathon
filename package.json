@@ -5,21 +5,35 @@
   "type": "module",
   "scripts": {
     "pretest": "node -e \"import('node:fs').then(fs => { fs.cpSync('packages/contracts', 'node_modules/@checkout-guardian/contracts', { recursive: true }); if (fs.existsSync('apps/api/node_modules')) fs.cpSync('packages/contracts', 'apps/api/node_modules/@checkout-guardian/contracts', { recursive: true }); })\"",
+    "pretypecheck": "tsc -p packages/contracts && node -e \"import('node:fs').then(fs => { fs.cpSync('packages/contracts', 'node_modules/@checkout-guardian/contracts', { recursive: true }); if (fs.existsSync('apps/api/node_modules')) fs.cpSync('packages/contracts', 'apps/api/node_modules/@checkout-guardian/contracts', { recursive: true }); })\"",
     "dev": "tsx watch apps/api/src/server.ts",
-    "build": "tsc -p packages/contracts && node -e \"import('node:fs').then(fs => { fs.cpSync('packages/contracts', 'node_modules/@checkout-guardian/contracts', { recursive: true }); if (fs.existsSync('apps/api/node_modules')) fs.cpSync('packages/contracts', 'apps/api/node_modules/@checkout-guardian/contracts', { recursive: true }); fs.cpSync('apps/api/src/database/migrations', 'apps/api/dist/src/database/migrations', { recursive: true }); })\" && tsc -p apps/api",
+    "build:agent": "tsc -p packages/agent",
+    "build:mcp": "tsc -p apps/mcp",
+    "build": "tsc -p packages/contracts && tsc -p packages/agent && tsc -p apps/mcp && node -e \"import('node:fs').then(fs => { fs.cpSync('packages/contracts', 'node_modules/@checkout-guardian/contracts', { recursive: true }); if (fs.existsSync('apps/api/node_modules')) fs.cpSync('packages/contracts', 'apps/api/node_modules/@checkout-guardian/contracts', { recursive: true }); fs.cpSync('apps/api/src/database/migrations', 'apps/api/dist/src/database/migrations', { recursive: true }); })\" && tsc -p apps/api",
     "typecheck": "tsc --noEmit",
     "start": "node apps/api/dist/src/server.js",
-    "test": "tsx --test apps/api/test/database.config.test.ts apps/api/test/database.health.test.ts apps/api/test/database.migration.test.ts apps/api/test/database.integration.test.ts apps/api/test/health.test.ts apps/api/test/paypal.auth.test.ts apps/api/test/paypal.orders.test.ts apps/api/test/merchant.verification.test.ts apps/api/test/risk.enforcement.test.ts apps/api/test/order.orchestration.test.ts apps/api/test/paypal.sandbox.live.test.ts",
+    "test": "tsx --test apps/api/test/database.config.test.ts apps/api/test/database.health.test.ts apps/api/test/database.migration.test.ts apps/api/test/database.integration.test.ts apps/api/test/health.test.ts apps/api/test/paypal.auth.test.ts apps/api/test/paypal.orders.test.ts apps/api/test/merchant.verification.test.ts apps/api/test/risk.enforcement.test.ts apps/api/test/order.orchestration.test.ts apps/api/test/paypal.sandbox.live.test.ts && npm run test:agent && npm run test:mcp",
+    "test:agent": "tsx --test \"packages/agent/tests/**/*.test.ts\"",
+    "test:mcp": "tsx --test \"apps/mcp/tests/**/*.test.ts\"",
+    "eval:fixtures": "tsx packages/agent/scripts/eval-fixtures.ts",
+    "record:llm": "tsx packages/agent/scripts/record-llm.ts",
+    "memory:setup": "tsx packages/agent/scripts/memory-setup.ts",
+    "mcp:dev": "tsx apps/mcp/src/index.ts",
+    "demo:agent": "tsx apps/mcp/demo-agent/index.ts",
     "migrate": "tsx apps/api/src/database/migrate.ts",
     "migrate:status": "tsx apps/api/src/database/migrate.ts --status"
   },
   "dependencies": {
+    "@channel3/sdk": "^4.6.0",
+    "@elastic/elasticsearch": "^8.19.2",
+    "@modelcontextprotocol/sdk": "^1.32.2",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "express-rate-limit": "^7.5.0",
     "helmet": "^8.0.0",
-    "pg": "^8.13.1"
+    "pg": "^8.13.1",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
