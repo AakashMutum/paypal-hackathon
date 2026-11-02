@@ -1,0 +1,21 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+@layer base {
+  body { @apply bg-canvas text-ink font-sans antialiased; font-feature-settings: 'tnum' 1; }
+  h1,h2,h3 { letter-spacing: -0.015em; }
+}
+@layer components {
+  .card { @apply bg-white rounded-lg border border-ink/10 shadow-l1 p-5; }
+  .mono-label { @apply font-mono text-[11px] font-semibold uppercase tracking-[0.04em] text-muted; }
+  .pill { @apply inline-flex items-center gap-1.5 min-h-[20px] px-2 rounded-full border text-[11px] font-semibold tracking-wide whitespace-nowrap; }
+  .btn { @apply inline-flex items-center justify-center gap-2 rounded px-4 h-11 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electric focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed; }
+  .btn-primary { @apply btn bg-navy text-white hover:bg-navy-hover; }
+  .btn-secondary { @apply btn bg-white text-ink border border-ink/15 hover:bg-canvas hover:border-ink/25; }
+  .btn-direct { @apply btn bg-electric text-white hover:bg-electric-hover hover:shadow-glow; }
+  .btn-danger { @apply btn bg-bad text-white hover:bg-bad-hover; }
+  .input { @apply w-full h-10 px-3 rounded bg-white border border-ink/15 text-sm text-ink placeholder:text-muted focus:outline-none focus:border-electric focus:ring-[3px] focus:ring-electric/15; }
+  .inset { box-shadow: inset 0px 1px 3px 0px rgba(16,27,51,.06); }
+}
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; } }
+@media print { header, nav, .no-print { display: none !important; } }
