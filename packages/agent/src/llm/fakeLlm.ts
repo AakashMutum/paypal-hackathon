@@ -38,10 +38,7 @@ export class ScriptedProvider implements LlmProvider {
     if (!turn) throw new Error('no scripted reply');
 
     if (turn.delayMs && turn.delayMs > 0) {
-      await new Promise<void>((resolve) => {
-        const timer = setTimeout(resolve, turn.delayMs);
-        timer.unref?.();
-      });
+      await new Promise<void>((resolve) => setTimeout(resolve, turn.delayMs));
     }
 
     if (turn.error) throw turn.error;
@@ -83,10 +80,7 @@ export class FakeLlm implements LlmClient {
     }
 
     if (turn.delayMs && turn.delayMs > 0) {
-      await new Promise<void>((resolve) => {
-        const timer = setTimeout(resolve, turn.delayMs);
-        timer.unref?.();
-      });
+      await new Promise<void>((resolve) => setTimeout(resolve, turn.delayMs));
     }
 
     if (turn.error) {
