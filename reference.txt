@@ -992,3 +992,48 @@ This section records the shared infrastructure, QA and security work for TrustOr
 - [ ] Confirm demo storefronts, fixtures and video use only fictional brands and logos
 - [ ] Demo video under 3 minutes on YouTube, no third-party trademarks or copyrighted music
 - [ ] Devpost page and final submission one day early, 11 November
+
+---
+
+# 17. CI SECURITY AUDIT REMEDIATION (DEPENDENCY VULNERABILITIES)
+
+Last updated: 2 November 2026
+
+## 17.1 CI Security Audit Failure Analysis
+- **Job Failure**: GitHub Actions CI security step (`npm ci` followed by `npm audit --audit-level=high`) failed with exit code 1.
+- **Initial Vulnerability Count**: 15 total (14 moderate, 1 high).
+- **Exact Root Cause of High Severity Failure**:
+  - `vite` `<=6.4.3` was vulnerable to **GHSA-587h-7wmj-h5pm** (CVE-2026-112942) with HIGH severity:
+    - Title: `launch-editor: fs.existsSync() existence check can be bypassed on Windows`
+    - Affected versions: `<=6.4.3`
+    - Vulnerable component: `launch-editor` (bundled/required by Vite dev server error overlay).
+  - An additional moderate vulnerability in `esbuild` `<=0.24.2` (GHSA-67mh-4wv8-2f99) was bundled under Vite `<=6.4.3`.
+
+## 17.2 Remediation Performed
+- **Vite Upgrade**: Upgraded `vite` in `apps/web/package.json` to `^6.4.5`.
+  - Vite `6.4.5` resolves GHSA-587h-7wmj-h5pm by including patched `launch-editor` (`>=2.14.2`).
+  - Vite `6.4.5` resolves GHSA-67mh-4wv8-2f99 by utilizing `esbuild` `^0.25.0`.
+  - Rollup cross-platform optional dependencies in `apps/web/package.json` updated to match Rollup 4 (`@rollup/rollup-linux-x64-gnu` & `@rollup/rollup-linux-x64-musl`: `^4.34.9`).
+- **Breaking Changes Avoided**:
+  - No breaking API changes or frontend modifications required.
+  - `@vitejs/plugin-react` remains fully compatible (`peerDependencies` supports Vite 4, 5, and 6).
+  - All contracts, API types, endpoints, and verification services unchanged.
+- **Lockfile Synchronization**:
+  - `package-lock.json` updated cleanly and synchronized with `package.json`.
+
+## 17.3 Remaining Vulnerabilities (Moderate Only)
+- `npm audit --audit-level=high` now passes with **0 vulnerabilities** at the high severity threshold (exit code 0).
+- 13 moderate vulnerabilities remain in dev-tooling / routing:
+  - `minimatch` `<11.0.1` (GHSA-g3hv-75wg-m249) via `@typescript-eslint` and `eslint` flat config. Requires major version upgrades of ESLint ecosystem (`eslint` v9 flat config transition).
+  - `react-router` / `react-router-dom` `6.0.0 - 7.17.0` (GHSA-wrjc-x8rr-h8h6, GHSA-337j-9hxr-rhxg). Requires major breaking upgrade to React Router v7 (`react-router-dom@7.18.5+`).
+  - Neither of these moderate vulnerabilities trigger `--audit-level=high`, preserving stability without breaking changes.
+
+## 17.4 Verification Results
+- `npm ci` – ✅ clean install from lockfile (Exit code 0).
+- `npm audit --audit-level=high` – ✅ 0 high or critical vulnerabilities (Exit code 0).
+- `npm run typecheck` – ✅ TypeScript validation passes across all workspaces (Exit code 0).
+- `npm run build` – ✅ Contracts, API, and Web workspaces built cleanly with Vite 6.4.5 (Exit code 0).
+- `npm run test:integration` – ✅ 28 passed, 0 failed (all order capture, payee mismatch PAUSE, acknowledgement WARN, risk scoring, token caching verified).
+- `npm run test:contracts` – ✅ fixtures and contracts typecheck pass.
+- `npm run check:brands` – ✅ 39 files scanned, 0 denylisted brands.
+- `npm run check:hygiene` – ✅ 125 tracked files, clean hygiene.
