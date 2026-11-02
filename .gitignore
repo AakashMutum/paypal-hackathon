@@ -6,3 +6,10 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .DS_Store
+
+# Project
+coverage/
+eval-report.json
+.cache/
+.env.*
+!.env.example
