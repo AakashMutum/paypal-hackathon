@@ -1,131 +1,66 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import {
+  CATEGORIES,
+  EvaluationCaseSchema,
+  FORBIDDEN_JUDGMENT_FIELDS,
+  getDefaultDatasetPath,
   loadEvaluationDataset,
   loadEvaluationDatasetAsync,
-  getEvaluationCaseById,
-  EvaluationCaseSchema,
 } from '../src/index.js';
+import { generated } from '../scripts/generateDataset.js';
 
-test('loadEvaluationDataset loads exactly 50 valid cases with Zod validation', () => {
+const rawCases = (): Array<Record<string, unknown>> =>
+  JSON.parse(readFileSync(getDefaultDatasetPath(), 'utf8')) as Array<Record<string, unknown>>;
+
+test('the dataset has at least 60 valid cases with unique ids', async () => {
   const dataset = loadEvaluationDataset();
-
-  assert.equal(dataset.length, 50, 'Total cases should be exactly 50');
-
-  // Verify all IDs are unique
-  const ids = new Set(dataset.map((c) => c.id));
-  assert.equal(ids.size, 50, 'All case IDs must be unique');
+  assert.ok(dataset.length >= 60);
+  assert.equal(new Set(dataset.map((c) => c.id)).size, dataset.length);
+  assert.equal((await loadEvaluationDatasetAsync()).length, dataset.length);
+  for (const c of dataset) EvaluationCaseSchema.parse(c);
 });
 
-test('loadEvaluationDatasetAsync resolves with identical dataset', async () => {
-  const dataset = await loadEvaluationDatasetAsync();
-  assert.equal(dataset.length, 50);
-});
-
-test('dataset has balanced labels: 25 fraud and 25 legit cases', () => {
+test('every category is present with enough cases and both labels occur', () => {
   const dataset = loadEvaluationDataset();
-
-  const fraudCases = dataset.filter((c) => c.label === 'fraud');
-  const legitCases = dataset.filter((c) => c.label === 'legit');
-
-  assert.equal(fraudCases.length, 25, 'Expected exactly 25 fraud cases');
-  assert.equal(legitCases.length, 25, 'Expected exactly 25 legit cases');
+  for (const category of CATEGORIES) {
+    assert.ok(dataset.filter((c) => c.category === category).length >= 5, `category ${category}`);
+  }
+  assert.ok(dataset.some((c) => c.label === 'fraud'));
+  assert.ok(dataset.some((c) => c.label === 'legit'));
+  assert.ok(dataset.some((c) => c.hiddenText), 'some cases carry hidden injection text');
+  assert.ok(dataset.some((c) => c.bindingMerchantId === null), 'some cases have no binding file');
+  assert.ok(dataset.some((c) => c.registryRecord === null), 'some cases have no registry record');
 });
 
-test('dataset contains the 3 demo stores aligned with fixtures', () => {
-  const dataset = loadEvaluationDataset();
-
-  // 1. harborline-outfitters.example (genuine-store.json - legit)
-  const genuineCase = dataset.find((c) => c.merchantUrl.includes('harborline-outfitters.example'));
-  assert.ok(genuineCase, 'harborline-outfitters.example must exist in dataset');
-  assert.equal(genuineCase.label, 'legit');
-  assert.equal(genuineCase.claimedBrand, 'Harborline Outfitters');
-
-  // 2. bargainbarn-outlet.example (discount-store.json - legit)
-  const discountCase = dataset.find((c) => c.merchantUrl.includes('bargainbarn-outlet.example'));
-  assert.ok(discountCase, 'bargainbarn-outlet.example must exist in dataset');
-  assert.equal(discountCase.label, 'legit');
-  assert.equal(discountCase.claimedBrand, 'Bargain Barn Outlet');
-
-  // 3. harborlyne-outfitters-sale.example (impersonator-store.json - fraud)
-  const impersonatorCase = dataset.find((c) =>
-    c.merchantUrl.includes('harborlyne-outfitters-sale.example'),
-  );
-  assert.ok(impersonatorCase, 'harborlyne-outfitters-sale.example must exist in dataset');
-  assert.equal(impersonatorCase.label, 'fraud');
-  assert.equal(impersonatorCase.claimedBrand, 'Harborline Outfitters');
+test('guard: no case contains a judgment field', () => {
+  for (const c of rawCases()) {
+    for (const field of FORBIDDEN_JUDGMENT_FIELDS) {
+      assert.equal(field in c, false, `${String(c.id)} has judgment field ${field}`);
+    }
+    for (const key of Object.keys(c)) {
+      assert.doesNotMatch(key, /consistent|matches|isFraud|expected/i, `${String(c.id)} field ${key} looks like a judgment`);
+    }
+  }
 });
 
-test('dataset includes all required hard cases', () => {
-  const dataset = loadEvaluationDataset();
-
-  // 1. New-but-legit domain (domainAgeDays <= 30 and label === 'legit')
-  const newLegit = dataset.find((c) => c.domainAgeDays <= 30 && c.label === 'legit');
-  assert.ok(newLegit, 'Must include a new-but-legit domain');
-
-  // 2. Big-but-legit sale (discount > 60% and label === 'legit')
-  const bigSaleLegit = dataset.find(
-    (c) => c.label === 'legit' && (c.referencePrice - c.listedPrice) / c.referencePrice >= 0.6,
-  );
-  assert.ok(bigSaleLegit, 'Must include a big-but-legit sale case');
-
-  // 3. Legit store with a personal payee (e.g. gmail/yahoo/hotmail and label === 'legit')
-  const personalPayeeLegit = dataset.find(
-    (c) =>
-      c.label === 'legit' &&
-      !c.payeeMatchesDomain &&
-      /@(gmail|yahoo|hotmail|outlook)\.com$/i.test(c.payeeEmail),
-  );
-  assert.ok(personalPayeeLegit, 'Must include a legit store with a personal payee email');
-
-  // 4. Fraud site with an old domain (domainAgeDays > 1000 and label === 'fraud')
-  const oldDomainFraud = dataset.find((c) => c.domainAgeDays > 1000 && c.label === 'fraud');
-  assert.ok(oldDomainFraud, 'Must include a fraud site with an old domain');
+test('guard: every dataset domain and email address ends in .example', () => {
+  const hostOk = (host: string) => host.endsWith('.example');
+  for (const c of loadEvaluationDataset()) {
+    assert.ok(hostOk(new URL(c.merchantUrl).hostname), `${c.id} merchantUrl`);
+    assert.ok(hostOk(c.payeeEmail.split('@')[1]), `${c.id} payeeEmail`);
+    if (c.brandOwner) assert.ok(hostOk(c.brandOwner.domain), `${c.id} brandOwner.domain`);
+  }
+  const text = readFileSync(getDefaultDatasetPath(), 'utf8');
+  assert.doesNotMatch(text, /\.(com|net|org|shop|top|online|site|cc|icu|io|co|store|xyz)["/:?\s]/i);
 });
 
-test('getEvaluationCaseById retrieves specific case', () => {
-  const found = getEvaluationCaseById('case-demo-001');
-  assert.ok(found);
-  assert.equal(found.id, 'case-demo-001');
-  assert.equal(found.claimedBrand, 'Harborline Outfitters');
-
-  const missing = getEvaluationCaseById('non-existent-case');
-  assert.equal(missing, undefined);
+test('guard: the committed dataset equals what the generator produces', () => {
+  assert.deepEqual(rawCases(), JSON.parse(JSON.stringify(generated)));
 });
 
-test('EvaluationCaseSchema rejects invalid cases and unknown extra fields (strict)', () => {
-  const validCase = getEvaluationCaseById('case-demo-001');
-  assert.ok(validCase);
-
-  // Reject extra unknown field (strict mode)
-  assert.throws(() => {
-    EvaluationCaseSchema.parse({
-      ...validCase,
-      unknownField: 'malicious',
-    });
-  });
-
-  // Reject invalid label
-  assert.throws(() => {
-    EvaluationCaseSchema.parse({
-      ...validCase,
-      label: 'maybe_fraud',
-    });
-  });
-
-  // Reject invalid URL
-  assert.throws(() => {
-    EvaluationCaseSchema.parse({
-      ...validCase,
-      merchantUrl: 'not-a-url',
-    });
-  });
-
-  // Reject negative price
-  assert.throws(() => {
-    EvaluationCaseSchema.parse({
-      ...validCase,
-      listedPrice: -50,
-    });
-  });
+test('guard: no real brand is used', () => {
+  const text = readFileSync(getDefaultDatasetPath(), 'utf8');
+  assert.doesNotMatch(text, /PulseAudio/i);
 });

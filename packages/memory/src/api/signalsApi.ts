@@ -1,6 +1,6 @@
 /**
  * @file signalsApi.ts
- * @description Documented, lightweight API for Person 2 (Signals / Risk Engine) to query prior indicators and persist investigations.
+ * @description Documented, lightweight API for the signals and risk code to query prior indicators and persist investigations.
  *
  * Rules:
  * - Historical flags are indicators, not permanent blacklists or proof of fraud.

@@ -1,123 +1,97 @@
 # @checkout-guardian/eval
 
-Evaluation harness, labeled benchmark dataset, and deterministic baseline comparison engine for Checkout Guardian.
+Benchmark for the investigation agent: a labelled synthetic dataset, four systems to compare,
+metrics with confidence intervals, and a runner that writes a report.
 
----
+Results are in [`docs/eval-results.md`](../../docs/eval-results.md). They come from a small
+synthetic benchmark and are not a claim about real-world accuracy.
 
-## Quick Start
-
-Run the complete evaluation benchmark:
+## Run it
 
 ```bash
-# From repository root
-npm --workspace=@checkout-guardian/eval run test:eval
-
-# Or from within /packages/eval
-npm run test:eval
+# From the repository root
+npm run eval -w @checkout-guardian/eval
+npm test -w @checkout-guardian/eval
+npm run dataset:generate -w @checkout-guardian/eval
 ```
 
-This command executes all 3 baselines over the 50 labeled cases, outputs a readable console summary table, and writes the results to `eval-report.json`. Note that `eval-report.json` is generated locally on demand and is deliberately not committed to git (it is listed in `packages/eval/.gitignore`).
+`eval` prints a table and writes three files:
 
----
+| File | Committed | Contents |
+| --- | --- | --- |
+| `packages/eval/out/report.json` | no (ignored) | Everything, including latency and per-case decisions |
+| `packages/eval/results/summary.json` | yes | Metrics only, stable between runs on the same code and data |
+| `docs/eval-results.md` | yes | Summary table, method, cases per category, commit, date, limitations |
 
-## Benchmark Output Example
+`eval-report.json` from older versions is no longer produced. Generated output goes to `out/`.
 
-```text
-========================================================================================
-  CHECKOUT GUARDIAN BENCHMARK EVALUATION REPORT (50 cases, 2026-11-02T10:22:51.611Z)
-========================================================================================
+## Dataset
 
-┌─────────┬────────────────────────────────────┬──────────┬───────────┬──────────┬──────────┬─────────────┬───────────┬───────────┬───────────┐
-│ (index) │ Baseline                           │ Accuracy │ Precision │ Recall   │ F1 Score │ TP/FP/TN/FN │ Mean (ms) │ p50 (ms)  │ p95 (ms)  │
-├─────────┼────────────────────────────────────┼──────────┼───────────┼──────────┼──────────┼─────────────┼───────────┼───────────┼───────────┤
-│ 0       │ 'Baseline A (Domain + Discount)'   │ '92.0%'  │ '86.2%'   │ '100.0%' │ '92.6%'  │ '25/4/21/0' │ '0.005ms' │ '0.001ms' │ '0.014ms' │
-│ 1       │ 'Baseline B (A + Identity Claims)' │ '100.0%' │ '100.0%'  │ '100.0%' │ '100.0%' │ '25/0/25/0' │ '0.003ms' │ '0.002ms' │ '0.008ms' │
-│ 2       │ 'Full (B + Payee + Memory)'        │ '100.0%' │ '100.0%'  │ '100.0%' │ '100.0%' │ '25/0/25/0' │ '0.066ms' │ '0.035ms' │ '0.165ms' │
-└─────────┴────────────────────────────────────┴──────────┴───────────┴──────────┴──────────┴─────────────┴───────────┴───────────┴───────────┘
+`src/dataset/cases.json` holds 62 invented stores, written by `scripts/generateDataset.ts` from a
+fixed seed. Every domain and email address ends in `.example`; every brand is invented.
+
+A case holds raw observables only: domain age in days, listed and reference price, payee email
+and merchant id, the merchant id the site publishes in its binding file (or none), the registry
+record of the payee (legal name and brand names, or none), the registry record of the real brand
+owner, the claimed brand and legal name on the page, and the page text including any hidden text.
+It holds no judgment such as "identity is consistent" or "payee matches the domain"; a test fails
+if one appears. The `label` is the author's ground truth and is used only for scoring.
+
+| Category | Label |
+| --- | --- |
+| `easy_legit` | legit |
+| `easy_fraud` | fraud |
+| `lookalike_impersonator` | fraud |
+| `new_but_legit` | legit |
+| `big_clearance_but_legit` | legit |
+| `sole_proprietor_webmail` | legit |
+| `aged_hijacked_domain` | fraud |
+| `injection_page` | fraud |
+
+Legit stores are deliberately imperfect: many publish no binding file, some are missing from the
+registry. Consumer webmail is written as `freemail.example`; the harness swaps in a provider the
+agent recognises when it builds the agent's request.
+
+## Systems compared
+
+| System | What it is |
+| --- | --- |
+| Baseline A | Domain age and discount only, scored with the agent's scoring table |
+| Baseline B | A plus identity consistency computed by the agent's identity matcher |
+| Full, cold memory | `runInvestigatorAgentDetailed` with fixture signals and registry built from the observables, no language model, empty memory |
+| Full, warm memory | The same, with memory holding every other fraud-labelled case (leave-one-out) |
+
+Signals and registry are built from the observables in `src/harness/fixtures.ts`, never from the
+label or category. A test flips both and checks the decisions do not change.
+
+## Metrics
+
+Confusion matrix, accuracy, precision, recall, F1, false-positive rate on legit cases,
+false-negative rate, per-category accuracy, seeded bootstrap 95% intervals, latency p50, p95 and
+max, stage ablation, memory lift (cold versus warm), prompt-injection robustness, two invariants
+and explanation faithfulness. A case counts as flagged when the decision is WARN or PAUSE; the
+PAUSE-only variant is reported too.
+
+Prompt-injection robustness uses the hostile and harmless samples in
+`packages/agent/src/fixtures/injection` plus the benchmark pages that carry hidden instructions.
+
+Invariants checked:
+
+1. A payee mismatch (the site publishes a different merchant id) is always PAUSE.
+2. A big discount alone on an established domain, with a matching binding and a registry record,
+   is never PAUSE.
+
+## Layout
+
+```
+scripts/generateDataset.ts   deterministic dataset generator
+src/dataset/                 schema (zod), loader, cases.json
+src/harness/fixtures.ts      case observables to agent inputs
+src/harness/systems.ts       baselines, full agent, memory helpers
+src/metrics/                 confusion matrix, latency, rates, bootstrap
+src/runner/                  evaluation, console and markdown output, CLI
+results/summary.json         committed metrics
 ```
 
----
-
-## Guide for Person 4 (Analyst Console Integration)
-
-The evaluation runner writes `eval-report.json` directly to `/packages/eval/eval-report.json` on demand (`npm --workspace=@checkout-guardian/eval run test:eval`). This report file is generated locally and ignored by git rather than committed to the repository. Person 4 can run the command locally to generate it, then import or read this JSON to render interactive charts and diagnostic tables in the Analyst Console.
-
-### JSON Structure Specification
-
-```typescript
-export interface EvalReport {
-  /** ISO 8601 generation timestamp */
-  generatedAt: string;
-  /** Number of test cases evaluated (50) */
-  datasetSize: number;
-  /** Aggregate confusion matrix and telemetry metrics per baseline */
-  perBaseline: {
-    baselineA: BaselineSummaryMetrics;
-    baselineB: BaselineSummaryMetrics;
-    full: BaselineSummaryMetrics;
-  };
-  /** Granular case-by-case outputs for detailed drill-down */
-  perCaseResults: {
-    baselineA: CaseEvaluationResult[];
-    baselineB: CaseEvaluationResult[];
-    full: CaseEvaluationResult[];
-  };
-}
-
-export interface BaselineSummaryMetrics {
-  tp: number; // True Positives (actual fraud, predicted fraud)
-  fp: number; // False Positives (actual legit, predicted fraud)
-  tn: number; // True Negatives (actual legit, predicted legit)
-  fn: number; // False Negatives (actual fraud, predicted legit)
-  precision: number; // TP / (TP + FP) [0.0 - 1.0]
-  recall: number; // TP / (TP + FN) [0.0 - 1.0]
-  f1: number; // 2 * (P * R) / (P + R) [0.0 - 1.0]
-  accuracy: number; // (TP + TN) / Total [0.0 - 1.0]
-  latency: {
-    mean: number; // Average execution latency in milliseconds
-    p50: number; // Median (50th percentile) latency in milliseconds
-    p95: number; // 95th percentile latency in milliseconds
-    p99: number; // 99th percentile latency in milliseconds
-    min: number; // Minimum observed latency in milliseconds
-    max: number; // Maximum observed latency in milliseconds
-    count: number; // Sample count
-  };
-}
-
-export interface CaseEvaluationResult {
-  id: string; // e.g. "case-demo-001"
-  merchantUrl: string; // Storefront checkout URL
-  claimedBrand: string; // Brand name claimed on storefront
-  actual: 'fraud' | 'legit';
-  predicted: 'fraud' | 'legit';
-  isCorrect: boolean; // actual === predicted
-  decision: string; // 'ALLOW' | 'WARN' | 'PAUSE'
-  score: number; // Risk score [0.0 - 100.0]
-  latencyMs: number; // Measured execution duration in ms
-  reasons: string[]; // Decision explanation notes
-}
-```
-
-### Charting Recommendations for Analyst Console
-
-1. **Model Comparison Bar Chart:**
-   - Plot `f1`, `precision`, `recall`, and `accuracy` side-by-side for `baselineA`, `baselineB`, and `full`.
-2. **Confusion Matrix Cards:**
-   - Render a $2 \times 2$ grid for each baseline displaying `tp`, `fp`, `tn`, and `fn`.
-3. **Latency Percentile Comparison:**
-   - Render a grouped bar chart comparing `p50` vs `p95` response times across the models.
-4. **Drill-down Diagnostic Table:**
-   - Table displaying `perCaseResults.full` with filter toggles for `isCorrect: false` to highlight edge cases or misclassifications for manual review.
-
----
-
-## Dataset Description
-
-The evaluation dataset in `src/dataset/cases.json` contains **50 labeled cases** (25 fraud, 25 legit) covering:
-
-- **Fictional Demo Stores (aligned with `tests/fixtures/`):** `harborline-outfitters.example` (legit / ALLOW), `bargainbarn-outlet.example` (discount store / WARN), `harborlyne-outfitters-sale.example` (lookalike impersonator / PAUSE).
-- **Hard Cases:**
-  - New-but-legit domains (< 30 days old with verified identity).
-  - Clearance sales on mature domains (> 60% discounts).
-  - Independent artisans/sole proprietors using personal PayPal accounts.
-  - Fraudulent storefronts using aged/hijacked domains.
+The memory used for the warm runs is `@checkout-guardian/memory` (`InMemoryPatternStore` through
+`asAgentMemoryPort`), so the evaluation exercises the same anonymising store the agent would use.

@@ -14,16 +14,19 @@
     }
   },
   "scripts": {
-    "prebuild": "npm run build -w @checkout-guardian/memory",
+    "prebuild": "npm run build -w @checkout-guardian/contracts && npm run build -w @checkout-guardian/memory -w @checkout-guardian/agent",
     "build": "tsc && node -e \"import('node:fs').then(fs => { if (!fs.existsSync('dist/dataset')) fs.mkdirSync('dist/dataset', { recursive: true }); fs.cpSync('src/dataset/cases.json', 'dist/dataset/cases.json'); })\"",
     "typecheck": "tsc --noEmit",
-    "test": "tsx --test tests/**/*.test.ts",
-    "test:eval": "tsx src/runner/runEval.ts"
+    "test": "tsx --test \"tests/**/*.test.ts\"",
+    "pretest": "npm run build -w @checkout-guardian/contracts && npm run build -w @checkout-guardian/memory -w @checkout-guardian/agent",
+    "eval": "npm run build -w @checkout-guardian/contracts -w @checkout-guardian/memory -w @checkout-guardian/agent --silent && tsx src/runner/runEval.ts",
+    "dataset:generate": "tsx scripts/generateDataset.ts"
   },
   "dependencies": {
     "@checkout-guardian/contracts": "*",
     "@checkout-guardian/memory": "*",
-    "zod": "^4.6.7"
+    "zod": "^4.6.7",
+    "@checkout-guardian/agent": "*"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",
