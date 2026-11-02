@@ -16,7 +16,7 @@ npm --workspace=@checkout-guardian/eval run test:eval
 npm run test:eval
 ```
 
-This command executes all 3 baselines over the 50 labeled cases, outputs a readable console summary table, and writes the results to `eval-report.json`.
+This command executes all 3 baselines over the 50 labeled cases, outputs a readable console summary table, and writes the results to `eval-report.json`. Note that `eval-report.json` is generated locally on demand and is deliberately not committed to git (it is listed in `packages/eval/.gitignore`).
 
 ---
 
@@ -40,7 +40,7 @@ This command executes all 3 baselines over the 50 labeled cases, outputs a reada
 
 ## Guide for Person 4 (Analyst Console Integration)
 
-The evaluation runner writes `eval-report.json` directly to `/packages/eval/eval-report.json`. Person 4 can import or read this JSON to render interactive charts and diagnostic tables in the Analyst Console.
+The evaluation runner writes `eval-report.json` directly to `/packages/eval/eval-report.json` on demand (`npm --workspace=@checkout-guardian/eval run test:eval`). This report file is generated locally and ignored by git rather than committed to the repository. Person 4 can run the command locally to generate it, then import or read this JSON to render interactive charts and diagnostic tables in the Analyst Console.
 
 ### JSON Structure Specification
 

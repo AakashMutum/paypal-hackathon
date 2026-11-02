@@ -37,12 +37,12 @@ test('Baseline A: scores domain age and price discount ratio only', () => {
   // Deep discount on an established domain (> 365 days) must NOT trigger PAUSE
   const bigLegitSale: EvaluationCase = {
     id: 'test-a-2',
-    merchantUrl: 'https://established-store.com/checkout',
+    merchantUrl: 'https://established-store.example/checkout',
     claimedBrand: 'Established Brand',
     domainAgeDays: 1200,
     listedPrice: 20,
     referencePrice: 100, // 80% discount
-    payeeEmail: 'billing@established-store.com',
+    payeeEmail: 'billing@established-store.example',
     payeeMerchantId: 'M-EST',
     payeeMatchesDomain: true,
     merchantIdentityClaimsConsistent: true,
@@ -135,12 +135,12 @@ test('Configurable predicted-fraud mapping: treat WARN as non-fraud when configu
 
   const moderateCase: EvaluationCase = {
     id: 'test-warn-1',
-    merchantUrl: 'https://young-shop.com/checkout',
+    merchantUrl: 'https://young-shop.example/checkout',
     claimedBrand: 'Brand',
     domainAgeDays: 60,
     listedPrice: 50,
     referencePrice: 100, // 50% discount
-    payeeEmail: 'pay@young-shop.com',
+    payeeEmail: 'pay@young-shop.example',
     payeeMerchantId: 'M-1',
     payeeMatchesDomain: true,
     merchantIdentityClaimsConsistent: true,
