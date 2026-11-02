@@ -1,0 +1,82 @@
+{
+  "description": "Established fictional store with consistent identity and normal pricing.",
+  "request": {
+    "storefrontUrl": "https://www.harborline-outfitters.example/checkout",
+    "amount": 84.5,
+    "currency": "USD",
+    "merchantId": "MERCH-HARBORLINE",
+    "claimedMerchantName": "Harborline Outfitters",
+    "payeeEmail": "payments@harborline-outfitters.example",
+    "orderItems": [
+      {
+        "name": "Canvas weekender bag",
+        "quantity": 1,
+        "unitPrice": 84.5
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "id": "ev-gen-1",
+      "kind": "domain",
+      "source": "fixture",
+      "observation": "Domain registered 9 years ago with stable registrar and DNS history.",
+      "severity": "low"
+    },
+    {
+      "id": "ev-gen-2",
+      "kind": "merchant_identity",
+      "source": "fixture",
+      "observation": "Business name, payee email domain and storefront domain all agree.",
+      "severity": "low"
+    },
+    {
+      "id": "ev-gen-3",
+      "kind": "pricing",
+      "source": "fixture",
+      "observation": "Item price is within 5 percent of the category median.",
+      "severity": "low"
+    },
+    {
+      "id": "ev-gen-4",
+      "kind": "ssl",
+      "source": "fixture",
+      "observation": "Valid certificate issued to the same organisation, 11 months remaining.",
+      "severity": "low"
+    }
+  ],
+  "verdict": {
+    "sessionId": "sess_gen",
+    "orderId": "order_gen",
+    "sessionStatus": "ALLOWED",
+    "decision": "ALLOW",
+    "actionTaken": "PROCEED",
+    "overallScore": 8,
+    "scores": {
+      "domainReputation": 10,
+      "merchantConsistency": 5,
+      "pricingAnomaly": 10,
+      "sslTechnical": 5
+    },
+    "weights": {
+      "domain": 0.3,
+      "merchantConsistency": 0.4,
+      "pricing": 0.2,
+      "ssl": 0.1
+    },
+    "reasons": [
+      "Merchant identity is consistent across domain, payee and claimed name."
+    ],
+    "merchantVerification": {
+      "isMatch": true,
+      "matchStatus": "MATCH",
+      "expectedMerchantId": "MERCH-HARBORLINE",
+      "expectedPayeeEmail": "payments@harborline-outfitters.example",
+      "expectedClaimedName": "Harborline Outfitters",
+      "observedMerchantId": "MERCH-HARBORLINE",
+      "observedPayeeEmail": "payments@harborline-outfitters.example",
+      "reasons": []
+    },
+    "captureEligible": true
+  }
+}

@@ -28,3 +28,20 @@ Set `VITE_USE_MOCK=false` and `VITE_API_TARGET` (Vite proxies `/api`). Endpoints
 
 Real PayPal button: set `VITE_PAYPAL_CLIENT_ID` (sandbox). Types live in `packages/contracts`, imported as `@checkout-guardian/contracts`.
 The frontend never captures or voids payments itself and only shows "captured" when the API says so.
+# TrustOra
+
+TrustOra authorizes a PayPal order, investigates the merchant, then captures or voids the payment.
+
+## Quick start
+
+TODO: fill in before submission.
+
+1. Install: `npm install`
+2. Copy `.env.example` to `.env` and fill in the placeholders.
+3. Build: `npm run build`
+4. Test: `npm test`
+5. Run the API: `npm run dev`
+
+## Tools used
+
+TODO: list each tool and service used (including AI tools) and how it was used.

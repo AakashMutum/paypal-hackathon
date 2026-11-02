@@ -1,0 +1,980 @@
+# Trustora
+## Technical Project Handover & Development Continuation Document
+
+**Project:** Trustora  
+**Hackathon:** PayPal AI Hackathon 2026  
+**Repository:** https://github.com/AakashMutum/paypal-hackathon  
+**Local project directory:** `C:\Workspaces\checkout-guardian`  
+**Current development branch:** `feature/person-1-backend-paypal`  
+**Current status:** Milestone 3 completed; Milestone 4 (PayPal Payment Integration) is the next development phase.
+
+---
+
+# 1. PROJECT OVERVIEW
+
+## 1.1 What is Trustora?
+
+Trustora is an AI-assisted payment security and merchant verification system designed to protect customers from potentially fraudulent or misleading online checkout experiences.
+
+The main problem it addresses is that customers may believe they are paying a legitimate brand or merchant on a storefront, but the actual merchant receiving the PayPal payment could be a different entity.
+
+Trustora introduces an additional security layer between the customer's checkout experience and payment execution.
+
+Instead of blindly proceeding with payment, the system evaluates the merchant, website, pricing and technical indicators before allowing a payment to proceed.
+
+## 1.2 Main objective
+
+The primary objective is:
+
+**Verify that the merchant presented to the customer matches the actual merchant receiving the PayPal payment, while identifying suspicious checkout conditions before payment capture.**
+
+The system should:
+
+1. Analyze the merchant and storefront.
+2. Evaluate website and domain reputation.
+3. Check merchant identity consistency.
+4. Detect suspicious pricing and unusual discounts.
+5. Evaluate SSL and technical security indicators.
+6. Calculate an overall risk score.
+7. Produce a payment decision.
+8. Enforce that decision through the backend.
+9. Integrate with PayPal for order creation and payment capture.
+10. Maintain an auditable record of checkout and payment decisions.
+
+## 1.3 Main differentiator
+
+The most important differentiator is **PayPal Payee Identity Verification**.
+
+For example:
+
+A customer visits a storefront claiming to sell products from Brand A.
+
+The checkout interface displays Brand A as the merchant.
+
+However, when the PayPal order is retrieved, its actual payee information identifies Merchant B.
+
+Trustora should detect this inconsistency and prevent automatic payment capture.
+
+This is more than a normal fraud score. It connects the storefront's claimed merchant identity with the actual payment recipient.
+
+---
+
+# 2. TECHNOLOGY STACK
+
+The current backend implementation uses TypeScript rather than JavaScript.
+
+| Layer | Technology |
+|---|---|
+| Backend runtime | Node.js |
+| Programming language | TypeScript |
+| Backend framework | Express.js |
+| Database | PostgreSQL 18 |
+| Database driver | pg |
+| Database migrations | Custom SQL migration engine |
+| Payment provider | PayPal REST APIs |
+| Payment environment | PayPal Sandbox |
+| Authentication | PayPal OAuth 2.0 |
+| Environment configuration | dotenv |
+| Security middleware | Helmet, CORS, express-rate-limit |
+| Testing | Node.js test runner, tsx, Supertest |
+| Frontend | React / Vite project architecture |
+| Version control | Git and GitHub |
+
+The existing repository is organized as an npm workspace.
+
+Main workspaces:
+
+- `apps/api`
+- `packages/contracts`
+
+The implementation must remain compatible with this workspace structure.
+
+---
+
+# 3. PROJECT ARCHITECTURE
+
+The intended high-level architecture is:
+
+Customer / Storefront
+        |
+        v
+Trustora Frontend
+        |
+        v
+Express TypeScript Backend
+        |
+        +--------------------------+
+        |                          |
+        v                          v
+Merchant Analysis             PostgreSQL
+        |                          |
+        v                          |
+Risk Assessment <------------------+
+        |
+        v
+Payment Decision Engine
+        |
+        +-------------------------------+
+        |               |               |
+        v               v               v
+      ALLOW            WARN            PAUSE
+        |               |               |
+        v               v               v
+ PayPal Order       Explicit         Block automatic
+ Creation            Warning         Capture
+        |
+        v
+PayPal Sandbox
+        |
+        v
+Retrieve PayPal Order
+        |
+        v
+Verify Actual Payee
+        |
+        v
+Risk and Identity Enforcement
+        |
+        v
+PayPal Capture API
+        |
+        v
+Payment Audit and Database Update
+
+Important: This is the intended end-to-end architecture. The PayPal order and capture workflow has not yet been implemented in the backend.
+
+---
+
+# 4. RISK ASSESSMENT MODEL
+
+The PRD specifies four primary risk components.
+
+| Risk component | Weight |
+|---|---:|
+| Domain age and reputation | 30% |
+| Merchant identity consistency | 40% |
+| Pricing anomalies | 20% |
+| SSL and technical indicators | 10% |
+| **Total** | **100%** |
+
+The overall risk score is between 0 and 100.
+
+## 4.1 Decision thresholds
+
+| Score | Decision | Expected behavior |
+|---|---|---|
+| 0–39 | ALLOW | Eligible to proceed after required checks |
+| 40–74 | WARN | Customer acknowledgement required through the approved warning flow |
+| 75–100 | PAUSE | Prevent automatic payment capture |
+
+The backend must enforce the final payment decision.
+
+The frontend must never be able to override a PAUSE decision by submitting its own ALLOW value.
+
+An LLM may assist with analysis, but its output is probabilistic and must not be treated as proof of fraud.
+
+High-risk decisions should have deterministic supporting evidence.
+
+**Important PRD clarification:** The discount anomaly threshold is described inconsistently in different parts of the PRD (>70% versus >80% below baseline). This must be clarified with the team rather than silently choosing one threshold.
+
+---
+
+# 5. COMPLETED DEVELOPMENT MILESTONES
+
+## MILESTONE 1 — BACKEND FOUNDATION
+
+Status: Completed.
+
+The initial backend foundation was established using Node.js, Express and TypeScript.
+
+The project uses npm workspaces.
+
+Workspace package names were corrected to avoid duplicate package identities:
+
+- API: `@checkout-guardian/api`
+- Contracts: `@checkout-guardian/contracts`
+
+The backend foundation includes:
+
+- Express application initialization.
+- Server startup.
+- Environment configuration.
+- Centralized middleware.
+- Health endpoints.
+- Structured error handling.
+- API routing.
+- TypeScript configuration.
+- Workspace scripts.
+
+Health endpoints verified:
+
+`GET /health`
+
+`GET /api/v1/health`
+
+Both returned HTTP 200 during earlier local verification.
+
+The API was started successfully on port 3000.
+
+Example:
+
+`npm start`
+
+The backend was observed listening on:
+
+`0.0.0.0:3000`
+
+The health endpoint also distinguishes API availability from database availability.
+
+## MILESTONE 2 — POSTGRESQL DATABASE FOUNDATION
+
+Status: Completed.
+
+PostgreSQL 18 was installed locally on Windows.
+
+Two databases were created:
+
+1. `checkout_guardian`
+2. `checkout_guardian_test`
+
+The development database stores application data.
+
+The test database is used for database integration tests.
+
+### 5.2.1 Database connection
+
+The project includes centralized PostgreSQL connection management.
+
+Main file:
+
+`apps/api/src/database/connection.ts`
+
+The database connection layer provides:
+
+- Centralized connection-pool configuration.
+- Connection timeout settings.
+- Maximum pool connection settings.
+- Configurable SSL behavior.
+- Pool error handling.
+- Graceful pool draining.
+- Connection lifecycle management.
+
+### 5.2.2 Migration engine
+
+The project has a custom migration engine.
+
+Relevant files include:
+
+- `apps/api/src/database/migrator.ts`
+- `apps/api/src/database/migrate.ts`
+- `apps/api/src/database/migrations/`
+
+Migration tracking uses the `schema_migrations` table.
+
+Available commands:
+
+`npm run migrate`
+
+`npm run migrate:status`
+
+The migration engine tracks previously applied migrations and avoids unnecessarily applying them again.
+
+### 5.2.3 Initial database schema
+
+Migration:
+
+`001_initial_schema.sql`
+
+The initial schema created four principal application entities:
+
+1. `checkout_sessions`
+2. `merchant_records`
+3. `risk_assessments`
+4. `payment_decisions`
+
+It also uses:
+
+5. `schema_migrations`
+
+The schema supports:
+
+- Checkout session tracking.
+- Merchant records.
+- Risk assessment persistence.
+- Separate risk component scores.
+- Payment decision storage.
+- Evidence and weights in JSONB fields.
+- Foreign-key relationships.
+- Score constraints.
+- Decision validation constraints.
+
+### 5.2.4 Migration 002
+
+Migration:
+
+`002_payment_decision_constraint_fix.sql`
+
+This migration fixed a PostgreSQL column-width issue.
+
+The original migration defined:
+
+`payment_decisions.decision VARCHAR(10)`
+
+The invalid-value test inserted `INVALID_DECISION`, which exceeded the column width before PostgreSQL could evaluate the intended CHECK constraint.
+
+Migration 002:
+
+- Widens the column to `VARCHAR(20)`.
+- Reaffirms `chk_payment_decision`.
+- Permits only `ALLOW`, `WARN`, and `PAUSE`.
+- Uses a new sequential migration rather than modifying an already-applied migration.
+
+This is an important database maintenance decision. Do not rewrite migration 001.
+
+### 5.2.5 Current database state
+
+According to the completed verification report:
+
+Development database:
+
+`checkout_guardian`
+
+Test database:
+
+`checkout_guardian_test`
+
+Development database tables confirmed:
+
+- `checkout_sessions`
+- `merchant_records`
+- `risk_assessments`
+- `payment_decisions`
+- `schema_migrations`
+
+Migration status:
+
+- Migration 001: APPLIED.
+- Migration 002: APPLIED.
+
+The development database was verified to contain zero rows in its four main application tables at the time of the Milestone 3 report.
+
+---
+
+# 6. MILESTONE 3 — DATABASE INTEGRATION AND TEST FIXES
+
+Status: Completed.
+
+Two important bugs were discovered and fixed.
+
+## 6.1 Bug A — Payment decision CHECK constraint
+
+Problem:
+
+PostgreSQL was returning:
+
+`value too long for type character varying(10)`
+
+instead of the expected named CHECK constraint violation.
+
+Root cause:
+
+The decision column was too narrow for the invalid test value.
+
+Solution:
+
+Created migration 002 to widen the column to `VARCHAR(20)` and re-establish the decision constraint.
+
+Verification:
+
+The integration test now correctly verifies the named `chk_payment_decision` constraint.
+
+## 6.2 Bug B — Health test environment isolation
+
+Problem:
+
+The health test expected:
+
+`database.status = not_configured`
+
+But the actual result was:
+
+`database.status = healthy`
+
+Root cause:
+
+The root `.env` contained a valid PostgreSQL connection URL.
+
+`dotenv.config()` loaded that configuration into the application, so the health check connected to the actual development database.
+
+Solution:
+
+Modified:
+
+`apps/api/src/config/env.ts`
+
+Added:
+
+`setDatabaseUrl(url)`
+
+This allows the test to temporarily override the configured database URL.
+
+Modified:
+
+`apps/api/test/health.test.ts`
+
+The test now:
+
+1. Saves the original database URL.
+2. Temporarily clears the database URL.
+3. Resets the cached database pool.
+4. Checks the not-configured health response.
+5. Restores the original URL using `try/finally`.
+
+This preserves the developer's `.env` configuration and avoids deleting or modifying local credentials.
+
+## 6.3 Final Milestone 3 test results
+
+The final reported results are:
+
+- Total tests: 23
+- Passed: 23
+- Failed: 0
+- Skipped: 0
+- Cancelled: 0
+
+The live PostgreSQL integration suite executed successfully against `checkout_guardian_test`.
+
+Tests covered:
+
+- Database configuration.
+- Database health.
+- Migration execution.
+- Merchant record persistence.
+- Checkout session constraints and foreign keys.
+- Risk assessment persistence.
+- Risk score validation.
+- Payment decision persistence.
+- Payment decision CHECK constraint.
+- API health behavior.
+- Unknown route handling.
+
+The test suite must continue passing after future changes.
+
+---
+
+# 7. CURRENT PAYPAL DEVELOPER SETUP
+
+Status: Developer account and Sandbox OAuth authentication verified.
+
+A PayPal Developer account was accessed using the existing personal PayPal account.
+
+The PayPal Developer Dashboard was opened:
+
+https://developer.paypal.com/dashboard/
+
+A Sandbox application was created or configured.
+
+Application name:
+
+`Trustora`
+
+The application provides:
+
+- Sandbox Client ID.
+- Sandbox Secret.
+
+Sandbox Business and Personal test accounts were also set up or made available.
+
+### 7.1 PayPal authentication verification
+
+The following environment variables were added to the root `.env` file:
+
+`PAYPAL_MODE=sandbox`
+
+`PAYPAL_CLIENT_ID=<local sandbox client ID>`
+
+`PAYPAL_CLIENT_SECRET=<local sandbox secret>`
+
+The actual secret must remain private.
+
+### 7.2 OAuth test
+
+The following Node.js command was executed successfully from the project root:
+
+```cmd
+node --input-type=module -e "import 'dotenv/config'; const id=process.env.PAYPAL_CLIENT_ID; const secret=process.env.PAYPAL_CLIENT_SECRET; if(!id||!secret){console.error('Missing PayPal credentials in .env');process.exit(1)} const r=await fetch('https://api-m.sandbox.paypal.com/v1/oauth2/token',{method:'POST',headers:{Authorization:'Basic '+Buffer.from(id+':'+secret).toString('base64'),'Content-Type':'application/x-www-form-urlencoded'},body:'grant_type=client_credentials'}); const d=await r.json(); if(!r.ok){console.error('PayPal authentication failed:',r.status,d.error||d.name,d.error_description||d.message);process.exit(1)} console.log('PAYPAL SANDBOX AUTHENTICATION SUCCESSFUL'); console.log('App ID:',d.app_id); console.log('Token type:',d.token_type); console.log('Expires in:',d.expires_in,'seconds');"
+```
+
+Actual observed result:
+
+`PAYPAL SANDBOX AUTHENTICATION SUCCESSFUL`
+
+Token type:
+
+`Bearer`
+
+Token expiration reported:
+
+`32400 seconds`
+
+This confirms:
+
+- The Sandbox Client ID is valid.
+- The Sandbox Secret is valid.
+- The local `.env` variables are loading.
+- PayPal OAuth authentication works.
+- PayPal returned an access token successfully.
+
+**Important distinction:** This only verifies OAuth authentication. It does not prove that order creation, approval, capture or merchant verification has been implemented.
+
+Official documentation:
+
+https://developer.paypal.com/api/rest/
+
+https://developer.paypal.com/docs/api/orders/v2/
+
+---
+
+# 8. CURRENT GIT AND SOURCE-CONTROL STATE
+
+Repository:
+
+`https://github.com/AakashMutum/paypal-hackathon`
+
+Current branch:
+
+`feature/person-1-backend-paypal`
+
+The branch was previously pushed to GitHub with explicit permission.
+
+The latest Milestone 3 report identifies these working-tree changes:
+
+Modified:
+
+- `apps/api/src/config/env.ts`
+- `apps/api/test/health.test.ts`
+
+Untracked:
+
+- `apps/api/src/database/migrations/002_payment_decision_constraint_fix.sql`
+
+The report states that no branch switches, resets, force-pushes or pushes occurred during Milestone 3 completion.
+
+Before making changes, the next developer must inspect the actual current Git state rather than assume the working tree is unchanged.
+
+Run:
+
+```cmd
+cd /d C:\Workspaces\checkout-guardian
+
+git branch --show-current
+
+git status --short --branch
+
+git log -5 --oneline
+```
+
+Do not discard uncommitted changes.
+
+Do not switch branches without coordination.
+
+Do not reset the branch.
+
+Do not force-push.
+
+Do not push unless explicitly authorized by the team lead.
+
+---
+
+# 9. ENVIRONMENT AND SECURITY CONFIGURATION
+
+The root `.env` file contains local configuration.
+
+Existing database configuration includes:
+
+```env
+NODE_ENV=development
+HOST=0.0.0.0
+PORT=3000
+CORS_ORIGIN=http://localhost:5173
+
+DATABASE_SSL=false
+DATABASE_TIMEOUT_MS=2000
+DATABASE_MAX_CONNECTIONS=10
+
+PAYPAL_MODE=sandbox
+PAYPAL_CLIENT_ID=your_sandbox_client_id
+PAYPAL_CLIENT_SECRET=your_sandbox_secret
+```
+
+The PostgreSQL `DATABASE_URL` must also remain configured locally.
+
+The values above are examples. Never replace working local values with placeholders.
+
+### Security requirements
+
+1. `.env` must remain in `.gitignore`.
+2. Never commit PayPal Client Secrets.
+3. Never print OAuth access tokens.
+4. Never store card numbers or CVV.
+5. Never log payment credentials.
+6. Do not use PayPal Live credentials during development.
+7. Do not expose database credentials.
+8. Validate all payment requests on the backend.
+9. Never allow the frontend to override a backend payment decision.
+
+**Credential hygiene:** A previous development handover contained an actual-looking PostgreSQL password. Treat that credential as exposed. Rotate it locally, update `.env`, and never repeat it in documentation, source code or team messages.
+
+---
+
+# 10. CURRENT DEVELOPMENT STATUS
+
+| Component | Status |
+|---|---|
+| TypeScript backend foundation | Completed |
+| Express API | Completed |
+| PostgreSQL connection | Completed |
+| Migration engine | Completed |
+| Initial schema migration | Completed |
+| Payment decision constraint fix | Completed |
+| Database integration tests | Completed |
+| Health tests | Completed |
+| TypeScript typecheck | Passed |
+| Production build command | Passed |
+| Automated tests | 23/23 passed |
+| PayPal Developer account | Accessible |
+| PayPal Sandbox application | Configured |
+| Sandbox credentials | Obtained |
+| PayPal OAuth authentication | Verified |
+| PayPal Orders API | Not implemented yet |
+| PayPal order creation | Not implemented yet |
+| PayPal order capture | Not implemented yet |
+| Payee identity verification | Not implemented yet |
+| Payment decision enforcement with PayPal | Not implemented yet |
+| PayPal webhook processing | Not implemented yet |
+| Frontend payment integration | Not implemented as part of this backend milestone |
+
+---
+
+# 11. NEXT DEVELOPMENT PHASE — MILESTONE 4
+
+## PayPal Payment Orchestration
+
+This is the next major task.
+
+The developer continuing this project should focus on integrating the actual PayPal Orders API into the existing TypeScript backend.
+
+Do not rebuild the backend.
+
+Do not create another database architecture.
+
+Do not replace existing risk scoring or payment decision logic.
+
+Extend the existing system.
+
+## 11.1 Task 1 — PayPal OAuth service
+
+Create a reusable PayPal service that:
+
+- Authenticates using Client ID and Client Secret.
+- Retrieves OAuth access tokens.
+- Caches tokens in memory.
+- Refreshes tokens before expiration.
+- Handles authentication failures.
+- Handles network timeouts.
+- Never exposes credentials or tokens in logs.
+
+Sandbox base URL:
+
+`https://api-m.sandbox.paypal.com`
+
+## 11.2 Task 2 — PayPal Orders API
+
+Implement:
+
+- Create Order.
+- Retrieve Order.
+- Capture Order.
+
+Use PayPal Orders API v2.
+
+Order creation should use server-side validated values.
+
+The frontend must not be trusted to supply arbitrary merchant identities, payment states or risk decisions.
+
+Persist PayPal order references in PostgreSQL.
+
+Implement idempotency to protect against duplicate order creation and capture requests.
+
+## 11.3 Task 3 — Payee identity verification
+
+This is the most important part of Trustora.
+
+Before capture:
+
+1. Retrieve the actual PayPal order.
+2. Inspect the actual payee information returned by PayPal.
+3. Retrieve the expected merchant identity from the trusted application database.
+4. Compare the two identities.
+5. Record the comparison result.
+6. Prevent automatic capture if the identity is inconsistent or cannot be verified safely.
+
+A successful PayPal order creation is not proof that the merchant is legitimate.
+
+## 11.4 Task 4 — Payment decision enforcement
+
+Connect the PayPal workflow to the existing risk assessment and decision system.
+
+Required behavior:
+
+**ALLOW**
+
+- Merchant/payee verification must succeed.
+- The backend may proceed to capture.
+
+**WARN**
+
+- Require the approved explicit acknowledgement flow.
+- Preserve the warning evidence.
+- Do not allow the frontend to silently bypass the warning.
+
+**PAUSE**
+
+- Never call PayPal capture.
+- Persist the payment decision.
+- Return an appropriate response to the frontend.
+
+A merchant/payee mismatch must not be overridden by a user-submitted ALLOW value.
+
+## 11.5 Task 5 — Payment audit
+
+Persist the relevant payment information:
+
+- Checkout session ID.
+- PayPal order ID.
+- Merchant reference.
+- Risk assessment reference.
+- Payment decision.
+- Payee identity verification result.
+- Payment status.
+- Relevant PayPal response identifiers.
+- Timestamps.
+- Audit evidence.
+
+Reuse existing tables wherever possible.
+
+If schema changes are required, create a new sequential migration, such as migration 003.
+
+Never modify migrations 001 or 002 because they have already been applied.
+
+## 11.6 Task 6 — Automated testing
+
+Add tests for:
+
+- OAuth success and failure.
+- Token caching.
+- Token expiration and refresh.
+- PayPal network errors.
+- Order creation.
+- Order retrieval.
+- Capture.
+- Capture failure.
+- Duplicate requests.
+- Payee match.
+- Payee mismatch.
+- Missing payee.
+- ALLOW enforcement.
+- WARN acknowledgement.
+- PAUSE rejection.
+- Database persistence.
+- Payment audit trail.
+
+Mock PayPal API responses for deterministic automated tests.
+
+A controlled Sandbox test should be performed where practical.
+
+Do not use Live payments.
+
+---
+
+# 12. EXPECTED END-TO-END PAYMENT FLOW
+
+The completed backend should follow this sequence:
+
+1. Customer initiates checkout.
+2. Backend receives the checkout request.
+3. Backend identifies the merchant using trusted application data.
+4. Risk assessment runs.
+5. Risk score is calculated.
+6. Backend records ALLOW, WARN or PAUSE.
+7. If PAUSE, the payment cannot proceed to capture.
+8. If ALLOW or an appropriately acknowledged WARN, the backend creates a PayPal order.
+9. Customer approves the PayPal order through the appropriate frontend flow.
+10. Backend retrieves the approved order from PayPal.
+11. Backend inspects actual PayPal payee information.
+12. Backend compares actual and expected merchant identity.
+13. Backend rechecks the payment decision and required conditions.
+14. If the merchant is verified and all conditions are satisfied, the backend captures the order.
+15. Backend records the final payment state and audit evidence.
+16. Frontend displays the verified result.
+
+The backend must remain the final authority for payment capture.
+
+---
+
+# 13. REQUIRED VERIFICATION AFTER MILESTONE 4
+
+After implementation, execute:
+
+```cmd
+npm run typecheck
+npm run build
+npm test
+npm run migrate:status
+```
+
+Also verify:
+
+```cmd
+npm start
+```
+
+Then test:
+
+`GET http://localhost:3000/health`
+
+`GET http://localhost:3000/api/v1/health`
+
+All previous tests must continue passing.
+
+The final report must distinguish between:
+
+- Unit tests using mocks.
+- Database integration tests.
+- Actual PayPal Sandbox API tests.
+- Confirmed Sandbox order captures.
+
+Do not claim that a real payment capture was verified if only mocked tests were executed.
+
+---
+
+# 14. DEVELOPMENT RULES FOR ALL TEAM MEMBERS
+
+These rules must be followed by everyone continuing the project.
+
+1. Read the PRD before implementing new functionality.
+2. Inspect existing files before creating new files.
+3. Use TypeScript for all new application source.
+4. Preserve the existing npm workspace architecture.
+5. Reuse existing database models and contracts.
+6. Create sequential migrations for schema changes.
+7. Never modify an already-applied migration.
+8. Keep all credentials in `.env`.
+9. Keep `.env` out of Git.
+10. Never hardcode payment secrets.
+11. Test all changes locally.
+12. Preserve existing passing tests.
+13. Do not push changes without authorization.
+14. Do not reset or force-push the shared branch.
+15. Document all new endpoints and environment variables.
+16. Do not implement frontend assumptions as backend security controls.
+17. Never let PAUSE reach PayPal capture.
+
+---
+
+# 15. HANDOVER SUMMARY FOR THE NEXT DEVELOPER
+
+Trustora has completed its backend foundation and PostgreSQL integration milestones.
+
+The application is now built with TypeScript, Express and PostgreSQL. It has a working database connection, custom SQL migration engine, checkout and merchant persistence, risk assessment storage, payment decision constraints and automated database integration tests.
+
+The two issues found during database testing have been fixed through:
+
+- Runtime database URL override for deterministic health tests.
+- A new sequential migration widening the payment decision column and restoring its named CHECK constraint.
+
+The completed Milestone 3 verification report confirms 23 passing tests, zero failures and zero skipped tests.
+
+PayPal Developer Dashboard access has been obtained. A Sandbox application has been configured, Sandbox Business and Personal accounts are available, and the Sandbox Client ID and Secret have been added to the local `.env`.
+
+Most importantly, PayPal OAuth authentication has already been tested successfully. The application can exchange its Sandbox credentials for a Bearer access token.
+
+However, the actual PayPal Orders API, payment capture, payee identity verification and backend payment enforcement have not yet been implemented.
+
+**The next developer should start with Milestone 4: PayPal Payment Orchestration.**
+
+The goal is to extend the current backend into a secure payment system that verifies the actual PayPal payment recipient and enforces the existing ALLOW, WARN and PAUSE decisions before capture.
+
+Do not rebuild what is already completed. Continue from the existing branch, preserve the passing tests and implement the next milestone incrementally.
+
+---
+
+**Current project milestone:**
+
+Milestone 1 — Backend Foundation: COMPLETED
+
+Milestone 2 — PostgreSQL Database Foundation: COMPLETED
+
+Milestone 3 — Database Integration and Testing: COMPLETED
+
+PayPal Developer Setup and OAuth Verification: COMPLETED
+
+Milestone 4 — PayPal Payment Orchestration: NEXT
+
+Milestone 5 — Frontend Integration: PENDING
+
+Milestone 6 — End-to-End Demonstration and Final Validation: PENDING
+
+---
+
+# 16. INFRASTRUCTURE, QA AND SECURITY PROGRESS (AAKASH SINGH MUTUM)
+
+Last updated: 2 November 2026
+
+This section records the shared infrastructure, QA and security work for TrustOra. It covers only the infra, tests and CI areas. It does not describe the api, contracts, agent or other areas.
+
+## 16.1 Done (merged to main in PR #3 on 2 November 2026)
+
+- [x] npm workspaces enabled and root scripts added (build, lint, typecheck, test, test:contracts, test:integration, test:sandbox, check:brands)
+- [x] Redundant pretest copy of the contracts package removed now that workspaces link it
+- [x] TypeScript base config, ESLint and Prettier config, .gitattributes (LF line endings)
+- [x] MIT LICENSE, root .env.example (placeholders only, grouped by service)
+- [x] .github/CODEOWNERS (handles are still placeholders, see 16.2) and AGENTS.md (contributor rules)
+- [x] CI workflow with five separate jobs: security (secret scan plus npm audit), build and lint, contracts, integration tests with mocks only, fictional-brand check
+- [x] Separate manual-only sandbox workflow for real PayPal sandbox tests, kept apart from the mock job
+- [x] Fictional-brand guard (scripts/check-brands.mjs and a denylist) and fixture validation script
+- [x] Test fixtures for three fictional stores (genuine, discount, impersonator) with a list of contract mismatches in tests/fixtures/README.md
+- [x] docs/submission-checklist.md and README skeleton sections
+- [x] Placeholder workspaces for the remaining areas so every owner has a place to commit
+
+## 16.2 To do: repo and CI
+
+- [ ] Open the Actions tab, confirm every CI job is green on main, and fix any that are red
+- [ ] Turn on branch protection for main: require the five CI jobs and at least one review
+- [ ] Replace the @TODO placeholders in CODEOWNERS with real GitHub handles and add every teammate as a collaborator
+- [ ] Pin the trufflehog action to a version tag instead of @main
+- [ ] Fill in the repo About section (description, topics) and confirm the MIT license shows there
+- [ ] Add a root-level scan of reference.txt and other root files to the brand check, or confirm manually that they contain no real brand names or secrets
+
+## 16.3 To do: contract and integration
+
+- [ ] Get agreement on shared types that the contracts package does not have yet: InvestigationRequest, Evidence and Verdict
+- [ ] Agree the decision vocabulary (ALLOW/WARN/PAUSE today versus ALLOW/WARN/BLOCK in the other guides) and add the void-authorization path
+- [ ] Confirm orders are created with intent AUTHORIZE and that void exists in the API
+- [ ] Confirm a payee mismatch forces a block regardless of the weighted score
+- [ ] Update the fixtures when the contract changes and keep test:contracts green
+
+## 16.4 To do: deployment and testing
+
+- [ ] Create separate PayPal sandbox business accounts for each demo storefront (genuine, discount, impersonator) so each has a different payee
+- [ ] Add a Render blueprint (web service plus Postgres) and a hosted demo URL
+- [ ] Write the daily demo-run smoke script that replays the three fixtures end to end
+- [ ] Add real sandbox regression tests and keep them in the manual sandbox workflow
+- [ ] Clean-machine setup test (fresh clone, install, test, run) by 10 November
+
+## 16.5 To do: submission (deadline 12 November 2026, 12:00 PM PST, which is 1:30 AM IST on 13 November)
+
+- [ ] README: setup steps, sandbox credentials for judges, mapping to the five judging criteria, tools used and how, note on what was built during the submission period
+- [ ] Confirm demo storefronts, fixtures and video use only fictional brands and logos
+- [ ] Demo video under 3 minutes on YouTube, no third-party trademarks or copyrighted music
+- [ ] Devpost page and final submission one day early, 11 November
