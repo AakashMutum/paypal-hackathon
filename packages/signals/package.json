@@ -9,5 +9,9 @@
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "tsx --test \"tests/**/*.test.ts\""
+  },
+  "dependencies": {
+    "@onkernel/sdk": "^0.139.0",
+    "playwright": "^1.64.1"
   }
 }
