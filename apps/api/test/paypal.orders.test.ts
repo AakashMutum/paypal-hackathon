@@ -35,12 +35,28 @@ beforeEach(() => {
   setCustomOrdersFetch(null);
 });
 
+interface CapturedOrderBody {
+  intent?: string;
+  purchase_units: Array<{
+    reference_id?: string;
+    amount: {
+      currency_code: string;
+      value: string;
+    };
+    payee?: {
+      email_address?: string;
+      merchant_id?: string;
+    };
+    description?: string;
+  }>;
+}
+
 test('createPayPalOrder creates an order with formatted amount and idempotency header', async () => {
-  let capturedBody: any = null;
+  let capturedBody: CapturedOrderBody | null = null;
   let capturedHeaders: Record<string, string> = {};
 
   setCustomOrdersFetch(async (_url, init) => {
-    capturedBody = JSON.parse(String(init?.body));
+    capturedBody = JSON.parse(String(init?.body)) as CapturedOrderBody;
     capturedHeaders = (init?.headers as Record<string, string>) || {};
 
     return new Response(
@@ -77,8 +93,13 @@ test('createPayPalOrder creates an order with formatted amount and idempotency h
   assert.equal(order.status, 'CREATED');
   assert.equal(capturedHeaders['PayPal-Request-Id'], 'req-idempotency-key-1');
   assert.equal(capturedHeaders.Authorization, 'Bearer valid_bearer_token');
-  assert.equal(capturedBody.purchase_units[0].amount.value, '49.99');
-  assert.equal(capturedBody.purchase_units[0].amount.currency_code, 'USD');
+  const getCapturedBody = (): CapturedOrderBody => {
+    if (!capturedBody) throw new Error('Body not captured');
+    return capturedBody;
+  };
+  const body = getCapturedBody();
+  assert.equal(body.purchase_units[0].amount.value, '49.99');
+  assert.equal(body.purchase_units[0].amount.currency_code, 'USD');
 });
 
 test('createPayPalOrder validates amount and currency strictly', async () => {
