@@ -1,10 +1,10 @@
 {
-  "name": "@TRUSTORA/api",
+  "name": "@checkout-guardian/api",
   "version": "0.1.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "pretest": "node -e \"import('node:fs').then(fs => { if (!fs.existsSync('node_modules/@TRUSTORA/contracts')) fs.cpSync('../../packages/contracts', 'node_modules/@TRUSTORA/contracts', { recursive: true }); })\"",
+    "pretest": "node -e \"import('node:fs').then(fs => { if (!fs.existsSync('node_modules/@checkout-guardian/contracts')) fs.cpSync('../../packages/contracts', 'node_modules/@checkout-guardian/contracts', { recursive: true }); })\"",
     "dev": "tsx watch src/server.ts",
     "build": "tsc && node -e \"import('node:fs').then(fs => { fs.cpSync('src/database/migrations', 'dist/src/database/migrations', { recursive: true }); })\"",
     "typecheck": "tsc --noEmit",
@@ -14,7 +14,7 @@
     "migrate:status": "tsx src/database/migrate.ts --status"
   },
   "dependencies": {
-    "@TRUSTORA/contracts": "*",
+    "@checkout-guardian/contracts": "*",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",

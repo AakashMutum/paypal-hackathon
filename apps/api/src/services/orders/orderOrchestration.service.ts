@@ -11,7 +11,7 @@ import {
   type DecisionType,
   type SessionStatusType,
   type ActionTakenType,
-} from '@TRUSTORA/contracts';
+} from '@checkout-guardian/contracts';
 import { query, getPool } from '../../database/connection.js';
 import {
   createPayPalOrder,
@@ -252,6 +252,7 @@ export async function createCheckoutOrder(req: CreateOrderRequest): Promise<Crea
 /**
  * Finds checkout session by either TRUSTORA sessionId or PayPal orderId.
  * Falls back to the in-memory store when no database is configured.
+ * Finds checkout session by either Checkout Guardian sessionId or PayPal orderId.
  */
 export async function findCheckoutSession(orderOrSessionId: string): Promise<Record<string, any> | null> {
   const pool = getPool();
@@ -402,8 +403,8 @@ export async function evaluateOrderRisk(orderOrSessionId: string): Promise<Order
       riskResult.decision === DecisionTypes.ALLOW
         ? ActionTaken.PROCEED
         : riskResult.decision === DecisionTypes.WARN
-          ? ActionTaken.WARN_DISPLAYED
-          : ActionTaken.CAPTURE_PAUSED,
+        ? ActionTaken.WARN_DISPLAYED
+        : ActionTaken.CAPTURE_PAUSED,
     overallScore: riskResult.overallScore,
     scores: riskResult.scores,
     weights: riskResult.weights,

@@ -1,5 +1,5 @@
 -- Migration: 001_initial_schema.sql
--- Description: Creates initial schema for TRUSTORA:
+-- Description: Creates initial schema for Checkout Guardian:
 --              merchant_records, checkout_sessions, risk_assessments, payment_decisions
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
