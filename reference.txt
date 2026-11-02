@@ -1169,3 +1169,44 @@ npm run dev:web
 - **Check 3: `fictional brands check`** -> `npm run check:brands` -> **PASS** (299 files scanned against 38 denylisted real brands, 0 violations).
 - **Check 4: `integration tests (mocks only, no network, no credentials)`** -> `npm run test:integration` with empty credentials and no external DB -> **PASS** (34/34 tests pass with mock isolation).
 - **Check 5: `security (secret scan and audit)`** -> Secret sanitization verified (zero exposed secrets in code or diffs) & `npm audit --audit-level=critical` -> **PASS** (0 critical vulnerabilities).
+---
+
+# 18. INTEGRATION PLAN FOR THE WALKING SKELETON (PROPOSED, PENDING REPLIES)
+
+Proposed on 2026-11-03. Teammates reply "ok" or object by 9:00 AM; after that this plan stands. Update this section as decisions are made.
+
+## 18.1 Where things stand
+
+- main has docs/integration-gaps.md, which holds the endpoint, vocabulary and evidence tables for every area.
+- createLocalSignalsPort is in packages/signals. It gives the agent the six signals methods in process, in mock or live mode.
+- The memory store and the real-agent evaluation are in packages/memory and packages/eval.
+- The lock file changed. Run git pull and npm ci before anything else.
+
+## 18.2 Decisions proposed
+
+- a. One decision word everywhere: PAUSE. Gargi changes BLOCK to PAUSE in apps/web.
+- b. Pranav documents the exact agent call (function, config, which signals and memory to pass) in packages/agent/README.md by 11:00. Shravan adds POST /api/v1/investigations in apps/api that calls the agent, using createLocalSignalsPort in mock mode for now.
+- c. Shravan adds POST /api/v1/orders/:id/cancel, which voids the PayPal authorization.
+- d. Gargi sends the exact list of API calls the frontend needs by 11:00. Shravan serves only those; everything else stays in mock mode.
+- e. One memory layer: the agent uses packages/memory through asAgentMemoryPort. No new memory code elsewhere. Anmol and Pranav to confirm.
+
+## 18.3 Goal
+
+- [ ] One fictional store goes end to end (frontend, API, agent, decision, capture or void) by 6 PM on 2026-11-03.
+
+## 18.4 Fallback
+
+- If the database move slips, run the frontend in mock mode and the API without a database.
+
+## 18.5 Open items
+
+- [ ] Kernel and Channel3 clients for the signals port
+- [ ] The failing agent tests are being fixed (branch fix/agent-test-timers)
+- [ ] Render deployment
+- [ ] The package tests CI job
+
+## 18.6 Database rules
+
+- No dumps or connection strings in the repo or in chat.
+- The schema comes from the migrations in apps/api/src/database/migrations.
+- Any seed data is fictional only.
