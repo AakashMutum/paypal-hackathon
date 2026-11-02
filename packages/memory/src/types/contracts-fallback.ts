@@ -2,7 +2,7 @@
  * @file contracts-fallback.ts
  * @description Local fallback types for contracts not yet exported by @checkout-guardian/contracts.
  *
- * NOTE: Person 5 owns only /packages/memory and /packages/eval. Per repository guidelines,
+ * NOTE: the memory and eval areas own only /packages/memory and /packages/eval. Per repository guidelines,
  * when shared types (Evidence, Verdict, Decision, DecisionAudit) are missing from
  * @checkout-guardian/contracts, temporary local types are defined in a clearly marked file.
  */
