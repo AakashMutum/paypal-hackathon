@@ -3,7 +3,7 @@ import { Globe, BadgeCheck, Flag, ShieldAlert, ScanLine, FileSearch, Zap, Buildi
 import { useInvestigations } from '../hooks/useOrderPolling';
 import { useApp } from '../context/OrderStateContext';
 import { Pill, RiskBadge, Switch } from '../components/ui';
-import { cn, money, telemetry } from '../lib/format';
+import { cn, telemetry } from '../lib/format';
 
 export default function Dashboard() {
   const { list } = useInvestigations(3000);

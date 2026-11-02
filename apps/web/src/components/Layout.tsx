@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, NavLink, Outlet } from 'react-router-dom';
 import { Bell, LayoutDashboard, ScanLine, Radar, ShieldCheck, History, User, Store, Gauge, BadgeCheck, RotateCcw } from 'lucide-react';
 import { cn, telemetry } from '../lib/format';
-import { Modal, Pill } from './ui';
+import { Modal } from './ui';
 import { useInvestigations } from '../hooks/useOrderPolling';
 import { api } from '../api/apiClient';
 import { useApp } from '../context/OrderStateContext';

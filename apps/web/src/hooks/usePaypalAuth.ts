@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-declare global { interface Window { paypal?: any } }
+declare global { interface Window { paypal?: unknown } }
 const CLIENT = import.meta.env.VITE_PAYPAL_CLIENT_ID as string | undefined;
 export function usePaypalAuth() {
   const [ready, setReady] = useState(!CLIENT);
