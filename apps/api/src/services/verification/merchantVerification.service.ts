@@ -1,4 +1,4 @@
-import type { MerchantVerificationSummary } from '@checkout-guardian/contracts';
+import type { MerchantVerificationSummary } from '@TRUSTORA/contracts';
 import type { PayPalOrderResponse, PayPalPayee } from '../paypal/paypalOrders.service.js';
 
 export interface ExpectedMerchant {
@@ -71,7 +71,7 @@ export function verifyMerchantIdentity(
 
   // Case 2: Storefront has no expected merchant record
   if (!expectedMerchant) {
-    reasons.push('Storefront domain has no registered merchant identity in Checkout Guardian');
+    reasons.push('Storefront domain has no registered merchant identity in TRUSTORA');
     return {
       isMatch: false,
       matchStatus: 'UNVERIFIED_MERCHANT',
@@ -97,7 +97,7 @@ export function verifyMerchantIdentity(
 
   // Flag confirmed fraud immediately
   if (verificationStatus === 'CONFIRMED_FRAUD') {
-    reasons.push('Merchant identity is marked as CONFIRMED_FRAUD in Checkout Guardian records');
+    reasons.push('Merchant identity is marked as CONFIRMED_FRAUD in TRUSTORA records');
     return {
       isMatch: false,
       matchStatus: 'MISMATCH',

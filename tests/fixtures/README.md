@@ -11,7 +11,7 @@ All brands and domains are invented; domains use the `.example` TLD.
 
 Each file has `description`, `request`, `evidence` and `verdict`.
 
-Field names come from `@checkout-guardian/contracts` as it exists today:
+Field names come from `@TRUSTORA/contracts` as it exists today:
 `request` follows `CreateOrderRequest`, and `verdict` follows `OrderDecisionResponse`
 (with `evidence` omitted from the verdict, because it is supplied separately here).
 Scores use the contract weights (domain 0.30, merchant consistency 0.40, pricing 0.20, ssl 0.10)

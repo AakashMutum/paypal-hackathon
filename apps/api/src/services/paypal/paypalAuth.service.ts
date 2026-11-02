@@ -63,7 +63,7 @@ export async function getAccessToken(options: { forceRefresh?: boolean } = {}): 
   const mode = env.paypalMode.toLowerCase().trim();
   if (mode !== 'sandbox') {
     throw new PayPalAuthError(
-      `Invalid PayPal mode: "${mode}". Checkout Guardian enforces sandbox mode only.`,
+      `Invalid PayPal mode: "${mode}". TRUSTORA enforces sandbox mode only.`,
       'INVALID_MODE'
     );
   }

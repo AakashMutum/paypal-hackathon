@@ -1,2 +1,52 @@
 { "name": "checkout-guardian", "private": true, "workspaces": ["apps/*", "packages/*"],
   "scripts": { "dev": "npm run dev -w apps/web", "build": "npm run build -w apps/web" } }
+{
+  "name": "TRUSTORA",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "apps/api",
+    "apps/mcp",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "tsx watch apps/api/src/server.ts",
+    "build": "npm run build -w @TRUSTORA/contracts && npm run build --workspaces --if-present",
+    "typecheck": "tsc --noEmit",
+    "start": "node apps/api/dist/src/server.js",
+    "test": "tsx --test apps/api/test/database.config.test.ts apps/api/test/database.health.test.ts apps/api/test/database.migration.test.ts apps/api/test/database.integration.test.ts apps/api/test/health.test.ts apps/api/test/paypal.auth.test.ts apps/api/test/paypal.orders.test.ts apps/api/test/merchant.verification.test.ts apps/api/test/risk.enforcement.test.ts apps/api/test/order.orchestration.test.ts apps/api/test/paypal.sandbox.live.test.ts",
+    "migrate": "tsx apps/api/src/database/migrate.ts",
+    "migrate:status": "tsx apps/api/src/database/migrate.ts --status",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test:contracts": "npm run typecheck -w @TRUSTORA/contracts && node scripts/validate-fixtures.mjs",
+    "test:integration": "tsx --test apps/api/test/health.test.ts apps/api/test/paypal.auth.test.ts apps/api/test/paypal.orders.test.ts apps/api/test/merchant.verification.test.ts apps/api/test/risk.enforcement.test.ts apps/api/test/order.orchestration.test.ts",
+    "test:sandbox": "tsx --test apps/api/test/paypal.sandbox.live.test.ts",
+    "check:brands": "node scripts/check-brands.mjs"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "express-rate-limit": "^7.5.0",
+    "helmet": "^8.0.0",
+    "pg": "^8.13.1"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.10.2",
+    "@types/pg": "^8.11.10",
+    "@types/supertest": "^6.0.2",
+    "supertest": "^7.0.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "@eslint/js": "^9.17.0",
+    "eslint": "^9.17.0",
+    "globals": "^15.14.0",
+    "prettier": "^3.4.2",
+    "typescript-eslint": "^8.19.0"
+  }
+}

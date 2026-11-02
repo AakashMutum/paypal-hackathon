@@ -5,7 +5,7 @@ import { closeDatabase } from './database/health.js';
 
 const app = createApp();
 const server: Server = app.listen(env.port, env.host, () => {
-  console.info(`Checkout Guardian API listening on ${env.host}:${env.port}`);
+  console.info(`TRUSTORA API listening on ${env.host}:${env.port}`);
 });
 
 async function shutdown(signal: string): Promise<void> {
