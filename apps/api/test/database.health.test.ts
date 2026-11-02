@@ -5,7 +5,7 @@ import type pg from 'pg';
 import { checkDatabase } from '../src/database/health.js';
 import { setPool } from '../src/database/connection.js';
 import { createApp } from '../src/app.js';
-import type { HealthData } from '@checkout-guardian/contracts';
+import type { HealthData } from '@TRUSTORA/contracts';
 
 test('checkDatabase returns not_configured when no pool is available', async () => {
   const result = await checkDatabase(null);
@@ -20,7 +20,7 @@ test('checkDatabase returns healthy when connection query succeeds', async () =>
           assert.equal(sql, 'SELECT 1 AS health_check');
           return { rows: [{ health_check: 1 }] } as unknown as pg.QueryResult;
         },
-        release() {},
+        release() { },
       };
     },
   } as unknown as pg.Pool;

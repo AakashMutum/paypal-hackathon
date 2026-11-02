@@ -117,7 +117,7 @@ export async function createPayPalOrder(params: CreateOrderParams): Promise<PayP
       currency_code: currency,
       value: formattedAmount,
     },
-    description: params.description || 'Checkout Guardian Protected Order',
+    description: params.description || 'TRUSTORA Protected Order',
   };
 
   if (params.payeeEmail || params.payeeMerchantId) {
@@ -132,7 +132,7 @@ export async function createPayPalOrder(params: CreateOrderParams): Promise<PayP
     purchase_units: [purchaseUnit],
     application_context: {
       user_action: 'PAY_NOW',
-      brand_name: 'Checkout Guardian Storefront',
+      brand_name: 'TRUSTORA Storefront',
     },
   };
 

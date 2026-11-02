@@ -4,7 +4,7 @@ import request from 'supertest';
 import { createApp } from '../src/app.js';
 import { setDatabaseUrl } from '../src/config/env.js';
 import { setPool, closeDatabase } from '../src/database/connection.js';
-import type { HealthData, ApiErrorDetail } from '@checkout-guardian/contracts';
+import type { HealthData, ApiErrorDetail } from '@TRUSTORA/contracts';
 
 after(async () => {
   await closeDatabase();
@@ -43,7 +43,7 @@ test('GET /api/v1/health exposes the same versioned health contract', async () =
   const response = await request(app).get('/api/v1/health');
   assert.equal(response.status, 200);
   const data = response.body.data as HealthData;
-  assert.equal(data.service, 'checkout-guardian-api');
+  assert.equal(data.service, 'TRUSTORA-api');
 });
 
 test('unknown routes return a safe structured error', async () => {
