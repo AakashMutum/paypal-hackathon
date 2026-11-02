@@ -22,7 +22,7 @@ export interface EnvConfig {
 
 const rawPaypalMode = (process.env.PAYPAL_MODE || 'sandbox').toLowerCase().trim();
 if (rawPaypalMode !== 'sandbox') {
-  throw new Error(`Invalid PAYPAL_MODE: "${rawPaypalMode}". Checkout Guardian requires PAYPAL_MODE=sandbox and will not silently fall back to live mode.`);
+  throw new Error(`Invalid PAYPAL_MODE: "${rawPaypalMode}". TRUSTORA requires PAYPAL_MODE=sandbox and will not silently fall back to live mode.`);
 }
 
 export const env: EnvConfig = {

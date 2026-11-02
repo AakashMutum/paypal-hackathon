@@ -1,10 +1,10 @@
-# Checkout Guardian: contributor guide
+# TRUSTORA: contributor guide
 
 This file is for everyone working in the repo, and for any coding tool they use.
 
 ## What this project does
 
-Checkout Guardian authorizes a PayPal order, investigates the merchant behind it, then either
+TRUSTORA authorizes a PayPal order, investigates the merchant behind it, then either
 captures the payment or voids it, depending on what the investigation finds.
 
 ## Folder ownership
@@ -27,7 +27,7 @@ Reviewers for each area are listed in `.github/CODEOWNERS`.
 
 ## Rules
 
-1. **One source of truth for types.** All shared types come from `@checkout-guardian/contracts`.
+1. **One source of truth for types.** All shared types come from `@TRUSTORA/contracts`.
    Never copy or redefine them in another package. If a type is missing, add it to contracts.
 2. **Only `apps/api` may capture or void.** No other package calls PayPal capture or void.
 3. **Small pull requests.** Keep PRs under about 300 changed lines. A human reviewer must run

@@ -1,6 +1,6 @@
-# Checkout Guardian
+# TRUSTORA
 
-Checkout Guardian authorizes a PayPal order, investigates the merchant, then captures or voids the payment.
+TRUSTORA authorizes a PayPal order, investigates the merchant, then captures or voids the payment.
 
 ## Quick start
 

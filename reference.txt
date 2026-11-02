@@ -4,7 +4,7 @@
 **Project:** Trustora  
 **Hackathon:** PayPal AI Hackathon 2026  
 **Repository:** https://github.com/AakashMutum/paypal-hackathon  
-**Local project directory:** `C:\Workspaces\checkout-guardian`  
+**Local project directory:** `C:\Workspaces\TRUSTORA`  
 **Current development branch:** `feature/person-1-backend-paypal`  
 **Current status:** Milestone 3 completed; Milestone 4 (PayPal Payment Integration) is the next development phase.
 
@@ -191,8 +191,8 @@ The project uses npm workspaces.
 
 Workspace package names were corrected to avoid duplicate package identities:
 
-- API: `@checkout-guardian/api`
-- Contracts: `@checkout-guardian/contracts`
+- API: `@TRUSTORA/api`
+- Contracts: `@TRUSTORA/contracts`
 
 The backend foundation includes:
 
@@ -565,7 +565,7 @@ Before making changes, the next developer must inspect the actual current Git st
 Run:
 
 ```cmd
-cd /d C:\Workspaces\checkout-guardian
+cd /d C:\Workspaces\TRUSTORA
 
 git branch --show-current
 

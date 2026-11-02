@@ -5,7 +5,7 @@ import {
   type DecisionType,
   type RiskScores,
   type RiskWeightsApplied,
-} from '@checkout-guardian/contracts';
+} from '@TRUSTORA/contracts';
 import type { VerificationResult } from '../verification/merchantVerification.service.js';
 
 export interface ComponentScoresInput {

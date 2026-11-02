@@ -1,8 +1,8 @@
 {
-  "name": "@checkout-guardian/contracts",
+  "name": "@TRUSTORA/contracts",
   "version": "0.1.0",
   "private": true,
-  "description": "Checkout Guardian shared API contracts",
+  "description": "TRUSTORA shared API contracts",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

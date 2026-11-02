@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction } from 'express';
-import { errorResponse } from '@checkout-guardian/contracts';
+import { errorResponse } from '@TRUSTORA/contracts';
 
 export interface HttpError extends Error {
   status?: number;
