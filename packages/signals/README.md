@@ -90,3 +90,74 @@ matched by the host of `request.storefrontUrl`. The fixture shape differs from t
 - Channel3 lookup: compare order prices against catalogue prices and emit price evidence.
 - Brand verification: compare the claimed brand with what the page and catalogue show.
 - Binding polish: agree the final file name, publish the format for merchants, and add caching.
+
+## Agent port
+
+`createLocalSignalsPort(options)` returns an object with the six methods of the investigation
+agent's `SignalsPort` (`packages/agent/src/ports.ts`), so the agent can use real signals in
+process instead of the HTTP signals service.
+
+```ts
+import { createLocalSignalsPort } from '@checkout-guardian/signals';
+
+const signals = createLocalSignalsPort({
+  mode: 'live', // or 'mock' to replay tests/fixtures/*.json
+  knownBrandDomains: ['brand-example.example'],
+  // kernel: yourKernelClient,    // interface only: getPageClaims(url, opts)
+  // channel3: yourChannel3Client // interface only: searchOffers(query, opts)
+});
+```
+
+Options: `mode`, `fetchImpl`, `lookupImpl`, `kernel`, `channel3`, `knownBrandDomains`,
+`claimedBrand`, `now`, `tlsProbe`, `fixturesDir`. No method throws on a failed lookup and none
+returns a decision. A failed lookup becomes `TOOL_UNAVAILABLE` evidence (severity `info`,
+`deterministic: false`) or an empty result. Page text is untrusted data: it is extracted and
+capped, never followed.
+
+### Agent port mapping
+
+What the agent scores (from `packages/agent/src/scoring/pointsFor.ts`, `scoring/rules.ts` and
+the recorded scenarios in `packages/agent/src/fixtures/scenario-*.ts`) and what this port emits.
+Severities are lowercase (`info`, `low`, `medium`, `high`).
+
+| Method | Agent evidence type | Source | Data fields the agent reads | Severity produced | Hard fail |
+| --- | --- | --- | --- | --- | --- |
+| `getDomainReport` | `DOMAIN_AGE` | `rdap` | `ageDays` | under 7 days high, under 30 medium, under 90 low, else info | no |
+| `getDomainReport` | `TLS_INVALID` | `tls` | none read; port adds `expired`, `daysToExpiry`, `issuer`, `reason` | high if expired, medium if untrusted | no |
+| `getDomainReport` | `LOOKALIKE_DOMAIN` | `rule` | `matchesKnownBrand`, `brandId` | high | no (the agent derives a hard rule from it) |
+| `checkPayeeBinding` | `PAYEE_BINDING` | `kernel` | `status` (`MATCH`, `MISMATCH`, `NO_BINDING`, `UNKNOWN_MERCHANT`), `expectedMerchantId`, `actualMerchantId`, `linkedBrandIds` | match info, no binding medium, mismatch high | yes on `MISMATCH` |
+| `getPriceReport` | `PRICE_DEVIATION` | `channel3` | `discountPct`, `price`, `medianPrice`, `offerCount` | 90 or more high, 70 or more medium, 40 or more low, else info | no |
+| `getPriceReport` | `PRICE_UNKNOWN` | `channel3` | `reason` | info | no |
+| any | `TOOL_UNAVAILABLE` | the failing tool's source | `tool`, `reason` | info | no |
+
+Notes:
+
+- Evidence is `deterministic: true` except `TOOL_UNAVAILABLE`. The agent ignores model-written
+  evidence for hard rules, so only deterministic checks are marked deterministic.
+- The agent's rules give a payee binding `MISMATCH` a floor of 75 and a `LOOKALIKE_DOMAIN` with
+  `matchesKnownBrand` a floor of 75 when the payee is not linked to the brand. This package only
+  reports the evidence; the agent decides.
+- `PAYEE_BINDING` comes from the merchant's published binding file (`BINDING_PATH`). The agent's
+  own recorded scenarios label that source `registry`; this port uses `kernel` because the data
+  is fetched from the merchant's site.
+- The lookalike check compares the merchant's registrable domain with `knownBrandDomains` (near
+  miss, or the brand's name as a whole word in a different domain) and, when only a brand name is
+  known, flags near misses of that name. A domain equal to a known brand domain never counts.
+  The brand name comes from `claimedBrand` or from the last `getPageClaims` for that domain.
+- `getPageClaims` uses the injected `kernel` client if present. Otherwise it makes a plain GET
+  through `assertSafeUrl` with a size cap, the call's `timeoutMs`, the call's `AbortSignal`, and
+  every redirect target re-checked. It returns title, site name, emails, phones, address text,
+  linked domains, visible text and hidden text (`display:none`, `visibility:hidden`, `hidden`,
+  `aria-hidden`, HTML comments).
+- `fetchPageSection` tries the usual paths for each hint (about, contact, returns, terms,
+  privacy, shipping) and returns `{ found: false }` when none loads.
+- Without a `channel3` client, `getPriceReport` returns `PRICE_UNKNOWN` and `compareOffers`
+  returns an empty `OfferSummary`. No keys are read and no request is made.
+- Mock mode maps `tests/fixtures/*.json` kinds to agent types: `domain` to `DOMAIN_AGE` (age
+  parsed from the sentence) and `LOOKALIKE_DOMAIN`, `ssl` to `TLS_INVALID` when high severity,
+  `merchant_identity` to `PAYEE_BINDING` (low is `MATCH`, medium is `NO_BINDING`, high is
+  `MISMATCH`), `pricing` to `PRICE_DEVIATION` (`discountPct` parsed from the sentence).
+  The fixture verdict is never read.
+- `src/agentPort/types.ts` holds local mirrors of the agent's types. A contract test loads
+  `packages/agent/src/fixtures/scenario-*.ts` and checks the port uses only type names those
+  scenarios use.

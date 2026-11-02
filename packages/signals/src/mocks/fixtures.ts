@@ -46,9 +46,10 @@ export function mapFixtureEvidence(item: unknown, index: number): Evidence {
   });
 }
 
-interface Fixture {
+export interface Fixture {
   storefrontHost: string;
   evidence: unknown[];
+  request: Record<string, unknown>;
 }
 
 export function loadFixtures(dir: string = defaultFixturesDir): Fixture[] {
@@ -61,7 +62,11 @@ export function loadFixtures(dir: string = defaultFixturesDir): Fixture[] {
       };
       const url = data.request?.storefrontUrl;
       if (typeof url !== 'string' || !Array.isArray(data.evidence)) continue;
-      fixtures.push({ storefrontHost: hostnameOf(url), evidence: data.evidence });
+      fixtures.push({
+        storefrontHost: hostnameOf(url),
+        evidence: data.evidence,
+        request: data.request as Record<string, unknown>,
+      });
     } catch {
       // Skip unreadable fixtures; the collector reports MOCK_NO_FIXTURE for the request.
     }

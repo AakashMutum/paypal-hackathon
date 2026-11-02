@@ -39,6 +39,8 @@ export interface SignalCollectorOptions {
   fetchImpl?: typeof fetch;
   /** Inject a DNS lookup returning the addresses of a hostname (tests). */
   lookupImpl?: (hostname: string) => Promise<string[]>;
+  /** Caller cancellation. Combined with the timeout. */
+  signal?: AbortSignal;
 }
 
 export interface ISignalCollector {
