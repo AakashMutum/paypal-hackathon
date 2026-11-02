@@ -7,6 +7,8 @@ import { requestLogger } from './middleware/requestLogger.js';
 import { errorHandler, notFoundHandler } from './middleware/errors.js';
 import { healthRouter } from './routes/health.routes.js';
 import { orderRouter } from './routes/order.routes.js';
+import { frontendApiRouter } from './routes/frontendApi.routes.js';
+import { agentBridgeRouter } from './routes/agentBridge.routes.js';
 import { getHealth } from './controllers/health.controller.js';
 
 export function createApp(): Application {
@@ -27,6 +29,8 @@ export function createApp(): Application {
   app.get('/health', getHealth);
   app.use('/api/v1/health', healthRouter);
   app.use('/api/v1/orders', orderRouter);
+  app.use('/api/v1', agentBridgeRouter);
+  app.use('/api', frontendApiRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

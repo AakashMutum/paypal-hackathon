@@ -71,6 +71,7 @@ export interface CreateOrderParams {
   requestId?: string;
   payeeEmail?: string;
   payeeMerchantId?: string;
+  intent?: 'CAPTURE' | 'AUTHORIZE';
 }
 
 type FetchFn = typeof fetch;
@@ -128,7 +129,7 @@ export async function createPayPalOrder(params: CreateOrderParams): Promise<PayP
   }
 
   const payload = {
-    intent: 'CAPTURE',
+    intent: params.intent || 'CAPTURE',
     purchase_units: [purchaseUnit],
     application_context: {
       user_action: 'PAY_NOW',
@@ -305,5 +306,125 @@ export async function capturePayPalOrder(orderId: string, requestId?: string): P
   }
 
   return (await response.json()) as PayPalOrderResponse;
+}
+
+/**
+ * Authorizes payment for an approved PayPal order via Orders API v2.
+ */
+export async function authorizePayPalOrder(orderId: string, requestId?: string): Promise<PayPalOrderResponse> {
+  if (!orderId || !orderId.trim()) {
+    throw new PayPalOrderError('Valid PayPal order ID is required for authorization', 'VALIDATION_ERROR', 400);
+  }
+
+  const token = await getAccessToken();
+  const activeFetch = customFetch || fetch;
+  const url = `${env.paypalBaseUrl}/v2/checkout/orders/${encodeURIComponent(orderId.trim())}/authorize`;
+
+  const headers: Record<string, string> = {
+    Authorization: `Bearer ${token}`,
+    'Content-Type': 'application/json',
+    Accept: 'application/json',
+  };
+
+  if (requestId) {
+    headers['PayPal-Request-Id'] = requestId;
+  }
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), env.paypalTimeoutMs);
+
+  let response: Response;
+  try {
+    response = await activeFetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({}),
+      signal: controller.signal,
+    });
+  } catch (error: unknown) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new PayPalOrderError(`PayPal Authorize Order timed out after ${env.paypalTimeoutMs}ms`, 'TIMEOUT');
+    }
+    const message = error instanceof Error ? error.message : 'Network request failed';
+    throw new PayPalOrderError(`PayPal Authorize Order network failure: ${message}`, 'NETWORK_ERROR');
+  } finally {
+    clearTimeout(timeoutId);
+  }
+
+  if (!response.ok) {
+    let errorJson: { message?: string } = {};
+    try {
+      errorJson = (await response.json()) as typeof errorJson;
+    } catch {
+      // ignore
+    }
+    const message = errorJson.message || `PayPal authorization failed with status ${response.status}`;
+    throw new PayPalOrderError(message, 'API_ERROR', response.status);
+  }
+
+  return (await response.json()) as PayPalOrderResponse;
+}
+
+/**
+ * Voids an authorized payment on PayPal via Payments API v2.
+ */
+export async function voidPayPalAuthorization(
+  authorizationId: string,
+  requestId?: string
+): Promise<{ id: string; status: string }> {
+  if (!authorizationId || !authorizationId.trim()) {
+    throw new PayPalOrderError('Valid authorization ID is required to void', 'VALIDATION_ERROR', 400);
+  }
+
+  const token = await getAccessToken();
+  const activeFetch = customFetch || fetch;
+  const url = `${env.paypalBaseUrl}/v2/payments/authorizations/${encodeURIComponent(authorizationId.trim())}/void`;
+
+  const headers: Record<string, string> = {
+    Authorization: `Bearer ${token}`,
+    'Content-Type': 'application/json',
+    Accept: 'application/json',
+  };
+
+  if (requestId) {
+    headers['PayPal-Request-Id'] = requestId;
+  }
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), env.paypalTimeoutMs);
+
+  let response: Response;
+  try {
+    response = await activeFetch(url, {
+      method: 'POST',
+      headers,
+      signal: controller.signal,
+    });
+  } catch (error: unknown) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new PayPalOrderError(`PayPal Void Authorization timed out after ${env.paypalTimeoutMs}ms`, 'TIMEOUT');
+    }
+    const message = error instanceof Error ? error.message : 'Network request failed';
+    throw new PayPalOrderError(`PayPal Void Authorization network failure: ${message}`, 'NETWORK_ERROR');
+  } finally {
+    clearTimeout(timeoutId);
+  }
+
+  if (response.status === 204) {
+    return { id: authorizationId, status: 'VOIDED' };
+  }
+
+  if (!response.ok) {
+    let errorJson: { message?: string } = {};
+    try {
+      errorJson = (await response.json()) as typeof errorJson;
+    } catch {
+      // ignore
+    }
+    const message = errorJson.message || `PayPal void failed with status ${response.status}`;
+    throw new PayPalOrderError(message, 'API_ERROR', response.status);
+  }
+
+  return (await response.json()) as { id: string; status: string };
 }
 
