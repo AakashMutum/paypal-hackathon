@@ -1,7 +1,6 @@
 import { createServer } from 'node:http';
 import { pathToFileURL } from 'node:url';
 
-import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 
