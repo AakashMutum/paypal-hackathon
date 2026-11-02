@@ -8,7 +8,6 @@
     "packages/*"
   ],
   "scripts": {
-    "pretest": "node -e \"import('node:fs').then(fs => { fs.cpSync('packages/contracts', 'node_modules/@checkout-guardian/contracts', { recursive: true }); if (fs.existsSync('apps/api/node_modules')) fs.cpSync('packages/contracts', 'apps/api/node_modules/@checkout-guardian/contracts', { recursive: true }); })\"",
     "dev": "tsx watch apps/api/src/server.ts",
     "build": "npm run build -w @checkout-guardian/contracts && npm run build --workspaces --if-present",
     "typecheck": "tsc --noEmit",
