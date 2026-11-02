@@ -64,3 +64,12 @@ export async function gatherAllSignals(
   });
   return evidence;
 }
+
+export { createLocalSignalsPort, detectLookalike } from './agentPort/index.js';
+export type {
+  AgentEvidence,
+  AgentSignalsPort,
+  Channel3Client,
+  KernelClient,
+  LocalSignalsPortOptions,
+} from './agentPort/index.js';
