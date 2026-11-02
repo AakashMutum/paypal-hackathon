@@ -40,6 +40,7 @@ export class RdapCollector implements ISignalCollector {
 
     const res = await fetchWithTimeout(fetchImpl, url, options.timeoutMs ?? RDAP_TIMEOUT_MS, {
       headers: { accept: 'application/rdap+json, application/json' },
+      signal: options.signal,
     });
 
     if (!res.ok) {

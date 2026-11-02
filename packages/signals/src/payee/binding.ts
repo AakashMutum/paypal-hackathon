@@ -53,6 +53,7 @@ export class PayeeBindingCollector implements ISignalCollector {
       const res = await fetchWithTimeout(fetchImpl, url, options.timeoutMs ?? BINDING_TIMEOUT_MS, {
         redirect: 'manual',
         headers: { accept: 'application/json' },
+        signal: options.signal,
       });
       status = res.status;
       if (res.ok) text = await readLimitedText(res);

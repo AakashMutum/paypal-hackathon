@@ -56,7 +56,7 @@ function nameOf(field: unknown): string {
   return 'unknown';
 }
 
-function readCertificate(address: string, servername: string, timeoutMs: number): Promise<CertificateInfo> {
+export function readCertificate(address: string, servername: string, timeoutMs: number): Promise<CertificateInfo> {
   return new Promise((resolve, reject) => {
     // Connect to an address that passed the safety check, and verify the certificate for the name.
     const socket = tls.connect({ host: address, port: 443, servername, rejectUnauthorized: false });

@@ -39,7 +39,9 @@ export function fetchWithTimeout(
   timeoutMs: number,
   init: RequestInit = {},
 ): Promise<Response> {
-  return fetchImpl(url, { ...init, signal: AbortSignal.timeout(timeoutMs) });
+  const timeout = AbortSignal.timeout(timeoutMs);
+  const signal = init.signal ? AbortSignal.any([init.signal, timeout]) : timeout;
+  return fetchImpl(url, { ...init, signal });
 }
 
 /** Reads at most maxBytes of the body as text. Website content is untrusted and may be huge. */
