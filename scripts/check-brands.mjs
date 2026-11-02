@@ -4,7 +4,8 @@ import { fileURLToPath } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const denylistPath = join(root, 'scripts', 'brand-denylist.txt');
-// Directories and single files to scan. PDFs and reference.txt are deliberately not listed.
+// Directories and single files to scan. PDFs, reference.txt and package-lock.json are
+// deliberately not listed, and node_modules is always skipped.
 const scanPaths = [
   'demo-sites',
   'tests/fixtures',
@@ -13,6 +14,11 @@ const scanPaths = [
   'apps/web/index.html',
   'README.md',
   'AGENTS.md',
+  // A * matches any one directory name.
+  'packages/*/src',
+  'packages/*/tests',
+  'packages/*/README.md',
+  'apps/*/src',
 ];
 const skipDirs = new Set(['node_modules', 'dist', '.git']);
 const binaryExt = new Set(['.png', '.jpg', '.jpeg', '.gif', '.ico', '.webp', '.pdf', '.woff', '.woff2']);
@@ -29,6 +35,28 @@ const patterns = brands.map((b) => ({
   re: new RegExp(`(?<![A-Za-z0-9])${escapeRegExp(b).replace(/\s+/g, '\\s+')}(?![A-Za-z0-9])`, 'i'),
 }));
 
+/** Expands a path where * stands for any one directory name. Missing paths expand to nothing. */
+function expand(pattern) {
+  let current = [root];
+  for (const part of pattern.split('/')) {
+    const next = [];
+    for (const base of current) {
+      if (part === '*') {
+        if (!existsSync(base) || !statSync(base).isDirectory()) continue;
+        for (const name of readdirSync(base)) {
+          if (skipDirs.has(name)) continue;
+          const full = join(base, name);
+          if (statSync(full).isDirectory()) next.push(full);
+        }
+      } else {
+        next.push(join(base, part));
+      }
+    }
+    current = next;
+  }
+  return current.filter((p) => existsSync(p));
+}
+
 function* walk(dir) {
   for (const name of readdirSync(dir)) {
     if (skipDirs.has(name)) continue;
@@ -40,9 +68,7 @@ function* walk(dir) {
 
 const hits = [];
 let scanned = 0;
-for (const p of scanPaths) {
-  const target = join(root, p);
-  if (!existsSync(target)) continue;
+for (const target of scanPaths.flatMap(expand)) {
   const files = statSync(target).isDirectory() ? walk(target) : [target];
   for (const file of files) {
     if (file === denylistPath) continue;

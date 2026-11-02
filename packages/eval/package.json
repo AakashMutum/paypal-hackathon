@@ -1,5 +1,33 @@
 {
   "name": "@checkout-guardian/eval",
-  "version": "0.0.0",
-  "private": true
+  "version": "0.1.0",
+  "private": true,
+  "description": "Checkout Guardian evaluation harness and benchmarking module",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "prebuild": "npm run build -w @checkout-guardian/memory",
+    "build": "tsc && node -e \"import('node:fs').then(fs => { if (!fs.existsSync('dist/dataset')) fs.mkdirSync('dist/dataset', { recursive: true }); fs.cpSync('src/dataset/cases.json', 'dist/dataset/cases.json'); })\"",
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test tests/**/*.test.ts",
+    "test:eval": "tsx src/runner/runEval.ts"
+  },
+  "dependencies": {
+    "@checkout-guardian/contracts": "*",
+    "@checkout-guardian/memory": "*",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
 }
