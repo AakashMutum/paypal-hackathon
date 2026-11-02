@@ -1,10 +1,12 @@
 # TRUSTORA: contributor guide
+# TrustOra: contributor guide
 
 This file is for everyone working in the repo, and for any coding tool they use.
 
 ## What this project does
 
 TRUSTORA authorizes a PayPal order, investigates the merchant behind it, then either
+TrustOra authorizes a PayPal order, investigates the merchant behind it, then either
 captures the payment or voids it, depending on what the investigation finds.
 
 ## Folder ownership
