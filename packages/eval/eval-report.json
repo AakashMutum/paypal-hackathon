@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-02T11:51:02.685Z",
+  "generatedAt": "2026-11-02T13:20:52.211Z",
   "datasetSize": 50,
   "perBaseline": {
     "baselineA": {
@@ -12,12 +12,12 @@
       "f1": 0.9091,
       "accuracy": 0.9,
       "latency": {
-        "mean": 0.004,
+        "mean": 0.005,
         "p50": 0.001,
-        "p95": 0.011,
-        "p99": 0.048,
+        "p95": 0.014,
+        "p99": 0.065,
         "min": 0.001,
-        "max": 0.083,
+        "max": 0.109,
         "count": 50
       }
     },
@@ -34,9 +34,9 @@
         "mean": 0.002,
         "p50": 0.001,
         "p95": 0.005,
-        "p99": 0.023,
+        "p99": 0.028,
         "min": 0.001,
-        "max": 0.04,
+        "max": 0.048,
         "count": 50
       }
     },
@@ -50,12 +50,12 @@
       "f1": 0.9804,
       "accuracy": 0.98,
       "latency": {
-        "mean": 0.015,
-        "p50": 0.003,
-        "p95": 0.023,
-        "p99": 0.25,
+        "mean": 0.016,
+        "p50": 0.004,
+        "p95": 0.024,
+        "p99": 0.267,
         "min": 0.003,
-        "max": 0.446,
+        "max": 0.469,
         "count": 50
       }
     }
@@ -71,7 +71,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.0832,
+        "latencyMs": 0.1092,
         "reasons": []
       },
       {
@@ -83,7 +83,7 @@
         "isCorrect": false,
         "decision": "WARN",
         "score": 40,
-        "latencyMs": 0.0067,
+        "latencyMs": 0.009,
         "reasons": [
           "High discount anomaly of 72%"
         ]
@@ -97,7 +97,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 75,
-        "latencyMs": 0.0113,
+        "latencyMs": 0.0169,
         "reasons": [
           "Extremely new domain (6 days old)",
           "Significant discount of 66%"
@@ -112,7 +112,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 90,
-        "latencyMs": 0.0024,
+        "latencyMs": 0.0033,
         "reasons": [
           "Extremely new domain (5 days old)",
           "High discount anomaly of 83%"
@@ -127,7 +127,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 90,
-        "latencyMs": 0.0036,
+        "latencyMs": 0.0047,
         "reasons": [
           "Recently registered domain (7 days old)",
           "Extreme discount anomaly of 98%"
@@ -142,7 +142,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 90,
-        "latencyMs": 0.0018,
+        "latencyMs": 0.0022,
         "reasons": [
           "Recently registered domain (11 days old)",
           "Extreme discount anomaly of 90%"
@@ -157,7 +157,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 80,
-        "latencyMs": 0.0017,
+        "latencyMs": 0.0021,
         "reasons": [
           "Recently registered domain (8 days old)",
           "High discount anomaly of 71%"
@@ -172,7 +172,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 100,
-        "latencyMs": 0.0017,
+        "latencyMs": 0.0019,
         "reasons": [
           "Extremely new domain (4 days old)",
           "Extreme discount anomaly of 85%"
@@ -187,7 +187,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 80,
-        "latencyMs": 0.0118,
+        "latencyMs": 0.0109,
         "reasons": [
           "Recently registered domain (14 days old)",
           "High discount anomaly of 78%"
@@ -202,7 +202,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 90,
-        "latencyMs": 0.0102,
+        "latencyMs": 0.0194,
         "reasons": [
           "Recently registered domain (10 days old)",
           "Extreme discount anomaly of 90%"
@@ -217,7 +217,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 100,
-        "latencyMs": 0.0026,
+        "latencyMs": 0.0043,
         "reasons": [
           "Extremely new domain (6 days old)",
           "Extreme discount anomaly of 88%"
@@ -232,7 +232,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 90,
-        "latencyMs": 0.0012,
+        "latencyMs": 0.0025,
         "reasons": [
           "Recently registered domain (15 days old)",
           "Extreme discount anomaly of 89%"
@@ -247,7 +247,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 90,
-        "latencyMs": 0.0009,
+        "latencyMs": 0.0016,
         "reasons": [
           "Extremely new domain (3 days old)",
           "High discount anomaly of 77%"
@@ -262,7 +262,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 90,
-        "latencyMs": 0.0008,
+        "latencyMs": 0.0014,
         "reasons": [
           "Recently registered domain (13 days old)",
           "Extreme discount anomaly of 87%"
@@ -277,7 +277,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 90,
-        "latencyMs": 0.0007,
+        "latencyMs": 0.0017,
         "reasons": [
           "Recently registered domain (8 days old)",
           "Extreme discount anomaly of 89%"
@@ -292,7 +292,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 90,
-        "latencyMs": 0.001,
+        "latencyMs": 0.0018,
         "reasons": [
           "Recently registered domain (9 days old)",
           "Extreme discount anomaly of 87%"
@@ -307,7 +307,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 90,
-        "latencyMs": 0.0042,
+        "latencyMs": 0.0015,
         "reasons": [
           "Recently registered domain (16 days old)",
           "Extreme discount anomaly of 88%"
@@ -322,7 +322,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 90,
-        "latencyMs": 0.0008,
+        "latencyMs": 0.0039,
         "reasons": [
           "Extremely new domain (6 days old)",
           "High discount anomaly of 83%"
@@ -337,7 +337,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 90,
-        "latencyMs": 0.0009,
+        "latencyMs": 0.0048,
         "reasons": [
           "Extremely new domain (5 days old)",
           "High discount anomaly of 80%"
@@ -352,7 +352,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 90,
-        "latencyMs": 0.0009,
+        "latencyMs": 0.0016,
         "reasons": [
           "Recently registered domain (11 days old)",
           "Extreme discount anomaly of 90%"
@@ -367,7 +367,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 100,
-        "latencyMs": 0.0008,
+        "latencyMs": 0.0015,
         "reasons": [
           "Extremely new domain (4 days old)",
           "Extreme discount anomaly of 90%"
@@ -382,7 +382,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 80,
-        "latencyMs": 0.0008,
+        "latencyMs": 0.001,
         "reasons": [
           "Recently registered domain (14 days old)",
           "High discount anomaly of 80%"
@@ -397,7 +397,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 90,
-        "latencyMs": 0.0009,
+        "latencyMs": 0.0007,
         "reasons": [
           "Recently registered domain (7 days old)",
           "Extreme discount anomaly of 86%"
@@ -412,7 +412,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 90,
-        "latencyMs": 0.0008,
+        "latencyMs": 0.001,
         "reasons": [
           "Recently registered domain (10 days old)",
           "Extreme discount anomaly of 86%"
@@ -427,7 +427,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 80,
-        "latencyMs": 0.0007,
+        "latencyMs": 0.001,
         "reasons": [
           "Recently registered domain (8 days old)",
           "High discount anomaly of 82%"
@@ -442,7 +442,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 100,
-        "latencyMs": 0.0008,
+        "latencyMs": 0.0012,
         "reasons": [
           "Extremely new domain (5 days old)",
           "Extreme discount anomaly of 86%"
@@ -457,7 +457,7 @@
         "isCorrect": false,
         "decision": "WARN",
         "score": 40,
-        "latencyMs": 0.001,
+        "latencyMs": 0.0011,
         "reasons": [
           "Recently registered domain (18 days old)"
         ]
@@ -471,7 +471,7 @@
         "isCorrect": false,
         "decision": "WARN",
         "score": 40,
-        "latencyMs": 0.001,
+        "latencyMs": 0.0011,
         "reasons": [
           "High discount anomaly of 70%"
         ]
@@ -485,7 +485,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.0009,
+        "latencyMs": 0.0008,
         "reasons": []
       },
       {
@@ -511,7 +511,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.001,
+        "latencyMs": 0.0009,
         "reasons": []
       },
       {
@@ -523,7 +523,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.0007,
+        "latencyMs": 0.0009,
         "reasons": []
       },
       {
@@ -535,7 +535,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.0007,
+        "latencyMs": 0.0008,
         "reasons": []
       },
       {
@@ -547,7 +547,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.0006,
+        "latencyMs": 0.0012,
         "reasons": []
       },
       {
@@ -559,7 +559,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.0006,
+        "latencyMs": 0.0008,
         "reasons": []
       },
       {
@@ -571,7 +571,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.0034,
+        "latencyMs": 0.0007,
         "reasons": []
       },
       {
@@ -583,7 +583,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.0029,
+        "latencyMs": 0.0008,
         "reasons": []
       },
       {
@@ -595,7 +595,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.0015,
+        "latencyMs": 0.0008,
         "reasons": []
       },
       {
@@ -619,7 +619,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.0006,
+        "latencyMs": 0.0009,
         "reasons": []
       },
       {
@@ -631,7 +631,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.0007,
+        "latencyMs": 0.0008,
         "reasons": []
       },
       {
@@ -643,7 +643,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.0005,
+        "latencyMs": 0.0008,
         "reasons": []
       },
       {
@@ -655,7 +655,7 @@
         "isCorrect": false,
         "decision": "WARN",
         "score": 40,
-        "latencyMs": 0.001,
+        "latencyMs": 0.0008,
         "reasons": [
           "Recently registered domain (22 days old)"
         ]
@@ -669,7 +669,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.0008,
+        "latencyMs": 0.0017,
         "reasons": []
       },
       {
@@ -681,7 +681,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.0008,
+        "latencyMs": 0.0012,
         "reasons": []
       },
       {
@@ -693,7 +693,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.0041,
+        "latencyMs": 0.0086,
         "reasons": []
       },
       {
@@ -705,7 +705,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 25,
-        "latencyMs": 0.0015,
+        "latencyMs": 0.0024,
         "reasons": [
           "Significant discount of 62%"
         ]
@@ -719,7 +719,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.0009,
+        "latencyMs": 0.0011,
         "reasons": []
       },
       {
@@ -731,7 +731,7 @@
         "isCorrect": false,
         "decision": "WARN",
         "score": 40,
-        "latencyMs": 0.0007,
+        "latencyMs": 0.0013,
         "reasons": [
           "Recently registered domain (16 days old)"
         ]
@@ -745,7 +745,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.0006,
+        "latencyMs": 0.0012,
         "reasons": []
       }
     ],
@@ -759,7 +759,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.0397,
+        "latencyMs": 0.0476,
         "reasons": [
           "Storefront claims for brand \"Harborline Outfitters\" are internally consistent"
         ]
@@ -773,7 +773,7 @@
         "isCorrect": false,
         "decision": "WARN",
         "score": 40,
-        "latencyMs": 0.0031,
+        "latencyMs": 0.004,
         "reasons": [
           "High discount anomaly of 72%",
           "Storefront claims for brand \"Bargain Barn Outlet\" are internally consistent"
@@ -788,7 +788,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 90,
-        "latencyMs": 0.0025,
+        "latencyMs": 0.0029,
         "reasons": [
           "Extremely new domain (6 days old)",
           "Significant discount of 66%",
@@ -804,7 +804,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 99,
-        "latencyMs": 0.0017,
+        "latencyMs": 0.0021,
         "reasons": [
           "Extremely new domain (5 days old)",
           "High discount anomaly of 83%",
@@ -820,7 +820,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 99,
-        "latencyMs": 0.0017,
+        "latencyMs": 0.0022,
         "reasons": [
           "Recently registered domain (7 days old)",
           "Extreme discount anomaly of 98%",
@@ -836,7 +836,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 99,
-        "latencyMs": 0.0015,
+        "latencyMs": 0.0019,
         "reasons": [
           "Recently registered domain (11 days old)",
           "Extreme discount anomaly of 90%",
@@ -852,7 +852,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 93,
-        "latencyMs": 0.0016,
+        "latencyMs": 0.0018,
         "reasons": [
           "Recently registered domain (8 days old)",
           "High discount anomaly of 71%",
@@ -868,7 +868,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 100,
-        "latencyMs": 0.0016,
+        "latencyMs": 0.0018,
         "reasons": [
           "Extremely new domain (4 days old)",
           "Extreme discount anomaly of 85%",
@@ -884,7 +884,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 93,
-        "latencyMs": 0.0066,
+        "latencyMs": 0.0083,
         "reasons": [
           "Recently registered domain (14 days old)",
           "High discount anomaly of 78%",
@@ -900,7 +900,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 99,
-        "latencyMs": 0.0061,
+        "latencyMs": 0.0064,
         "reasons": [
           "Recently registered domain (10 days old)",
           "Extreme discount anomaly of 90%",
@@ -916,7 +916,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 100,
-        "latencyMs": 0.0027,
+        "latencyMs": 0.0029,
         "reasons": [
           "Extremely new domain (6 days old)",
           "Extreme discount anomaly of 88%",
@@ -932,7 +932,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 99,
-        "latencyMs": 0.0009,
+        "latencyMs": 0.0013,
         "reasons": [
           "Recently registered domain (15 days old)",
           "Extreme discount anomaly of 89%",
@@ -948,7 +948,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 99,
-        "latencyMs": 0.0008,
+        "latencyMs": 0.001,
         "reasons": [
           "Extremely new domain (3 days old)",
           "High discount anomaly of 77%",
@@ -980,7 +980,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 99,
-        "latencyMs": 0.0007,
+        "latencyMs": 0.0009,
         "reasons": [
           "Recently registered domain (8 days old)",
           "Extreme discount anomaly of 89%",
@@ -996,7 +996,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 99,
-        "latencyMs": 0.0008,
+        "latencyMs": 0.0009,
         "reasons": [
           "Recently registered domain (9 days old)",
           "Extreme discount anomaly of 87%",
@@ -1012,7 +1012,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 99,
-        "latencyMs": 0.0008,
+        "latencyMs": 0.0012,
         "reasons": [
           "Recently registered domain (16 days old)",
           "Extreme discount anomaly of 88%",
@@ -1028,7 +1028,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 99,
-        "latencyMs": 0.0008,
+        "latencyMs": 0.0009,
         "reasons": [
           "Extremely new domain (6 days old)",
           "High discount anomaly of 83%",
@@ -1060,7 +1060,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 99,
-        "latencyMs": 0.0007,
+        "latencyMs": 0.0008,
         "reasons": [
           "Recently registered domain (11 days old)",
           "Extreme discount anomaly of 90%",
@@ -1076,7 +1076,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 100,
-        "latencyMs": 0.0008,
+        "latencyMs": 0.001,
         "reasons": [
           "Extremely new domain (4 days old)",
           "Extreme discount anomaly of 90%",
@@ -1092,7 +1092,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 93,
-        "latencyMs": 0.0007,
+        "latencyMs": 0.0012,
         "reasons": [
           "Recently registered domain (14 days old)",
           "High discount anomaly of 80%",
@@ -1124,7 +1124,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 99,
-        "latencyMs": 0.0008,
+        "latencyMs": 0.0012,
         "reasons": [
           "Recently registered domain (10 days old)",
           "Extreme discount anomaly of 86%",
@@ -1140,7 +1140,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 93,
-        "latencyMs": 0.0008,
+        "latencyMs": 0.001,
         "reasons": [
           "Recently registered domain (8 days old)",
           "High discount anomaly of 82%",
@@ -1156,7 +1156,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 100,
-        "latencyMs": 0.0007,
+        "latencyMs": 0.0021,
         "reasons": [
           "Extremely new domain (5 days old)",
           "Extreme discount anomaly of 86%",
@@ -1172,7 +1172,7 @@
         "isCorrect": false,
         "decision": "WARN",
         "score": 40,
-        "latencyMs": 0.0015,
+        "latencyMs": 0.0017,
         "reasons": [
           "Recently registered domain (18 days old)",
           "Storefront claims for brand \"Lumina Coffee\" are internally consistent"
@@ -1187,7 +1187,7 @@
         "isCorrect": false,
         "decision": "WARN",
         "score": 40,
-        "latencyMs": 0.0024,
+        "latencyMs": 0.0012,
         "reasons": [
           "High discount anomaly of 70%",
           "Storefront claims for brand \"Cascade Outdoors\" are internally consistent"
@@ -1202,7 +1202,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.0016,
+        "latencyMs": 0.0011,
         "reasons": [
           "Storefront claims for brand \"Elena Handcrafted\" are internally consistent"
         ]
@@ -1216,7 +1216,7 @@
         "isCorrect": true,
         "decision": "WARN",
         "score": 69,
-        "latencyMs": 0.0013,
+        "latencyMs": 0.0011,
         "reasons": [
           "High discount anomaly of 76%",
           "Inconsistent merchant identity claims for storefront claiming \"NovaSound\""
@@ -1245,7 +1245,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.0008,
+        "latencyMs": 0.001,
         "reasons": [
           "Storefront claims for brand \"Patagonia\" are internally consistent"
         ]
@@ -1273,7 +1273,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.0007,
+        "latencyMs": 0.001,
         "reasons": [
           "Storefront claims for brand \"Austin Ceramics Co\" are internally consistent"
         ]
@@ -1287,7 +1287,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.0007,
+        "latencyMs": 0.0009,
         "reasons": [
           "Storefront claims for brand \"Keychron\" are internally consistent"
         ]
@@ -1301,7 +1301,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.0006,
+        "latencyMs": 0.0008,
         "reasons": [
           "Storefront claims for brand \"Vitamix\" are internally consistent"
         ]
@@ -1315,7 +1315,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.0008,
+        "latencyMs": 0.0013,
         "reasons": [
           "Storefront claims for brand \"Sol Organics\" are internally consistent"
         ]
@@ -1329,7 +1329,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.0007,
+        "latencyMs": 0.0009,
         "reasons": [
           "Storefront claims for brand \"Nordic Trail\" are internally consistent"
         ]
@@ -1343,7 +1343,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.0006,
+        "latencyMs": 0.001,
         "reasons": [
           "Storefront claims for brand \"The Independent Reader\" are internally consistent"
         ]
@@ -1357,7 +1357,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.0006,
+        "latencyMs": 0.0009,
         "reasons": [
           "Storefront claims for brand \"Apex Pet\" are internally consistent"
         ]
@@ -1371,7 +1371,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.0007,
+        "latencyMs": 0.0009,
         "reasons": [
           "Storefront claims for brand \"Dell\" are internally consistent"
         ]
@@ -1385,7 +1385,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.0006,
+        "latencyMs": 0.0011,
         "reasons": [
           "Storefront claims for brand \"Summit Knives\" are internally consistent"
         ]
@@ -1399,7 +1399,7 @@
         "isCorrect": false,
         "decision": "WARN",
         "score": 40,
-        "latencyMs": 0.0009,
+        "latencyMs": 0.0011,
         "reasons": [
           "Recently registered domain (22 days old)",
           "Storefront claims for brand \"Brooklyn Roast\" are internally consistent"
@@ -1428,7 +1428,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.0007,
+        "latencyMs": 0.001,
         "reasons": [
           "Storefront claims for brand \"Kinfolk Weavers\" are internally consistent"
         ]
@@ -1442,7 +1442,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.0007,
+        "latencyMs": 0.0009,
         "reasons": [
           "Storefront claims for brand \"Audio-Technica\" are internally consistent"
         ]
@@ -1456,7 +1456,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 25,
-        "latencyMs": 0.0007,
+        "latencyMs": 0.002,
         "reasons": [
           "Significant discount of 62%",
           "Storefront claims for brand \"Sierra Camp\" are internally consistent"
@@ -1471,7 +1471,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.0007,
+        "latencyMs": 0.0012,
         "reasons": [
           "Storefront claims for brand \"Harbor Lighting\" are internally consistent"
         ]
@@ -1485,7 +1485,7 @@
         "isCorrect": false,
         "decision": "WARN",
         "score": 40,
-        "latencyMs": 0.0008,
+        "latencyMs": 0.0015,
         "reasons": [
           "Recently registered domain (16 days old)",
           "Storefront claims for brand \"Tabletop Quest\" are internally consistent"
@@ -1500,7 +1500,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.0006,
+        "latencyMs": 0.0011,
         "reasons": [
           "Storefront claims for brand \"Pure Botanicals\" are internally consistent"
         ]
@@ -1516,7 +1516,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.446,
+        "latencyMs": 0.4691,
         "reasons": [
           "Storefront claims for brand \"Harborline Outfitters\" are internally consistent",
           "PayPal payee matches storefront domain"
@@ -1531,7 +1531,7 @@
         "isCorrect": false,
         "decision": "WARN",
         "score": 50,
-        "latencyMs": 0.045,
+        "latencyMs": 0.0558,
         "reasons": [
           "High discount anomaly of 72%",
           "Storefront claims for brand \"Bargain Barn Outlet\" are internally consistent",
@@ -1548,7 +1548,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 78,
-        "latencyMs": 0.0119,
+        "latencyMs": 0.0131,
         "reasons": [
           "Extremely new domain (6 days old)",
           "Significant discount of 66%",
@@ -1566,7 +1566,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 78,
-        "latencyMs": 0.0093,
+        "latencyMs": 0.0099,
         "reasons": [
           "Extremely new domain (5 days old)",
           "High discount anomaly of 83%",
@@ -1602,7 +1602,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 78,
-        "latencyMs": 0.0072,
+        "latencyMs": 0.0074,
         "reasons": [
           "Recently registered domain (11 days old)",
           "Extreme discount anomaly of 90%",
@@ -1620,7 +1620,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 78,
-        "latencyMs": 0.0072,
+        "latencyMs": 0.0071,
         "reasons": [
           "Recently registered domain (8 days old)",
           "High discount anomaly of 71%",
@@ -1638,7 +1638,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 78,
-        "latencyMs": 0.0178,
+        "latencyMs": 0.0152,
         "reasons": [
           "Extremely new domain (4 days old)",
           "Extreme discount anomaly of 85%",
@@ -1656,7 +1656,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 78,
-        "latencyMs": 0.0222,
+        "latencyMs": 0.0238,
         "reasons": [
           "Recently registered domain (14 days old)",
           "High discount anomaly of 78%",
@@ -1674,7 +1674,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 78,
-        "latencyMs": 0.0245,
+        "latencyMs": 0.025,
         "reasons": [
           "Recently registered domain (10 days old)",
           "Extreme discount anomaly of 90%",
@@ -1692,7 +1692,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 78,
-        "latencyMs": 0.0104,
+        "latencyMs": 0.0109,
         "reasons": [
           "Extremely new domain (6 days old)",
           "Extreme discount anomaly of 88%",
@@ -1710,7 +1710,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 78,
-        "latencyMs": 0.0059,
+        "latencyMs": 0.0055,
         "reasons": [
           "Recently registered domain (15 days old)",
           "Extreme discount anomaly of 89%",
@@ -1728,7 +1728,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 78,
-        "latencyMs": 0.0044,
+        "latencyMs": 0.0041,
         "reasons": [
           "Extremely new domain (3 days old)",
           "High discount anomaly of 77%",
@@ -1746,7 +1746,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 78,
-        "latencyMs": 0.0037,
+        "latencyMs": 0.0039,
         "reasons": [
           "Recently registered domain (13 days old)",
           "Extreme discount anomaly of 87%",
@@ -1764,7 +1764,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 78,
-        "latencyMs": 0.0034,
+        "latencyMs": 0.0037,
         "reasons": [
           "Recently registered domain (8 days old)",
           "Extreme discount anomaly of 89%",
@@ -1782,7 +1782,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 78,
-        "latencyMs": 0.0034,
+        "latencyMs": 0.0036,
         "reasons": [
           "Recently registered domain (9 days old)",
           "Extreme discount anomaly of 87%",
@@ -1800,7 +1800,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 78,
-        "latencyMs": 0.0035,
+        "latencyMs": 0.0034,
         "reasons": [
           "Recently registered domain (16 days old)",
           "Extreme discount anomaly of 88%",
@@ -1836,7 +1836,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 78,
-        "latencyMs": 0.0033,
+        "latencyMs": 0.0048,
         "reasons": [
           "Extremely new domain (5 days old)",
           "High discount anomaly of 80%",
@@ -1854,7 +1854,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 78,
-        "latencyMs": 0.0041,
+        "latencyMs": 0.005,
         "reasons": [
           "Recently registered domain (11 days old)",
           "Extreme discount anomaly of 90%",
@@ -1872,7 +1872,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 78,
-        "latencyMs": 0.0083,
+        "latencyMs": 0.0054,
         "reasons": [
           "Extremely new domain (4 days old)",
           "Extreme discount anomaly of 90%",
@@ -1908,7 +1908,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 78,
-        "latencyMs": 0.0039,
+        "latencyMs": 0.0056,
         "reasons": [
           "Recently registered domain (7 days old)",
           "Extreme discount anomaly of 86%",
@@ -1926,7 +1926,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 78,
-        "latencyMs": 0.0033,
+        "latencyMs": 0.0058,
         "reasons": [
           "Recently registered domain (10 days old)",
           "Extreme discount anomaly of 86%",
@@ -1944,7 +1944,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 78,
-        "latencyMs": 0.0035,
+        "latencyMs": 0.0036,
         "reasons": [
           "Recently registered domain (8 days old)",
           "High discount anomaly of 82%",
@@ -1962,7 +1962,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 78,
-        "latencyMs": 0.0031,
+        "latencyMs": 0.0036,
         "reasons": [
           "Extremely new domain (5 days old)",
           "Extreme discount anomaly of 86%",
@@ -1980,7 +1980,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 22,
-        "latencyMs": 0.0049,
+        "latencyMs": 0.0059,
         "reasons": [
           "Recently registered domain (18 days old)",
           "Storefront claims for brand \"Lumina Coffee\" are internally consistent",
@@ -1996,7 +1996,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 22,
-        "latencyMs": 0.0037,
+        "latencyMs": 0.0041,
         "reasons": [
           "High discount anomaly of 70%",
           "Storefront claims for brand \"Cascade Outdoors\" are internally consistent",
@@ -2012,7 +2012,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 5,
-        "latencyMs": 0.0041,
+        "latencyMs": 0.0045,
         "reasons": [
           "Storefront claims for brand \"Elena Handcrafted\" are internally consistent",
           "Personal payee email observed on storefront with consistent identity claims (potential sole proprietor)"
@@ -2027,7 +2027,7 @@
         "isCorrect": true,
         "decision": "PAUSE",
         "score": 78,
-        "latencyMs": 0.0033,
+        "latencyMs": 0.004,
         "reasons": [
           "High discount anomaly of 76%",
           "Inconsistent merchant identity claims for storefront claiming \"NovaSound\"",
@@ -2044,7 +2044,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.0033,
+        "latencyMs": 0.0037,
         "reasons": [
           "Storefront claims for brand \"Anker\" are internally consistent",
           "PayPal payee matches storefront domain"
@@ -2059,7 +2059,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.0034,
+        "latencyMs": 0.0037,
         "reasons": [
           "Storefront claims for brand \"Patagonia\" are internally consistent",
           "PayPal payee matches storefront domain"
@@ -2074,7 +2074,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.003,
+        "latencyMs": 0.0031,
         "reasons": [
           "Storefront claims for brand \"Bose\" are internally consistent",
           "PayPal payee matches storefront domain"
@@ -2089,7 +2089,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 5,
-        "latencyMs": 0.0031,
+        "latencyMs": 0.0048,
         "reasons": [
           "Storefront claims for brand \"Austin Ceramics Co\" are internally consistent",
           "Personal payee email observed on storefront with consistent identity claims (potential sole proprietor)"
@@ -2104,7 +2104,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.003,
+        "latencyMs": 0.0032,
         "reasons": [
           "Storefront claims for brand \"Keychron\" are internally consistent",
           "PayPal payee matches storefront domain"
@@ -2119,7 +2119,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.0031,
+        "latencyMs": 0.0032,
         "reasons": [
           "Storefront claims for brand \"Vitamix\" are internally consistent",
           "PayPal payee matches storefront domain"
@@ -2134,7 +2134,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.003,
+        "latencyMs": 0.0034,
         "reasons": [
           "Storefront claims for brand \"Sol Organics\" are internally consistent",
           "PayPal payee matches storefront domain"
@@ -2149,7 +2149,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.0028,
+        "latencyMs": 0.0032,
         "reasons": [
           "Storefront claims for brand \"Nordic Trail\" are internally consistent",
           "PayPal payee matches storefront domain"
@@ -2164,7 +2164,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 5,
-        "latencyMs": 0.0031,
+        "latencyMs": 0.0103,
         "reasons": [
           "Storefront claims for brand \"The Independent Reader\" are internally consistent",
           "Personal payee email observed on storefront with consistent identity claims (potential sole proprietor)"
@@ -2179,7 +2179,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.0029,
+        "latencyMs": 0.0049,
         "reasons": [
           "Storefront claims for brand \"Apex Pet\" are internally consistent",
           "PayPal payee matches storefront domain"
@@ -2194,7 +2194,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.0032,
+        "latencyMs": 0.0042,
         "reasons": [
           "Storefront claims for brand \"Dell\" are internally consistent",
           "PayPal payee matches storefront domain"
@@ -2209,7 +2209,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.0028,
+        "latencyMs": 0.0036,
         "reasons": [
           "Storefront claims for brand \"Summit Knives\" are internally consistent",
           "PayPal payee matches storefront domain"
@@ -2224,7 +2224,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 22,
-        "latencyMs": 0.0036,
+        "latencyMs": 0.004,
         "reasons": [
           "Recently registered domain (22 days old)",
           "Storefront claims for brand \"Brooklyn Roast\" are internally consistent",
@@ -2240,7 +2240,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.0029,
+        "latencyMs": 0.0032,
         "reasons": [
           "Storefront claims for brand \"Rogue Fitness\" are internally consistent",
           "PayPal payee matches storefront domain"
@@ -2255,7 +2255,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 5,
-        "latencyMs": 0.0029,
+        "latencyMs": 0.0036,
         "reasons": [
           "Storefront claims for brand \"Kinfolk Weavers\" are internally consistent",
           "Personal payee email observed on storefront with consistent identity claims (potential sole proprietor)"
@@ -2270,7 +2270,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.0028,
+        "latencyMs": 0.0031,
         "reasons": [
           "Storefront claims for brand \"Audio-Technica\" are internally consistent",
           "PayPal payee matches storefront domain"
@@ -2285,7 +2285,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 14,
-        "latencyMs": 0.0031,
+        "latencyMs": 0.0034,
         "reasons": [
           "Significant discount of 62%",
           "Storefront claims for brand \"Sierra Camp\" are internally consistent",
@@ -2301,7 +2301,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.0029,
+        "latencyMs": 0.0031,
         "reasons": [
           "Storefront claims for brand \"Harbor Lighting\" are internally consistent",
           "PayPal payee matches storefront domain"
@@ -2332,7 +2332,7 @@
         "isCorrect": true,
         "decision": "ALLOW",
         "score": 0,
-        "latencyMs": 0.0029,
+        "latencyMs": 0.0032,
         "reasons": [
           "Storefront claims for brand \"Pure Botanicals\" are internally consistent",
           "PayPal payee matches storefront domain"
