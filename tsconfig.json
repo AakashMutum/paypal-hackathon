@@ -19,6 +19,10 @@
     "apps/mcp/demo-agent/**/*",
     "packages/agent/src/**/*",
     "packages/agent/tests/**/*",
-    "packages/contracts/src/**/*"
+    "packages/contracts/src/**/*",
+    "packages/memory/src/**/*",
+    "packages/memory/tests/**/*",
+    "packages/eval/src/**/*",
+    "packages/eval/tests/**/*"
   ]
 }
