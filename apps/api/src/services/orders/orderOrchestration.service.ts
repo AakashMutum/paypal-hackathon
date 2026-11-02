@@ -26,6 +26,39 @@ import {
 } from '../verification/merchantVerification.service.js';
 import { evaluateRisk, type RiskEvaluationResult } from '../risk/riskEngine.service.js';
 
+// ──────────────────────────────────────────────────────────────────────────────
+// In-memory session & merchant store (fallback when no database is configured).
+// This lets mock-only integration tests (CI, no credentials) preserve the
+// create → evaluate → capture flow without requiring PostgreSQL.
+// ──────────────────────────────────────────────────────────────────────────────
+interface InMemorySession {
+  id: string;
+  paypal_order_id: string;
+  domain: string;
+  amount: number;
+  currency: string;
+  status: SessionStatusType;
+  merchant_id?: string;
+  storefront_url: string;
+  metadata: Record<string, unknown>;
+  // Flattened merchant fields (mirror the JOIN used in findCheckoutSession)
+  merchant_domain?: string;
+  claimed_name?: string;
+  merchant_payee_email?: string | null;
+  merchant_registered_id?: string | null;
+  merchant_status?: string;
+  merchant_reputation?: number;
+}
+
+const inMemorySessions = new Map<string, InMemorySession>();
+const inMemoryMerchants = new Map<string, ExpectedMerchant>();
+
+/** Exposed for test teardown — clears the in-memory stores. */
+export function clearInMemoryStore(): void {
+  inMemorySessions.clear();
+  inMemoryMerchants.clear();
+}
+
 export class OrchestrationError extends Error {
   public readonly code: string;
   public readonly status: number;
@@ -54,6 +87,7 @@ export function extractDomain(urlStr: string): string {
 
 /**
  * Looks up or initializes a merchant record for the given domain.
+ * Falls back to an in-memory store when no database is configured (CI / mock tests).
  */
 export async function getOrCreateMerchant(params: {
   domain: string;
@@ -61,36 +95,54 @@ export async function getOrCreateMerchant(params: {
   merchantId?: string;
   payeeEmail?: string;
 }): Promise<ExpectedMerchant | null> {
-  const pool = getPool();
-  if (!pool) return null;
-
   const domain = params.domain.toLowerCase().trim();
+  const pool = getPool();
 
-  // Try finding existing merchant by domain or merchant_id
-  const existing = await query<ExpectedMerchant>(
-    `SELECT id, merchant_id, domain, claimed_name, payee_email, verification_status, reputation_score
-     FROM merchant_records
-     WHERE domain = $1
-        OR (merchant_id IS NOT NULL AND merchant_id = $2)
-     LIMIT 1`,
-    [domain, params.merchantId || null]
-  );
+  if (pool) {
+    // Try finding existing merchant by domain or merchant_id
+    const existing = await query<ExpectedMerchant>(
+      `SELECT id, merchant_id, domain, claimed_name, payee_email, verification_status, reputation_score
+       FROM merchant_records
+       WHERE domain = $1
+          OR (merchant_id IS NOT NULL AND merchant_id = $2)
+       LIMIT 1`,
+      [domain, params.merchantId || null]
+    );
 
-  if (existing.rows.length > 0) {
-    return existing.rows[0];
+    if (existing.rows.length > 0) {
+      return existing.rows[0];
+    }
+
+    // Create initial merchant record
+    const claimedName = params.claimedName || domain;
+    const insertResult = await query<ExpectedMerchant>(
+      `INSERT INTO merchant_records (
+         domain, claimed_name, merchant_id, payee_email, verification_status, reputation_score
+       ) VALUES ($1, $2, $3, $4, 'UNVERIFIED', 50.00)
+       RETURNING id, merchant_id, domain, claimed_name, payee_email, verification_status, reputation_score`,
+      [domain, claimedName, params.merchantId || null, params.payeeEmail || null]
+    );
+
+    return insertResult.rows[0];
   }
 
-  // Create initial merchant record
-  const claimedName = params.claimedName || domain;
-  const insertResult = await query<ExpectedMerchant>(
-    `INSERT INTO merchant_records (
-       domain, claimed_name, merchant_id, payee_email, verification_status, reputation_score
-     ) VALUES ($1, $2, $3, $4, 'UNVERIFIED', 50.00)
-     RETURNING id, merchant_id, domain, claimed_name, payee_email, verification_status, reputation_score`,
-    [domain, claimedName, params.merchantId || null, params.payeeEmail || null]
-  );
+  // ── In-memory fallback (no database) ──────────────────────────────────
+  const existingMem = inMemoryMerchants.get(domain)
+    || (params.merchantId ? [...inMemoryMerchants.values()].find(m => m.merchant_id === params.merchantId) : undefined);
+  if (existingMem) return existingMem;
 
-  return insertResult.rows[0];
+  const claimedName = params.claimedName || domain;
+  const merchant: ExpectedMerchant = {
+    id: `mem_${randomUUID().replace(/-/g, '').slice(0, 12)}`,
+    domain,
+    claimed_name: claimedName,
+    merchant_id: params.merchantId || null,
+    payee_email: params.payeeEmail || null,
+    verification_status: 'UNVERIFIED',
+    reputation_score: 50.00,
+  };
+  inMemoryMerchants.set(domain, merchant);
+  return merchant;
 }
 
 /**
@@ -161,6 +213,30 @@ export async function createCheckoutOrder(req: CreateOrderRequest): Promise<Crea
     );
   }
 
+  // ── In-memory fallback: persist session when no database ──────────────
+  if (!pool && merchant) {
+    const memSession: InMemorySession = {
+      id: sessionId,
+      paypal_order_id: paypalOrder.id,
+      domain,
+      amount: req.amount,
+      currency,
+      status: SessionStatus.CREATED,
+      merchant_id: merchant.id,
+      storefront_url: req.storefrontUrl,
+      metadata: {},
+      merchant_domain: merchant.domain,
+      claimed_name: merchant.claimed_name,
+      merchant_payee_email: merchant.payee_email,
+      merchant_registered_id: merchant.merchant_id,
+      merchant_status: merchant.verification_status,
+      merchant_reputation: typeof merchant.reputation_score === 'number'
+        ? merchant.reputation_score : 50.00,
+    };
+    inMemorySessions.set(sessionId, memSession);
+    inMemorySessions.set(paypalOrder.id, memSession);
+  }
+
   const approveLink = paypalOrder.links?.find((l) => l.rel === 'approve')?.href;
 
   return {
@@ -175,23 +251,27 @@ export async function createCheckoutOrder(req: CreateOrderRequest): Promise<Crea
 
 /**
  * Finds checkout session by either TRUSTORA sessionId or PayPal orderId.
+ * Falls back to the in-memory store when no database is configured.
  */
 export async function findCheckoutSession(orderOrSessionId: string): Promise<Record<string, any> | null> {
   const pool = getPool();
-  if (!pool) return null;
+  if (pool) {
+    const result = await query(
+      `SELECT cs.*, mr.domain as merchant_domain, mr.claimed_name, mr.payee_email as merchant_payee_email,
+              mr.merchant_id as merchant_registered_id, mr.verification_status as merchant_status,
+              mr.reputation_score as merchant_reputation
+       FROM checkout_sessions cs
+       LEFT JOIN merchant_records mr ON cs.merchant_id = mr.id
+       WHERE cs.id = $1 OR cs.paypal_order_id = $1
+       LIMIT 1`,
+      [orderOrSessionId]
+    );
 
-  const result = await query(
-    `SELECT cs.*, mr.domain as merchant_domain, mr.claimed_name, mr.payee_email as merchant_payee_email,
-            mr.merchant_id as merchant_registered_id, mr.verification_status as merchant_status,
-            mr.reputation_score as merchant_reputation
-     FROM checkout_sessions cs
-     LEFT JOIN merchant_records mr ON cs.merchant_id = mr.id
-     WHERE cs.id = $1 OR cs.paypal_order_id = $1
-     LIMIT 1`,
-    [orderOrSessionId]
-  );
+    return result.rows[0] || null;
+  }
 
-  return result.rows[0] || null;
+  // ── In-memory fallback ────────────────────────────────────────────────
+  return inMemorySessions.get(orderOrSessionId) || null;
 }
 
 /**
@@ -297,6 +377,15 @@ export async function evaluateOrderRisk(orderOrSessionId: string): Promise<Order
        WHERE id = $2`,
       [sessionStatus, session.id]
     );
+  }
+
+  // ── In-memory fallback: update session status ───────────────────────
+  if (!pool && session) {
+    let memStatus: SessionStatusType = SessionStatus.CREATED;
+    if (riskResult.decision === DecisionTypes.ALLOW) memStatus = SessionStatus.ALLOWED;
+    else if (riskResult.decision === DecisionTypes.WARN) memStatus = SessionStatus.WARNED;
+    else memStatus = SessionStatus.PAUSED;
+    (session as InMemorySession).status = memStatus;
   }
 
   let finalSessionStatus: SessionStatusType = SessionStatus.CREATED;
@@ -441,6 +530,15 @@ export async function captureCheckoutOrder(
           : null,
       ]
     );
+  }
+
+  // ── In-memory fallback: mark session completed ──────────────────────
+  if (!pool && session) {
+    (session as InMemorySession).status = SessionStatus.COMPLETED;
+    (session as InMemorySession).metadata = {
+      ...(session.metadata || {}),
+      capture_id: captureId,
+    };
   }
 
   return {

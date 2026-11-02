@@ -6,6 +6,7 @@ import { closeDatabase } from '../src/database/connection.js';
 import { setCustomFetch, clearTokenCache } from '../src/services/paypal/paypalAuth.service.js';
 import { setCustomOrdersFetch } from '../src/services/paypal/paypalOrders.service.js';
 import { setPaypalConfig } from '../src/config/env.js';
+import { clearInMemoryStore } from '../src/services/orders/orderOrchestration.service.js';
 
 const app = createApp();
 
@@ -15,6 +16,7 @@ after(async () => {
 
 beforeEach(() => {
   clearTokenCache();
+  clearInMemoryStore();
   setPaypalConfig({
     paypalClientId: 'client_orchestration_test',
     paypalClientSecret: 'secret_orchestration_test',
