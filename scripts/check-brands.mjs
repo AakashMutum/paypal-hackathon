@@ -4,7 +4,16 @@ import { fileURLToPath } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const denylistPath = join(root, 'scripts', 'brand-denylist.txt');
-const scanDirs = ['demo-sites', 'tests/fixtures', 'docs'];
+// Directories and single files to scan. PDFs and reference.txt are deliberately not listed.
+const scanPaths = [
+  'demo-sites',
+  'tests/fixtures',
+  'docs',
+  'apps/web/src',
+  'apps/web/index.html',
+  'README.md',
+  'AGENTS.md',
+];
 const skipDirs = new Set(['node_modules', 'dist', '.git']);
 const binaryExt = new Set(['.png', '.jpg', '.jpeg', '.gif', '.ico', '.webp', '.pdf', '.woff', '.woff2']);
 
@@ -31,10 +40,11 @@ function* walk(dir) {
 
 const hits = [];
 let scanned = 0;
-for (const d of scanDirs) {
-  const dir = join(root, d);
-  if (!existsSync(dir)) continue;
-  for (const file of walk(dir)) {
+for (const p of scanPaths) {
+  const target = join(root, p);
+  if (!existsSync(target)) continue;
+  const files = statSync(target).isDirectory() ? walk(target) : [target];
+  for (const file of files) {
     if (file === denylistPath) continue;
     const ext = file.slice(file.lastIndexOf('.')).toLowerCase();
     if (binaryExt.has(ext)) continue;

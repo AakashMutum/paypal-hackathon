@@ -21,7 +21,8 @@
     "test:contracts": "npm run typecheck -w @checkout-guardian/contracts && node scripts/validate-fixtures.mjs",
     "test:integration": "tsx --test apps/api/test/health.test.ts apps/api/test/paypal.auth.test.ts apps/api/test/paypal.orders.test.ts apps/api/test/merchant.verification.test.ts apps/api/test/risk.enforcement.test.ts apps/api/test/order.orchestration.test.ts",
     "test:sandbox": "tsx --test apps/api/test/paypal.sandbox.live.test.ts",
-    "check:brands": "node scripts/check-brands.mjs"
+    "check:brands": "node scripts/check-brands.mjs",
+    "check:hygiene": "node scripts/check-hygiene.mjs"
   },
   "dependencies": {
     "cors": "^2.8.5",
