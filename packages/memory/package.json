@@ -17,7 +17,8 @@
     "build": "tsc",
     "typecheck": "tsc --noEmit",
     "test": "tsx --test \"tests/**/*.test.ts\"",
-    "index:create": "tsx scripts/create-index.ts"
+    "index:create": "tsx scripts/create-index.ts",
+    "pretest": "npm run build -w @checkout-guardian/contracts"
   },
   "dependencies": {
     "@checkout-guardian/contracts": "*",
