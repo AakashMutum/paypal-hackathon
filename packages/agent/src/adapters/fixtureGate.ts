@@ -13,10 +13,7 @@ export function createGate(behaviour: FixtureBehaviour = {}): FixtureGate {
   return async function gate(tool: string): Promise<void> {
     const delay = behaviour.delays?.[tool] ?? 0;
     if (delay > 0) {
-      await new Promise<void>((resolve) => {
-        const timer = setTimeout(resolve, delay);
-        timer.unref?.();
-      });
+      await new Promise<void>((resolve) => setTimeout(resolve, delay));
     }
 
     const used = counters.get(tool) ?? 0;
