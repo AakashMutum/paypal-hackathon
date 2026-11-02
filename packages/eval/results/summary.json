@@ -1,0 +1,394 @@
+{
+  "seed": 20261102,
+  "dataset": {
+    "total": 62,
+    "fraud": 28,
+    "legit": 34,
+    "perCategory": {
+      "easy_legit": 10,
+      "easy_fraud": 8,
+      "lookalike_impersonator": 8,
+      "new_but_legit": 8,
+      "big_clearance_but_legit": 8,
+      "sole_proprietor_webmail": 8,
+      "aged_hijacked_domain": 6,
+      "injection_page": 6
+    }
+  },
+  "systems": [
+    {
+      "name": "Baseline A",
+      "accuracy": 0.6451612903225806,
+      "precision": 1,
+      "recall": 0.21428571428571427,
+      "f1": 0.35294117647058826,
+      "falsePositiveRate": 0,
+      "falseNegativeRate": 0.7857142857142857,
+      "confusion": {
+        "truePositives": 6,
+        "falsePositives": 0,
+        "trueNegatives": 34,
+        "falseNegatives": 22,
+        "total": 62
+      },
+      "strictPauseOnly": {
+        "recall": 0,
+        "falsePositiveRate": 0
+      },
+      "intervals95": {
+        "accuracy": {
+          "low": 0.532258064516129,
+          "high": 0.7580645161290323
+        },
+        "f1": {
+          "low": 0.13793103448275862,
+          "high": 0.5454545454545454
+        },
+        "recall": {
+          "low": 0.07407407407407407,
+          "high": 0.375
+        },
+        "falsePositiveRate": {
+          "low": 0,
+          "high": 0
+        }
+      },
+      "perCategoryAccuracy": {
+        "aged_hijacked_domain": {
+          "n": 6,
+          "accuracy": 0
+        },
+        "big_clearance_but_legit": {
+          "n": 8,
+          "accuracy": 1
+        },
+        "easy_fraud": {
+          "n": 8,
+          "accuracy": 0.75
+        },
+        "easy_legit": {
+          "n": 10,
+          "accuracy": 1
+        },
+        "injection_page": {
+          "n": 6,
+          "accuracy": 0
+        },
+        "lookalike_impersonator": {
+          "n": 8,
+          "accuracy": 0
+        },
+        "new_but_legit": {
+          "n": 8,
+          "accuracy": 1
+        },
+        "sole_proprietor_webmail": {
+          "n": 8,
+          "accuracy": 1
+        }
+      }
+    },
+    {
+      "name": "Baseline B",
+      "accuracy": 0.7580645161290323,
+      "precision": 1,
+      "recall": 0.4642857142857143,
+      "f1": 0.6341463414634146,
+      "falsePositiveRate": 0,
+      "falseNegativeRate": 0.5357142857142857,
+      "confusion": {
+        "truePositives": 13,
+        "falsePositives": 0,
+        "trueNegatives": 34,
+        "falseNegatives": 15,
+        "total": 62
+      },
+      "strictPauseOnly": {
+        "recall": 0,
+        "falsePositiveRate": 0
+      },
+      "intervals95": {
+        "accuracy": {
+          "low": 0.6451612903225806,
+          "high": 0.8548387096774194
+        },
+        "f1": {
+          "low": 0.43750000000000006,
+          "high": 0.7916863207547168
+        },
+        "recall": {
+          "low": 0.28,
+          "high": 0.6551993534482757
+        },
+        "falsePositiveRate": {
+          "low": 0,
+          "high": 0
+        }
+      },
+      "perCategoryAccuracy": {
+        "aged_hijacked_domain": {
+          "n": 6,
+          "accuracy": 0
+        },
+        "big_clearance_but_legit": {
+          "n": 8,
+          "accuracy": 1
+        },
+        "easy_fraud": {
+          "n": 8,
+          "accuracy": 0.75
+        },
+        "easy_legit": {
+          "n": 10,
+          "accuracy": 1
+        },
+        "injection_page": {
+          "n": 6,
+          "accuracy": 0
+        },
+        "lookalike_impersonator": {
+          "n": 8,
+          "accuracy": 0.875
+        },
+        "new_but_legit": {
+          "n": 8,
+          "accuracy": 1
+        },
+        "sole_proprietor_webmail": {
+          "n": 8,
+          "accuracy": 1
+        }
+      }
+    },
+    {
+      "name": "Full, cold memory",
+      "accuracy": 1,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "falsePositiveRate": 0,
+      "falseNegativeRate": 0,
+      "confusion": {
+        "truePositives": 28,
+        "falsePositives": 0,
+        "trueNegatives": 34,
+        "falseNegatives": 0,
+        "total": 62
+      },
+      "strictPauseOnly": {
+        "recall": 0.6428571428571429,
+        "falsePositiveRate": 0
+      },
+      "intervals95": {
+        "accuracy": {
+          "low": 1,
+          "high": 1
+        },
+        "f1": {
+          "low": 1,
+          "high": 1
+        },
+        "recall": {
+          "low": 1,
+          "high": 1
+        },
+        "falsePositiveRate": {
+          "low": 0,
+          "high": 0
+        }
+      },
+      "perCategoryAccuracy": {
+        "aged_hijacked_domain": {
+          "n": 6,
+          "accuracy": 1
+        },
+        "big_clearance_but_legit": {
+          "n": 8,
+          "accuracy": 1
+        },
+        "easy_fraud": {
+          "n": 8,
+          "accuracy": 1
+        },
+        "easy_legit": {
+          "n": 10,
+          "accuracy": 1
+        },
+        "injection_page": {
+          "n": 6,
+          "accuracy": 1
+        },
+        "lookalike_impersonator": {
+          "n": 8,
+          "accuracy": 1
+        },
+        "new_but_legit": {
+          "n": 8,
+          "accuracy": 1
+        },
+        "sole_proprietor_webmail": {
+          "n": 8,
+          "accuracy": 1
+        }
+      }
+    },
+    {
+      "name": "Full, warm memory",
+      "accuracy": 0.967741935483871,
+      "precision": 0.9333333333333333,
+      "recall": 1,
+      "f1": 0.9655172413793104,
+      "falsePositiveRate": 0.058823529411764705,
+      "falseNegativeRate": 0,
+      "confusion": {
+        "truePositives": 28,
+        "falsePositives": 2,
+        "trueNegatives": 32,
+        "falseNegatives": 0,
+        "total": 62
+      },
+      "strictPauseOnly": {
+        "recall": 0.6428571428571429,
+        "falsePositiveRate": 0
+      },
+      "intervals95": {
+        "accuracy": {
+          "low": 0.9193548387096774,
+          "high": 1
+        },
+        "f1": {
+          "low": 0.9056603773584906,
+          "high": 1
+        },
+        "recall": {
+          "low": 1,
+          "high": 1
+        },
+        "falsePositiveRate": {
+          "low": 0,
+          "high": 0.15151515151515152
+        }
+      },
+      "perCategoryAccuracy": {
+        "aged_hijacked_domain": {
+          "n": 6,
+          "accuracy": 1
+        },
+        "big_clearance_but_legit": {
+          "n": 8,
+          "accuracy": 1
+        },
+        "easy_fraud": {
+          "n": 8,
+          "accuracy": 1
+        },
+        "easy_legit": {
+          "n": 10,
+          "accuracy": 1
+        },
+        "injection_page": {
+          "n": 6,
+          "accuracy": 1
+        },
+        "lookalike_impersonator": {
+          "n": 8,
+          "accuracy": 1
+        },
+        "new_but_legit": {
+          "n": 8,
+          "accuracy": 1
+        },
+        "sole_proprietor_webmail": {
+          "n": 8,
+          "accuracy": 0.75
+        }
+      }
+    }
+  ],
+  "ablation": [
+    {
+      "name": "Full, cold memory (reference)",
+      "accuracy": 1,
+      "f1": 1,
+      "recall": 1,
+      "falsePositiveRate": 0
+    },
+    {
+      "name": "Full, no memory",
+      "accuracy": 1,
+      "f1": 1,
+      "recall": 1,
+      "falsePositiveRate": 0
+    },
+    {
+      "name": "Full, no investigator loop",
+      "accuracy": 1,
+      "f1": 1,
+      "recall": 1,
+      "falsePositiveRate": 0
+    },
+    {
+      "name": "Full, no domain report",
+      "accuracy": 0.967741935483871,
+      "f1": 0.962962962962963,
+      "recall": 0.9285714285714286,
+      "falsePositiveRate": 0
+    },
+    {
+      "name": "Full, no price report",
+      "accuracy": 1,
+      "f1": 1,
+      "recall": 1,
+      "falsePositiveRate": 0
+    },
+    {
+      "name": "Full, no payee binding",
+      "accuracy": 0.9838709677419355,
+      "f1": 0.9818181818181818,
+      "recall": 0.9642857142857143,
+      "falsePositiveRate": 0
+    },
+    {
+      "name": "Full, no registry",
+      "accuracy": 0.9516129032258065,
+      "f1": 0.9433962264150945,
+      "recall": 0.8928571428571429,
+      "falsePositiveRate": 0
+    }
+  ],
+  "memoryLift": {
+    "accuracyDelta": -0.032258064516129004,
+    "recallDelta": 0,
+    "f1Delta": -0.03448275862068961,
+    "falsePositiveRateDelta": 0.058823529411764705,
+    "decisionsChanged": 2,
+    "warmRecords": 28
+  },
+  "injection": {
+    "hostileTotal": 15,
+    "hostileDetected": 15,
+    "harmlessTotal": 12,
+    "harmlessUntouched": 12,
+    "pagesWithHiddenInstructions": 6,
+    "pagesFlagged": 6,
+    "pagesNotAllowed": 6
+  },
+  "invariants": [
+    {
+      "name": "A payee mismatch is always PAUSE",
+      "applicable": 7,
+      "violations": 0,
+      "caseIds": []
+    },
+    {
+      "name": "A big discount alone on an established domain is never PAUSE",
+      "applicable": 4,
+      "violations": 0,
+      "caseIds": []
+    }
+  ],
+  "faithfulness": {
+    "explained": 62,
+    "faithful": 62
+  }
+}
