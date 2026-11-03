@@ -17,13 +17,19 @@ import { ElasticPatternStore, InMemoryPatternStore } from '@checkout-guardian/me
 
 const originalEnv = { ...process.env };
 
+// The agent's deadline timers are unref'd, so a fake fetch that never settles would let the event
+// loop drain and cancel the running test. A referenced interval keeps the loop alive while a test runs.
+let keepAlive: NodeJS.Timeout | undefined;
+
 describe('Live Integration Suite (LLM, Signals, Elastic)', () => {
   beforeEach(() => {
+    keepAlive = setInterval(() => undefined, 1000);
     resetAgentPorts();
     process.env = { ...originalEnv };
   });
 
   afterEach(() => {
+    clearInterval(keepAlive);
     resetAgentPorts();
     process.env = { ...originalEnv };
   });
