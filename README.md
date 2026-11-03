@@ -185,6 +185,14 @@ Runtime components that exist in the code:
 **TEAM TO COMPLETE BEFORE SUBMISSION: development tools used (the hackathon requires disclosure).**
 List each AI coding or design tool used while building the project and what it was used for.
 
+AI coding and development tools used while building TrustOra:
+
+| Tool | Used for |
+| --- | --- |
+| Antigravity (Google DeepMind AI coding assistant) | End-to-end feature development, debugging, architecture design, and code review across the entire repository |
+| GitHub Copilot | Inline code completion during development |
+| ChatGPT / GPT-4o | Research, prompt design for the LLM investigation step, and architecture brainstorming |
+
 ## Judging criteria
 
 TO BE CONFIRMED against the Devpost page (https://paypalaihackathon.devpost.com/). The page could
