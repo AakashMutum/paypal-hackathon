@@ -62,11 +62,29 @@ export interface FrontendInvestigation {
   reasons: string[];
   evidence: FrontendEvidence[];
   trace?: unknown[];
-  provenance?: Record<string, unknown>;
+  provenance?: Provenance;
+  /** Up to three similar past cases retrieved from memory. Display only: they never change a decision. */
+  similarCases?: SimilarCase[];
   patternSentence?: string;
   buyerEmail?: string;
   reviewRequested?: boolean;
   createdAt: string;
+}
+
+export interface SimilarCase {
+  patternSentence: string;
+  matchType: 'exact_payee' | 'exact_domain' | 'semantic';
+  score: number;
+  decision: UiVerdict;
+}
+
+export interface Provenance {
+  /** What actually produced the signals for this investigation. */
+  signals: 'replay' | 'live';
+  llm: 'live' | 'replay' | 'record' | 'none';
+  memory: 'elastic' | 'memory';
+  /** The configured SIGNALS_MODE (replay, live or auto). */
+  signalsMode: 'replay' | 'live' | 'auto';
 }
 
 export interface PaymentEvent {

@@ -1,6 +1,6 @@
 import type { NextFunction, Request, Response } from 'express';
 import type { AgentResult, InvestigationRequest } from '@checkout-guardian/agent';
-import { findProfileForUrlOrStore, runAgent } from '../services/agent/agentRunner.service.js';
+import { runAgent } from '../services/agent/agentRunner.service.js';
 import { checkoutStore, type AgentCheckoutRecord } from '../services/investigation/checkoutStore.service.js';
 import { checkSpendPolicy, policyStore } from '../services/persistence/policyStore.service.js';
 import {
@@ -50,8 +50,12 @@ export async function investigateMerchant(req: Request, res: Response, next: Nex
       ...(body.items ? { items: body.items } : {}),
     };
 
-    const result = await runAgent(request);
-    res.status(200).json({ success: true, data: result.verdict });
+    const run = await runAgent(request);
+    res.status(200).json({
+      success: true,
+      data: run.result.verdict,
+      meta: { provenance: run.provenance, similarCases: run.similarCases, hardRules: run.result.hardRulesTriggered.map((r) => r.rule) },
+    });
   } catch (err) {
     next(err);
   }
@@ -181,7 +185,8 @@ export async function finalizeAgentCheckout(req: Request, res: Response, next: N
       ...(record.agentId ? { agentId: record.agentId } : {}),
       ...(record.items ? { items: record.items } : {}),
     };
-    const result = await runAgent(request, findProfileForUrlOrStore(record.merchantUrl));
+    const run = await runAgent(request);
+    const result = run.result;
     const decision = result.verdict.decision;
 
     record.verdict = decision;

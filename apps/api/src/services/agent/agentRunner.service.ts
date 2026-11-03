@@ -1,20 +1,27 @@
 import {
+  buildPatternFacts,
   runInvestigatorAgentDetailed,
-  createFixtureSignals,
-  createFixtureRegistry,
-  SCENARIOS,
-  type AgentDeps,
+  templatePatternSentence,
   type AgentResult,
+  type Evidence,
   type InvestigationRequest,
-  type RegistryPort,
-  type RegistryRecord,
-  type RegistryLookup,
-  type CallOpts,
 } from '@checkout-guardian/agent';
-import { createLocalSignalsPort } from '@checkout-guardian/signals';
-import { InMemoryPatternStore, asAgentMemoryPort } from '@checkout-guardian/memory';
-import { findCatalogStore, hostOf, loadStoreCatalog, type CatalogStore } from '../../config/storeCatalog.js';
-import type { FrontendEvidence, FrontendInvestigation, UiVerdict } from '../investigation/investigation.types.js';
+import { findCatalogStore, hostOf, type CatalogStore } from '../../config/storeCatalog.js';
+import type {
+  FrontendEvidence,
+  FrontendInvestigation,
+  Provenance,
+  SimilarCase,
+  UiVerdict,
+} from '../investigation/investigation.types.js';
+import {
+  createAgentWiring,
+  isCanonicalDomain,
+  llmMode,
+  memoryMode,
+  searchMemory,
+  signalsMode,
+} from './agentPorts.js';
 
 export type {
   FrontendEvidence,
@@ -22,9 +29,9 @@ export type {
   FrontendInvestigation,
 } from '../investigation/investigation.types.js';
 
-type Scenario = 'A' | 'B' | 'C' | 'D2' | 'CUSTOM';
-
+/** What the catalog (plain data) says about a store. Unknown stores have `known: false`. */
 export interface MerchantProfile {
+  known: boolean;
   storeId?: string;
   domain: string;
   brand: string;
@@ -36,17 +43,13 @@ export interface MerchantProfile {
   payeeTier: string;
   ageDays: number;
   records: number;
-  scenario: Scenario;
-  riskScore: number;
   payeeEmail?: string;
   sandboxPayee?: boolean;
 }
 
-const SCENARIO_FOR_KIND: Record<CatalogStore['kind'], Scenario> = { genuine: 'A', discount: 'B', impersonator: 'C' };
-const RISK_FOR_KIND: Record<CatalogStore['kind'], number> = { genuine: 8, discount: 50, impersonator: 87 };
-
 function profileFromCatalog(s: CatalogStore): MerchantProfile {
   return {
+    known: true,
     storeId: s.storeId,
     domain: s.domain,
     brand: s.brand,
@@ -59,24 +62,17 @@ function profileFromCatalog(s: CatalogStore): MerchantProfile {
     payeeTier: s.payeeTier,
     ageDays: s.ageDays,
     records: s.registryRecords,
-    scenario: SCENARIO_FOR_KIND[s.kind],
-    riskScore: RISK_FOR_KIND[s.kind],
     sandboxPayee: s.sandboxPayee,
   };
-}
-
-export function knownProfiles(): MerchantProfile[] {
-  return loadStoreCatalog().map(profileFromCatalog);
 }
 
 export function findProfileForUrlOrStore(input: string): MerchantProfile {
   const store = findCatalogStore(input);
   if (store) return profileFromCatalog(store);
-
-  // An unknown store: no catalog data, so only what the request itself carries is known.
-  const domain = hostOf(input) || 'storefront.example';
+  const domain = hostOf(input) || 'unknown.example';
   const brand = (domain.replace(/^www\./, '').split('.')[0].split('-')[0] || 'Merchant').replace(/^./, (c) => c.toUpperCase());
   return {
+    known: false,
     domain,
     brand,
     product: 'Storefront item',
@@ -87,69 +83,214 @@ export function findProfileForUrlOrStore(input: string): MerchantProfile {
     payeeTier: 'Unknown',
     ageDays: 0,
     records: 0,
-    scenario: 'CUSTOM',
-    riskScore: 0,
   };
 }
 
-/** In-memory pattern store initialised with default seeds. */
-const memoryStore = new InMemoryPatternStore();
-const memoryPort = asAgentMemoryPort(memoryStore);
+// ---------------------------------------------------------------------------------------------
+// Running the agent
+// ---------------------------------------------------------------------------------------------
 
-/** Registry of the canonical demo merchants. */
-const registryPort: RegistryPort = {
-  async lookup(input: RegistryLookup, _options: CallOpts): Promise<RegistryRecord[]> {
-    const q = input.query.trim().toLowerCase();
-    const matches: RegistryRecord[] = [];
-    for (const store of loadStoreCatalog()) {
-      if (store.kind === 'impersonator') continue;
-      const hit =
-        (input.by === 'name' && store.brand.toLowerCase() === q) ||
-        (input.by === 'merchantId' && store.registeredMerchantId.toLowerCase() === q) ||
-        (input.by === 'domain' && store.domain.replace(/^www\./, '') === q.replace(/^www\./, ''));
-      if (hit) {
-        matches.push({
-          merchantId: store.registeredMerchantId,
-          legalName: store.payeeName,
-          brandNames: [store.brand],
-          domain: store.domain,
-          status: 'verified',
-          linkedBrandIds: [],
-        });
-      }
-    }
-    return matches;
-  },
-};
+export interface AgentRun {
+  result: AgentResult;
+  similarCases: SimilarCase[];
+  provenance: Provenance;
+}
+
+const RETRIEVAL_TIMEOUT_MS = 2000;
+
+function provenanceFor(domain: string, memory: 'elastic' | 'memory'): Provenance {
+  const configured = signalsMode();
+  const signals = configured === 'live' ? 'live' : configured === 'auto' ? (isCanonicalDomain(domain) ? 'replay' : 'live') : 'replay';
+  return { signals, llm: llmMode(), memory, signalsMode: configured };
+}
 
 /**
- * Creates agent dependencies from the signals, memory and registry components. Known demo
- * scenarios use the agent's recorded fixtures; anything else uses the mock signals port.
+ * Runs the investigator agent with the configured ports. Errors propagate: nothing is invented
+ * on failure. The top three similar past cases are attached for display; they are never an
+ * input to the decision.
  */
-export function createAgentDeps(scenario?: Scenario): AgentDeps {
-  if (scenario && scenario !== 'CUSTOM' && SCENARIOS[scenario]) {
-    const fixture = SCENARIOS[scenario];
-    return {
-      signals: createFixtureSignals(fixture),
-      memory: memoryPort,
-      registry: createFixtureRegistry(fixture),
-      now: () => Date.now(),
-      log: () => undefined,
-    };
+export async function runAgent(request: InvestigationRequest): Promise<AgentRun> {
+  const { deps, recorder } = await createAgentWiring();
+  const result = await runInvestigatorAgentDetailed(request, deps);
+
+  const domain = hostOf(request.merchantUrl);
+  const registrable = domain.replace(/^www\./, '');
+  let hits = recorder.searched ? recorder.hits : [];
+  if (!recorder.searched) {
+    // The agent skips memory on its fast path, so search here with the same query shape.
+    hits = await searchMemory(
+      {
+        patternText: result.patternSentence ?? templatePatternSentence(buildPatternFacts(result.evidence)),
+        registrableDomain: registrable,
+        ...(request.payee?.merchantId ? { payeeMerchantId: request.payee.merchantId } : {}),
+      },
+      { timeoutMs: RETRIEVAL_TIMEOUT_MS },
+    );
   }
+
+  const similarCases: SimilarCase[] = hits.slice(0, 3).map((h) => ({
+    patternSentence: h.patternText,
+    matchType: h.matchType,
+    score: Number((h.score ?? 0).toFixed(3)),
+    decision: h.decision,
+  }));
+
+  return { result, similarCases, provenance: provenanceFor(domain, await memoryMode()) };
+}
+
+// ---------------------------------------------------------------------------------------------
+// Mapping to the web app's shape
+// ---------------------------------------------------------------------------------------------
+
+type NodeId = FrontendEvidence['node'];
+
+const NODE_FOR_TYPE: Record<string, NodeId> = {
+  DOMAIN_AGE: 'SURFACE',
+  TLS_INVALID: 'SURFACE',
+  LOOKALIKE_DOMAIN: 'SURFACE',
+  INJECTION_ATTEMPT: 'SURFACE',
+  PAGE_SECTION_CLAIMS: 'SURFACE',
+  CONTACT_LEGAL_MISSING: 'SURFACE',
+  FAVICON_MISMATCH: 'SURFACE',
+  IMAGE_REUSE: 'SURFACE',
+  TOOL_UNAVAILABLE: 'SURFACE',
+  AGENT_ERROR: 'SURFACE',
+  INVESTIGATION_NOTE: 'SURFACE',
+  REGISTRY_RECORD: 'MERCHANT',
+  IDENTITY_MATCH: 'MERCHANT',
+  IDENTITY_UNVERIFIABLE: 'MERCHANT',
+  CLAIMED_BRAND_MISMATCH: 'MERCHANT',
+  SCAM_MEMORY_MATCH: 'MERCHANT',
+  PRICE_DEVIATION: 'PRICE',
+  PRICE_UNKNOWN: 'PRICE',
+  OFFER_COMPARISON: 'PRICE',
+  PAYEE_BINDING: 'PAYEE',
+  PAYEE_UNKNOWN: 'PAYEE',
+  PAYEE_FREE_EMAIL: 'PAYEE',
+};
+
+const NODE_TITLE: Record<NodeId, string> = {
+  SURFACE: 'Surface Storefront Claims',
+  MERCHANT: 'Merchant Verification',
+  PRICE: 'Price Anomaly Model',
+  PAYEE: 'PayPal Real Recipient',
+};
+
+const humanize = (type: string): string =>
+  type
+    .toLowerCase()
+    .split('_')
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ');
+
+const SEVERITY_RANK: Record<Evidence['severity'], number> = { info: 0, low: 1, medium: 2, high: 3 };
+
+function cardFor(node: NodeId, items: Evidence[]): FrontendEvidence {
+  const worst = items.reduce((m, e) => Math.max(m, SEVERITY_RANK[e.severity]), -1);
+  const status: FrontendEvidence['status'] = items.length === 0 ? 'WARN' : worst >= 3 ? 'FAIL' : worst >= 1 ? 'WARN' : 'PASS';
+  const confidence = items.length ? Math.round((items.reduce((s, e) => s + e.confidence, 0) / items.length) * 100) : 0;
   return {
-    signals: createLocalSignalsPort({ mode: 'mock' }),
-    memory: memoryPort,
-    registry: registryPort,
-    now: () => Date.now(),
-    log: () => undefined,
+    id: `e-${node.toLowerCase()}`,
+    node,
+    title: NODE_TITLE[node],
+    status,
+    badge: items.length === 0 ? 'NO DATA' : status === 'PASS' ? 'CHECKED' : status === 'FAIL' ? 'FLAGGED' : 'REVIEW',
+    confidence,
+    fields: items.length
+      ? items.map((e) => ({ label: humanize(e.type), value: e.summary, flag: e.severity === 'high' || e.severity === 'medium' }))
+      : [{ label: 'Result', value: 'No evidence was collected for this check.', flag: true }],
+    sources: [...new Set(items.map((e) => e.source))],
   };
 }
 
-/** Runs the investigator agent for one request. Errors propagate: nothing is invented on failure. */
-export async function runAgent(request: InvestigationRequest, profile?: MerchantProfile): Promise<AgentResult> {
-  const resolved = profile ?? findProfileForUrlOrStore(request.merchantUrl);
-  return runInvestigatorAgentDetailed(request, createAgentDeps(resolved.scenario));
+const num = (value: unknown): number | undefined => (typeof value === 'number' && Number.isFinite(value) ? value : undefined);
+
+export interface MapMeta {
+  id?: string;
+  orderId?: string;
+  paypalOrderId?: string;
+  buyerEmail?: string;
+  profile: MerchantProfile;
+  price: number;
+  benchmark: number;
+  currency: string;
+  productName: string;
+  claimedBrand: string;
+  payeeEmail?: string;
+}
+
+/**
+ * Turns the agent's result into what the web app shows, using the agent's own evidence. Two
+ * rules sit on top of the agent's decision: a payee-binding hard rule is always PAUSE, and an
+ * ALLOW needs at least some deterministic evidence behind it.
+ */
+export function mapRunToFrontend(run: AgentRun, meta: MapMeta): FrontendInvestigation {
+  const { result, provenance, similarCases } = run;
+  const verdict = result.verdict;
+  const hardRules = result.hardRulesTriggered.map((r) => r.rule);
+  const payeeMismatch = hardRules.includes('HF1') || hardRules.includes('HF2');
+  const evidence = result.evidence;
+
+  const reasons = verdict.explanation?.bullets.map((b) => b.text) ?? [verdict.summary];
+
+  const hasGroundingEvidence = evidence.some(
+    (e) => e.deterministic && (e.type === 'DOMAIN_AGE' || (e.type === 'PAYEE_BINDING' && e.data?.status === 'MATCH')),
+  );
+  let decision: UiVerdict = verdict.decision;
+  if (payeeMismatch) decision = 'PAUSE';
+  if (decision === 'ALLOW' && !hasGroundingEvidence) {
+    decision = 'WARN';
+    reasons.unshift(
+      provenance.signals === 'replay'
+        ? 'No live signals were available for this domain, so it could not be cleared. Unknown domains need live signals.'
+        : 'Not enough evidence was collected to clear this merchant.',
+    );
+  }
+
+  const byNode = new Map<NodeId, Evidence[]>();
+  for (const e of evidence) {
+    const node = NODE_FOR_TYPE[e.type] ?? 'SURFACE';
+    byNode.set(node, [...(byNode.get(node) ?? []), e]);
+  }
+  const cards = (['SURFACE', 'MERCHANT', 'PRICE', 'PAYEE'] as NodeId[]).map((n) => cardFor(n, byNode.get(n) ?? []));
+
+  const age = evidence.find((e) => e.type === 'DOMAIN_AGE');
+  const price = evidence.find((e) => e.type === 'PRICE_DEVIATION');
+  const registryCount = evidence.filter((e) => e.type === 'REGISTRY_RECORD').length;
+  const p = meta.profile;
+
+  return {
+    id: meta.id || `INV-${Math.random().toString(16).slice(2, 8).toUpperCase()}`,
+    orderId: meta.orderId,
+    paypalOrderId: meta.paypalOrderId,
+    storeId: p.storeId,
+    domain: p.domain,
+    claimedBrand: meta.claimedBrand,
+    productName: meta.productName,
+    price: meta.price,
+    benchmark: num(price?.data?.medianPrice) ?? meta.benchmark,
+    currency: meta.currency,
+    payeeName: p.payeeName,
+    payeeId: p.payeeId,
+    payeeTier: p.payeeTier,
+    domainAgeDays: num(age?.data?.ageDays) ?? p.ageDays,
+    registryRecords: registryCount || p.records,
+    riskScore: verdict.score,
+    confidence: Math.round(verdict.confidence * 1000) / 10,
+    status: 'COMPLETE',
+    verdict: decision,
+    captureState: 'PENDING',
+    reasons,
+    evidence: cards,
+    trace: result.trace,
+    provenance,
+    similarCases,
+    ...(result.patternSentence ? { patternSentence: result.patternSentence } : {}),
+    hardRules,
+    payeeMismatch,
+    buyerEmail: meta.buyerEmail,
+    createdAt: new Date().toISOString(),
+  };
 }
 
 export interface InvestigationExecutionParams {
@@ -168,139 +309,40 @@ export interface InvestigationExecutionParams {
   benchmark?: number;
 }
 
-/**
- * Runs the merchant investigation using the agent and converts the result into the shape the
- * web app shows.
- */
-export async function executeMerchantInvestigation(
-  params: InvestigationExecutionParams,
-): Promise<FrontendInvestigation> {
+/** Investigates a merchant with the real pipeline and returns the web app's shape. */
+export async function executeMerchantInvestigation(params: InvestigationExecutionParams): Promise<FrontendInvestigation> {
   const profile = findProfileForUrlOrStore(params.storeId || params.url);
   const domain = hostOf(params.url || profile.domain) || profile.domain;
-  const claimedBrand = params.claimedBrand || profile.brand;
-  const price = params.amount ?? profile.price;
-  const benchmark = params.benchmark ?? profile.benchmark;
   const currency = (params.currency || 'USD').toUpperCase();
-  const payeeEmail = params.payeeEmail ?? profile.payeeEmail;
-  const payeeMerchantId = params.payeeMerchantId ?? profile.payeeId;
+  const price = params.amount ?? profile.price;
   const productName = params.productName || profile.product;
+  const claimedBrand = params.claimedBrand || (profile.known ? profile.brand : undefined);
+  // A known demo store brings its own payee; an unknown store has none unless the caller names one.
+  const named = params.payeeMerchantId && params.payeeMerchantId !== 'UNKNOWN' ? params.payeeMerchantId : undefined;
+  const payeeMerchantId = named ?? (profile.known ? profile.payeeId : undefined);
+  const payeeEmail = params.payeeEmail ?? (profile.known && !named ? profile.payeeEmail : undefined);
 
   const request: InvestigationRequest = {
     orderId: params.orderId || `ORD-PREVIEW-${Math.random().toString(16).slice(2, 8).toUpperCase()}`,
     merchantUrl: `https://${domain}`,
-    claimedBrand,
-    ...(price > 0 ? { transactionAmount: price } : {}),
+    ...(claimedBrand ? { claimedBrand } : {}),
+    ...(price > 0 ? { transactionAmount: price, items: [{ name: productName, unitPrice: price, quantity: 1 }] } : {}),
     currency,
-    items: price > 0 ? [{ name: productName, unitPrice: price, quantity: 1 }] : undefined,
-    payee: { merchantId: payeeMerchantId, ...(payeeEmail ? { email: payeeEmail } : {}) },
+    ...(payeeMerchantId ? { payee: { merchantId: payeeMerchantId, ...(payeeEmail ? { email: payeeEmail } : {}) } } : {}),
   };
 
-  const result = await runAgent(request, profile);
-
-  return mapResultToFrontend(result, profile, {
+  const run = await runAgent(request);
+  return mapRunToFrontend(run, {
     id: params.id,
     orderId: params.orderId,
     paypalOrderId: params.paypalOrderId,
     buyerEmail: params.buyerEmail,
+    profile: { ...profile, domain: profile.known ? profile.domain : domain },
     price,
-    benchmark,
+    benchmark: params.benchmark ?? profile.benchmark,
     currency,
     productName,
+    claimedBrand: claimedBrand ?? profile.brand,
+    payeeEmail,
   });
-}
-
-function mapResultToFrontend(
-  result: AgentResult,
-  profile: MerchantProfile,
-  meta: {
-    id?: string;
-    orderId?: string;
-    paypalOrderId?: string;
-    buyerEmail?: string;
-    price: number;
-    benchmark: number;
-    currency: string;
-    productName: string;
-  },
-): FrontendInvestigation {
-  const verdict = result.verdict;
-  const uiVerdict: UiVerdict = verdict.decision;
-  const hardRules = result.hardRulesTriggered.map((r) => r.rule);
-  const payeeMismatch = hardRules.includes('HF1') || hardRules.includes('HF2');
-
-  const usd = (n: number) => `$${n.toLocaleString('en-US', { minimumFractionDigits: 2 })} ${meta.currency}`;
-  const dev = meta.benchmark > 0 ? Math.round((meta.price / meta.benchmark - 1) * 100) : 0;
-  const bad = uiVerdict !== 'ALLOW';
-  const vec = verdict.score > 80 ? verdict.score : 2;
-
-  const st: Array<'PASS' | 'WARN' | 'FAIL'> =
-    uiVerdict === 'ALLOW' ? ['PASS', 'PASS', 'PASS', 'PASS'] : uiVerdict === 'WARN' ? ['PASS', 'WARN', 'WARN', 'WARN'] : ['FAIL', 'FAIL', 'FAIL', 'FAIL'];
-
-  const evidence: FrontendEvidence[] = [
-    {
-      id: 'e1', node: 'SURFACE', title: 'Surface Storefront Claims', status: st[0], badge: 'INGESTED', confidence: 99,
-      fields: [
-        { label: 'Presented Domain', value: profile.domain },
-        { label: 'Claimed Brand', value: profile.brand },
-        { label: 'Theme Signature', value: uiVerdict === 'PAUSE' ? 'Copied storefront theme' : bad ? 'Generic discount template' : 'Original theme', flag: bad },
-      ],
-    },
-    {
-      id: 'e2', node: 'MERCHANT', title: 'Merchant Verification', status: st[1], badge: profile.records ? 'MATCHED' : 'FAILED (0 MATCH)', confidence: 97,
-      fields: [
-        { label: 'Corporate Registry', value: `${profile.records} Legal Records`, flag: !profile.records },
-        { label: 'Domain Age', value: `${profile.ageDays} Days`, flag: profile.ageDays < 90 },
-        { label: 'Impersonation Vector', value: `${bad ? vec : 2}%`, flag: bad, meter: bad ? vec : 2 },
-      ],
-    },
-    {
-      id: 'e3', node: 'PRICE', title: 'Price Anomaly Model', status: st[2], badge: dev < -20 ? `${dev}% THRESHOLD` : 'IN RANGE', confidence: 96,
-      fields: [
-        { label: 'Cart Item', value: meta.productName },
-        { label: 'Advertised Price', value: usd(meta.price), flag: dev < -20 },
-        { label: 'Market Global Benchmark', value: usd(meta.benchmark), strike: dev < -20 },
-      ],
-    },
-    {
-      id: 'e4', node: 'PAYEE', title: 'PayPal Real Recipient', status: st[3], badge: 'DECODED', confidence: 99,
-      fields: [
-        { label: 'Actual Receiver', value: profile.payeeName },
-        { label: 'PayPal Sandbox ID', value: profile.payeeId },
-        { label: 'Account Status', value: profile.payeeTier, flag: bad },
-      ],
-    },
-  ];
-
-  const reasons =
-    verdict.explanation?.bullets.map((b) => b.text) ??
-    (uiVerdict === 'ALLOW' ? ['Storefront claims match the registered PayPal recipient.'] : [verdict.summary]);
-
-  return {
-    id: meta.id || `INV-${Math.random().toString(16).slice(2, 8).toUpperCase()}`,
-    orderId: meta.orderId,
-    paypalOrderId: meta.paypalOrderId,
-    storeId: profile.storeId,
-    domain: profile.domain,
-    claimedBrand: profile.brand,
-    productName: meta.productName,
-    price: meta.price,
-    benchmark: meta.benchmark,
-    currency: meta.currency,
-    payeeName: profile.payeeName,
-    payeeId: profile.payeeId,
-    payeeTier: profile.payeeTier,
-    domainAgeDays: profile.ageDays,
-    registryRecords: profile.records,
-    riskScore: verdict.score,
-    confidence: Math.round(verdict.confidence * 1000) / 10,
-    status: 'COMPLETE',
-    verdict: uiVerdict,
-    captureState: 'PENDING',
-    reasons,
-    evidence,
-    hardRules,
-    payeeMismatch,
-    buyerEmail: meta.buyerEmail,
-    createdAt: new Date().toISOString(),
-  };
 }
