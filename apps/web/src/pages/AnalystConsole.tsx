@@ -8,7 +8,7 @@ import { STORES } from '../data/stores';
 import { EvidenceCard } from '../components/EvidenceCard';
 import { Pill, RiskBadge } from '../components/ui';
 import { CAPTURE_LABEL, clock, cn, money } from '../lib/format';
-const F = ['ALL', 'ALLOW', 'WARN', 'BLOCK'] as const;
+const F = ['ALL', 'ALLOW', 'WARN', 'PAUSE'] as const;
 export default function AnalystConsole() {
   const { list, reload } = useInvestigations(2000); const { toast } = useApp();
   const [f, setF] = useState<typeof F[number]>('ALL'); const [q, setQ] = useState(''); const [min, setMin] = useState(0); const [sel, setSel] = useState<string | null>(null);
@@ -34,7 +34,7 @@ export default function AnalystConsole() {
             <td className="px-4 font-mono font-semibold">{i.status === 'COMPLETE' ? i.riskScore : '…'}</td><td className="px-4"><RiskBadge verdict={i.verdict} /></td><td className="px-4 font-mono text-xs">{CAPTURE_LABEL[i.captureState]}</td></tr>)}
             {!rows.length && <tr><td colSpan={6} className="p-6 text-center text-muted">No rows match these filters.</td></tr>}</tbody></table></div></section>
       <aside className="lg:col-span-5 space-y-3">
-        {cur ? <><div className={cn('card', cur.verdict === 'BLOCK' && 'border-l-[3px] !border-l-bad', cur.verdict === 'WARN' && 'border-l-[3px] !border-l-warn')}>
+        {cur ? <><div className={cn('card', cur.verdict === 'PAUSE' && 'border-l-[3px] !border-l-bad', cur.verdict === 'WARN' && 'border-l-[3px] !border-l-warn')}>
           <div className="flex justify-between"><h2 className="font-semibold text-lg">{cur.domain}</h2><RiskBadge verdict={cur.verdict} /></div>
           <p className="text-sm text-muted mt-1">{cur.productName} · {money(cur.price)} vs {money(cur.benchmark)} · {cur.payeeTier}</p>
           <p className="text-sm mt-2">{cur.reasons[0]}</p>

@@ -11,7 +11,7 @@ import { ageLabel, cn, maskEmail, money } from '../lib/format';
 const TILES: { v: Verdict; label: string; sub: string; on: string }[] = [
   { v: 'ALLOW', label: 'LOW RISK', sub: 'Auto-Release', on: 'bg-ok text-white' },
   { v: 'WARN', label: 'MEDIUM RISK', sub: '2FA Step-Up', on: 'bg-warn text-ink' },
-  { v: 'BLOCK', label: 'HIGH RISK', sub: 'Intercept Locked', on: 'bg-bad-deep text-white' }];
+  { v: 'PAUSE', label: 'HIGH RISK', sub: 'Intercept Locked', on: 'bg-bad-deep text-white' }];
 export default function Pay() {
   const { id } = useParams(); const nav = useNavigate(); const { toast } = useApp();
   const { list, loading } = useInvestigations();
@@ -26,7 +26,7 @@ export default function Pay() {
   const state = running ? { cls: 'bg-navy text-white', chip: 'VERIFYING', title: 'Verifying merchant…', text: 'Guardian is checking the PayPal recipient. No funds are captured until verification ends.' }
     : cs === 'CAPTURED' ? { cls: 'bg-ok text-white', chip: 'CAPTURED', title: 'Payment Captured', text: 'The recipient matched the storefront. Funds were released to the verified merchant.' }
     : cs === 'VOIDED' ? { cls: 'bg-ink text-white', chip: 'VOIDED', title: 'Authorization Voided', text: 'The PayPal authorization was voided. No funds were transferred to the seller.' }
-    : inv.verdict === 'BLOCK' ? { cls: 'bg-bad-deep text-white', chip: 'SEC-ERR #8829-HK', title: 'Payment Capture Paused', text: 'TrustOra halted funds settlement. Storefront claims do not match the destination PayPal recipient ledger.' }
+    : inv.verdict === 'PAUSE' ? { cls: 'bg-bad-deep text-white', chip: 'SEC-ERR #8829-HK', title: 'Payment Capture Paused', text: 'TrustOra halted funds settlement. Storefront claims do not match the destination PayPal recipient ledger.' }
     : { cls: 'bg-warn text-ink', chip: 'REVIEW HOLD', title: 'Payment On Hold', text: 'Some claims could not be verified. Capture is paused until you cancel or an analyst reviews it.' };
   const submitReport = async (e: FormEvent) => { e.preventDefault(); await run('rep', () => api.reportMerchant({ domain: inv.domain, reason, investigationId: inv.id }), 'Report submitted. Thank you.'); setRep(false); setReason(''); };
   return <>

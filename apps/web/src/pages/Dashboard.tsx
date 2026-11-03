@@ -15,7 +15,7 @@ export default function Dashboard() {
     { l: 'Websites Checked', v: 139 + list.length, icon: Globe, sub: <span className="text-electric font-mono text-xs">↗ +12% this week</span> },
     { l: 'Verified Entities', v: 97 + done.filter(i => i.verdict === 'ALLOW').length, icon: BadgeCheck, sub: <span className="text-muted text-xs">Trusted PayPal tier</span> },
     { l: 'Suspicious Sites', v: 16 + flagged.length, icon: Flag, sub: <Pill tone="info">Flagged</Pill> },
-    { l: 'Prevented Threats', v: 4 + done.filter(i => i.verdict === 'BLOCK').length, icon: ShieldAlert, sub: <span className="mono-label !text-bad">Capture paused</span> },
+    { l: 'Prevented Threats', v: 4 + done.filter(i => i.verdict === 'PAUSE').length, icon: ShieldAlert, sub: <span className="mono-label !text-bad">Capture paused</span> },
   ];
   const defended = 4620.45 + flagged.filter(i => i.captureState !== 'CAPTURED').reduce((s, i) => s + i.price, 0);
   const radar = flagged[0];
@@ -52,7 +52,7 @@ export default function Dashboard() {
 
     <section className="card">
       <div className="flex items-center justify-between"><h2 className="font-semibold flex items-center gap-2"><Radar size={18} className="text-electric" />Live Consistency Radar</h2>
-        {radar && <Pill tone={radar.verdict === 'BLOCK' ? 'bad' : 'warn'}>{radar.verdict === 'BLOCK' ? 'INTERCEPTED' : 'FLAGGED'}</Pill>}</div>
+        {radar && <Pill tone={radar.verdict === 'PAUSE' ? 'bad' : 'warn'}>{radar.verdict === 'PAUSE' ? 'INTERCEPTED' : 'FLAGGED'}</Pill>}</div>
       {radar ? <>
         <p className="text-sm text-muted my-2">Active session consistency mismatch detected during payment authorization handoff.</p>
         <div className="rounded-lg bg-tint p-3 space-y-2">
@@ -71,7 +71,7 @@ export default function Dashboard() {
         <div className="flex justify-between items-start gap-2"><div><div className="font-mono font-semibold text-sm break-all">{i.domain}</div><div className="text-xs text-muted">Claimed: {i.claimedBrand}</div></div><RiskBadge verdict={i.verdict} /></div>
         <div className="mt-3 rounded bg-tint p-2 flex justify-between items-center text-xs font-mono">
           <span className="flex items-center gap-2 min-w-0">{i.payeeName.includes('@') ? <Mail size={14} /> : <Building2 size={14} />}<span className="truncate">{i.payeeName}</span></span>
-          <span className={cn('font-semibold', i.verdict === 'BLOCK' ? 'text-bad' : i.verdict === 'ALLOW' ? 'text-electric' : 'text-warn')}>{i.verdict === 'BLOCK' ? 'CAPTURE PAUSED' : i.verdict === 'ALLOW' ? 'ALLOWED' : i.verdict === 'WARN' ? `${i.riskScore}% Anomaly` : '…'}</span></div></button>)}</div>
+          <span className={cn('font-semibold', i.verdict === 'PAUSE' ? 'text-bad' : i.verdict === 'ALLOW' ? 'text-electric' : 'text-warn')}>{i.verdict === 'PAUSE' ? 'CAPTURE PAUSED' : i.verdict === 'ALLOW' ? 'ALLOWED' : i.verdict === 'WARN' ? `${i.riskScore}% Anomaly` : '…'}</span></div></button>)}</div>
     </section>
 
     <section className="card">

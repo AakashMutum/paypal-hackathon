@@ -4,7 +4,7 @@ import { Download, Search } from 'lucide-react';
 import { useInvestigations } from '../hooks/useOrderPolling';
 import { RiskBadge } from '../components/ui';
 import { clock, cn, download } from '../lib/format';
-const F = ['ALL', 'ALLOW', 'WARN', 'BLOCK'] as const;
+const F = ['ALL', 'ALLOW', 'WARN', 'PAUSE'] as const;
 export default function HistoryPage() {
   const { list, loading } = useInvestigations(3000); const nav = useNavigate();
   const [f, setF] = useState<typeof F[number]>('ALL'); const [q, setQ] = useState('');

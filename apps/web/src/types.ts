@@ -1,11 +1,11 @@
 // Frontend-specific types used by apps/web.
-// Shared backend/API types live in ../../../../../../../../../../types (packages/contracts/src/index.ts).
+// Shared backend/API types live in packages/contracts/src/index.ts, imported as @checkout-guardian/contracts.
 
-export type Verdict = 'ALLOW' | 'WARN' | 'BLOCK';
+export type Verdict = 'ALLOW' | 'WARN' | 'PAUSE';
 export type InvestigationStatus = 'QUEUED' | 'RUNNING' | 'COMPLETE' | 'FAILED';
 export type NodeId = 'SURFACE' | 'MERCHANT' | 'PRICE' | 'PAYEE';
 export type EvidenceStatus = 'PASS' | 'WARN' | 'FAIL';
-export type CaptureState = 'PENDING' | 'AUTHORIZED' | 'CAPTURED' | 'HELD' | 'VOIDED';
+export type CaptureState = 'PENDING' | 'AUTHORIZED' | 'CAPTURED' | 'HELD' | 'VOIDED' | 'FAILED';
 
 export interface EvidenceField { label: string; value: string; flag?: boolean; strike?: boolean; meter?: number }
 export interface Evidence {
@@ -24,7 +24,7 @@ export interface Investigation {
 }
 export interface CartItem { sku: string; name: string; price: number; qty: number }
 export interface CreateOrderRequest { storeId: string; items: CartItem[]; buyerEmail: string }
-export interface CreateOrderResponse { orderId: string; paypalOrderId: string; investigationId: string }
+export interface CreateOrderResponse { orderId: string; paypalOrderId: string; investigationId: string; orderToken?: string; simulated?: boolean; mode?: string }
 export interface ScanRequest { url: string }
 export interface MerchantRegistration { legalName: string; domain: string; paypalEmail: string; type: 'REGISTERED' | 'INDIVIDUAL'; country: string }
 export interface MerchantResult { merchantId: string; status: 'VERIFIED' | 'SUSPECT' }
