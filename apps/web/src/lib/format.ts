@@ -24,12 +24,10 @@ export function download(name: string, data: unknown) {
   const a = document.createElement('a'); a.href = url; a.download = name; a.click(); URL.revokeObjectURL(url);
 }
 export function telemetry(list: Investigation[]) {
-  const ev = list.filter(i => i.status === 'COMPLETE').slice(0, 3).map(i => ({
+  return list.filter(i => i.status === 'COMPLETE').slice(0, 3).map(i => ({
     id: i.id, time: clock(i.createdAt),
     tone: (i.verdict === 'PAUSE' ? 'bad' : i.verdict === 'WARN' ? 'warn' : 'info') as Tone,
     title: i.verdict === 'PAUSE' ? 'Capture blocked' : i.verdict === 'WARN' ? 'Held for review' : 'Checkout cleared',
     text: i.verdict === 'ALLOW' ? `No problems found for ${i.domain} (confidence ${i.confidence}%).` : `${i.verdict === 'PAUSE' ? 'Blocked capture for' : 'Held a checkout from'} ${i.domain}.`,
   }));
-  ev.push({ id: 'model', time: '11:12:49', tone: 'neutral', title: 'About this log', text: 'Shows the latest investigations from this session.' });
-  return ev;
 }

@@ -307,6 +307,7 @@ function sellerFromMeta(meta: Map<string, string>): string | undefined {
 export interface ExtractedPage {
   title?: string;
   siteName?: string;
+  faviconUrl?: string;
   visibleText: string;
   /** Visible text chunks, one per text node, so searches do not span unrelated elements. */
   chunks: string[];
@@ -333,6 +334,12 @@ export function extractPage(html: string): ExtractedPage {
   const title = titleMatch ? collapse(titleMatch[1]) : undefined;
   const meta = readMetaTags(body);
   const siteName = meta.get('og:site_name') ?? meta.get('application-name');
+  const iconTag = (body.match(/<link\b[^>]*>/gi) ?? []).find((tag) => {
+    const rel = (attr(tag, 'rel') ?? '').toLowerCase();
+    return rel.split(/\s+/).some((part) => part === 'icon' || part.endsWith('touch-icon'));
+  });
+  const iconHref = iconTag ? attr(iconTag, 'href') : undefined;
+  const faviconUrl = iconHref ? decodeEntities(iconHref).trim() : undefined;
 
   const visible: string[] = [];
   const hidden: string[] = [...comments.filter(Boolean)];
@@ -401,6 +408,7 @@ export function extractPage(html: string): ExtractedPage {
   return {
     title,
     siteName,
+    ...(faviconUrl ? { faviconUrl } : {}),
     visibleText,
     chunks: visible,
     hiddenText,
@@ -532,6 +540,27 @@ export function extractPageClaims(html: string, finalUrl: string, httpStatus = 2
     }
   }
 
+  const hasContactPage = Boolean(
+    sectionLinks.contact || page.emails.length > 0 || page.phones.length > 0 || page.address,
+  );
+  const hasLegalPage = Boolean(sectionLinks.terms || sectionLinks.privacy);
+
+  // The favicon URL is recorded, but it is not compared to a trusted reference: no such
+  // reference exists in this pipeline. A third-party CDN is common and is not a mismatch.
+  let faviconUrl: string | undefined;
+  let faviconSameOrigin: boolean | undefined;
+  if (page.faviconUrl) {
+    try {
+      const icon = new URL(page.faviconUrl, finalUrl);
+      if (icon.protocol === 'http:' || icon.protocol === 'https:') {
+        faviconUrl = icon.toString();
+        if (own) faviconSameOrigin = registrableDomain(icon.hostname) === own;
+      }
+    } catch {
+      // A malformed icon URL is simply not recorded.
+    }
+  }
+
   // A product-page <title> is a product name, not the merchant's claimed identity. Only fall
   // back to the title on non-product URLs.
   const siteName = page.siteName ?? (!isProductPath(finalUrl) ? page.title?.split(/\s[-|–]\s/)[0] : undefined);
@@ -546,8 +575,10 @@ export function extractPageClaims(html: string, finalUrl: string, httpStatus = 2
     visibleText: page.visibleText,
     hiddenText: page.hiddenText,
     sectionLinks,
-    hasContactPage: Boolean(sectionLinks.contact),
-    hasLegalPage: Boolean(sectionLinks.terms || sectionLinks.privacy),
+    ...(faviconUrl ? { faviconUrl } : {}),
+    ...(faviconSameOrigin !== undefined ? { faviconSameOrigin } : {}),
+    hasContactPage,
+    hasLegalPage,
     pageAccess: access,
     ...(access.state === 'ok' && product ? { product } : {}),
     ...(marketplace ? { marketplace } : {}),

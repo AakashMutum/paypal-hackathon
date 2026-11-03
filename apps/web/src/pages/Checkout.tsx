@@ -9,7 +9,7 @@ import { api } from '../api/apiClient';
 import { money } from '../lib/format';
 export default function Checkout() {
   const { id } = useParams(); const s = storeById(id); const cart = useCart(); const nav = useNavigate(); const { setLatestId, protection, toast } = useApp();
-  const [email, setEmail] = useState('alex.walker@mail.example');
+  const [email, setEmail] = useState('');
   const order = useRef<{ orderId: string; invId: string } | null>(null);
   if (!s) return <Navigate to="/stores" replace />;
   const items = cart.storeId === s.id && cart.items.length ? cart.items : [{ sku: s.product.sku, name: s.product.name, price: s.product.price, qty: 1 }];
@@ -20,7 +20,7 @@ export default function Checkout() {
       {items.map((i, n) => <div key={n} className="flex justify-between text-sm"><span>{i.name} × {i.qty}</span><span className="font-mono">{money(i.price * i.qty)}</span></div>)}
       <div className="border-t border-ink/10 pt-3 flex justify-between font-semibold"><span>Total</span><span className="font-mono">{money(total)}</span></div></div>
     <div className="card space-y-2"><label htmlFor="em" className="mono-label">Buyer email</label>
-      <input id="em" className="input font-mono" value={email} onChange={e => setEmail(e.target.value)} type="email" /></div>
+      <input id="em" className="input font-mono" value={email} onChange={e => setEmail(e.target.value)} type="email" placeholder="buyer@example.com" autoComplete="email" /></div>
     <div className="card flex gap-3 items-start text-sm"><ShieldCheck className={protection ? 'text-ok' : 'text-muted'} />
       <p>{protection ? 'Guardian investigates the merchant and the receiving PayPal account before any funds are captured.' : 'The pre-payment switch is off in this app, but the API still investigates every order before capture.'}</p></div>
     <PaypalButton disabled={!email}

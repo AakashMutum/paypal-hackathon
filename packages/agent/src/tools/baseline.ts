@@ -345,6 +345,50 @@ function buildPageEvidence(claims: SafeClaims | undefined, ids: IdFactory): Evid
     });
   }
 
+  if (access?.state === 'ok') {
+    if (!claims.hasContactPage && !claims.hasLegalPage) {
+      evidence.push({
+        id: ids.next('CONTACT_LEGAL_MISSING'),
+        type: 'CONTACT_LEGAL_MISSING',
+        severity: 'low',
+        confidence: 0.7,
+        summary:
+          'The page is readable but publishes neither contact details nor a privacy/terms page.',
+        source: 'rule',
+        deterministic: true,
+        data: {
+          hasContactPage: false,
+          hasLegalPage: false,
+          ...(claims.sectionLinks.contact ? { contactPageUrl: claims.sectionLinks.contact } : {}),
+          ...(claims.sectionLinks.terms || claims.sectionLinks.privacy
+            ? { legalPageUrl: claims.sectionLinks.terms ?? claims.sectionLinks.privacy }
+            : {}),
+        },
+      });
+    }
+
+    // Favicon observation only. A true mismatch needs a trusted reference favicon; without one,
+    // a third-party CDN must not be reported as a mismatch. This evidence carries no points.
+    evidence.push({
+      id: ids.next('FAVICON_OBSERVED'),
+      type: 'FAVICON_OBSERVED',
+      severity: 'info',
+      confidence: 0.7,
+      summary: claims.faviconUrl
+        ? 'A favicon is declared; its integrity was not compared to a trusted reference.'
+        : 'No favicon was declared; this is an observation, not evidence of fraud.',
+      source: 'rule',
+      deterministic: true,
+      data: {
+        status: claims.faviconUrl ? 'declared' : 'missing',
+        ...(claims.faviconUrl ? { faviconUrl: claims.faviconUrl } : {}),
+        ...(claims.faviconSameOrigin !== undefined ? { sameOrigin: claims.faviconSameOrigin } : {}),
+        ...(claims.faviconHash ? { faviconHash: claims.faviconHash } : {}),
+        integrity: 'not_compared',
+      },
+    });
+  }
+
   if (access?.state === 'blocked') {
     evidence.push({
       id: ids.next('PAGE_BLOCKED'),

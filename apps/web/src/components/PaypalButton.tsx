@@ -16,5 +16,5 @@ export function PaypalButton({ createOrder, onApprove, disabled }: { createOrder
   if (sdk) return <div ref={ref} className={disabled ? 'pointer-events-none opacity-50' : ''} />;
   return <button disabled={disabled || busy} onClick={async () => { setBusy(true); try { await cb.current.createOrder(); cb.current.onApprove(); } finally { setBusy(false); } }}
     className="w-full h-12 rounded bg-[#FFC439] hover:bg-[#f5b921] text-[#003087] font-bold italic text-lg flex items-center justify-center gap-2 disabled:opacity-60">
-    {busy ? <Loader2 className="animate-spin" size={18} /> : null}Pay with PayPal <span className="text-[10px] not-italic font-semibold opacity-70">SANDBOX</span></button>;
+    {busy ? <Loader2 className="animate-spin" size={18} /> : null}Pay with PayPal <span className="text-[10px] not-italic font-semibold opacity-70">SIMULATED</span></button>;
 }

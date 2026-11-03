@@ -1,5 +1,5 @@
 import { readCertificate } from '../certificate/tls.js';
-import { domainAgeDays, findRegistrationDate, rdapUrlFor } from '../domain/rdap.js';
+import { domainAgeDays, findRegistrarName, findRegistrationDate, rdapUrlFor } from '../domain/rdap.js';
 import { PayeeBindingCollector } from '../payee/binding.js';
 import { assertSafeUrl, UnsafeUrlError } from '../safety/url.js';
 import { readLimitedText, registrableDomain } from '../util.js';
@@ -129,14 +129,24 @@ export function createLocalSignalsPort(options: LocalSignalsPortOptions): AgentS
     }
     const registered = findRegistrationDate(body);
     const ageDays = registered ? domainAgeDays(registered, new Date(now())) : null;
+    const registrar = findRegistrarName(body);
     if (registered === null || ageDays === null) {
       return [unavailable('domain age lookup', 'rdap', 'no registration date')];
     }
     return [
-      evidence('DOMAIN_AGE', 'rdap', ageSeverity(ageDays), `The domain was registered ${ageDays} days ago.`, {
-        ageDays,
-        registrationDate: registered,
-      }),
+      evidence(
+        'DOMAIN_AGE',
+        'rdap',
+        ageSeverity(ageDays),
+        registrar
+          ? `The domain was registered ${ageDays} days ago with ${registrar}.`
+          : `The domain was registered ${ageDays} days ago.`,
+        {
+          ageDays,
+          registrationDate: registered,
+          ...(registrar ? { registrar } : {}),
+        },
+      ),
     ];
   }
 

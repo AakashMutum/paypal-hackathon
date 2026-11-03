@@ -4,37 +4,38 @@ import { useInvestigations } from '../hooks/useOrderPolling';
 import { useApp } from '../context/OrderStateContext';
 import { Pill, RiskBadge, Switch } from '../components/ui';
 import { cn, telemetry } from '../lib/format';
+import { dashboardMetrics } from '../lib/metrics';
 
 export default function Dashboard() {
   const { list } = useInvestigations(3000);
   const { protection, setProtection, toast } = useApp();
   const nav = useNavigate();
-  const done = list.filter(i => i.status === 'COMPLETE');
-  const flagged = done.filter(i => i.verdict !== 'ALLOW');
+  const metrics = dashboardMetrics(list);
+  const flagged = list.filter(i => i.status === 'COMPLETE' && (i.verdict === 'WARN' || i.verdict === 'PAUSE'));
   const stats = [
-    { l: 'Websites Checked', v: 139 + list.length, icon: Globe, sub: <span className="text-electric font-mono text-xs">Demo figures</span> },
-    { l: 'Allowed Sites', v: 97 + done.filter(i => i.verdict === 'ALLOW').length, icon: BadgeCheck, sub: <span className="text-muted text-xs">Allowed by Guardian</span> },
-    { l: 'Suspicious Sites', v: 16 + flagged.length, icon: Flag, sub: <Pill tone="info">Flagged</Pill> },
-    { l: 'Prevented Threats', v: 4 + done.filter(i => i.verdict === 'PAUSE').length, icon: ShieldAlert, sub: <span className="mono-label !text-bad">Capture paused</span> },
+    { l: 'Websites Checked', v: metrics.websitesChecked, icon: Globe, sub: <span className="text-muted text-xs">Persisted investigations</span> },
+    { l: 'Allowed Sites', v: metrics.allowed, icon: BadgeCheck, sub: <span className="text-muted text-xs">Allowed by Guardian</span> },
+    { l: 'Suspicious Sites', v: metrics.suspicious, icon: Flag, sub: <Pill tone="info">Flagged</Pill> },
+    { l: 'Prevented Threats', v: metrics.prevented, icon: ShieldAlert, sub: <span className="mono-label !text-bad">Capture paused</span> },
   ];
-  const defended = 4620.45 + flagged.filter(i => i.captureState !== 'CAPTURED').reduce((s, i) => s + (i.price ?? 0), 0);
+  const defended = metrics.defendedAmount;
   const radar = flagged[0];
   const [whole, cents] = defended.toFixed(2).split('.');
   return <>
     <section>
-      <p className="mono-label !text-electric">Active session • ID #8849-DF</p>
-      <h1 className="text-3xl font-bold mt-1">Welcome, Alex</h1>
+      <p className="mono-label !text-electric">Persisted investigations</p>
+      <h1 className="text-3xl font-bold mt-1">Protection overview</h1>
       <p className="text-muted text-sm mt-1">TrustOra protection {protection ? 'enabled' : 'paused'} (demo switch; the API screens every order)</p>
     </section>
 
     <section className="rounded-xl bg-navy text-white p-5 shadow-l2">
       <div className="flex justify-between items-start">
         <Pill tone="cyan" pulse className="!bg-white/5">GUARDIAN: {protection ? 'ON' : 'OFF'}</Pill>
-        <span className="pill border-white/20 text-white/80">DEMO</span></div>
-      <p className="text-sm text-white/60 mt-4">Sample amount held or paused</p>
+        <span className="pill border-white/20 text-white/80">PERSISTED</span></div>
+      <p className="text-sm text-white/60 mt-4">Amount held or paused</p>
       <div className="flex items-end justify-between gap-3 mt-1">
-        <div className="text-4xl font-bold font-mono">${Number(whole).toLocaleString()}<span className="text-lg text-white/60">.{cents} (demo)</span></div>
-        <span className="pill border-white/15 text-white/80 !h-9 px-3"><ShieldCheck size={14} />Demo data</span></div>
+        <div className="text-4xl font-bold font-mono">${Number(whole).toLocaleString()}<span className="text-lg text-white/60">.{cents}</span></div>
+        <span className="pill border-white/15 text-white/80 !h-9 px-3"><ShieldCheck size={14} />{metrics.websitesChecked === 0 ? 'No investigations yet' : 'From persisted data'}</span></div>
       <div className="mt-5 rounded-lg bg-white/5 p-3 flex items-center justify-between gap-3">
         <div className="flex items-center gap-3"><Zap size={18} className="text-accent" /><div><div className="text-sm font-semibold">Pre-Payment Intervention</div><div className="text-xs text-white/60">Investigates before capture</div></div></div>
         <Switch on={protection} label="Pre-payment intervention" onChange={b => { setProtection(b); toast(b ? 'Switch on' : 'Switch off. This only changes this screen: the API still screens every order', b ? 'ok' : 'bad'); }} /></div>
@@ -67,17 +68,21 @@ export default function Dashboard() {
 
     <section>
       <div className="flex justify-between items-baseline mb-2"><h2 className="font-semibold text-lg">Recent Assessments</h2><Link to="/history" className="text-electric text-sm font-semibold">View All ({list.length})</Link></div>
-      <div className="space-y-3">{list.slice(0, 3).map(i => <button key={i.id} onClick={() => nav(`/engine/${i.id}`)} className="card !p-4 w-full text-left hover:shadow-l2 hover:border-electric/20 transition">
-        <div className="flex justify-between items-start gap-2"><div><div className="font-mono font-semibold text-sm break-all">{i.domain}</div><div className="text-xs text-muted">Claimed: {i.claimedBrand}</div></div><RiskBadge verdict={i.verdict} /></div>
-        <div className="mt-3 rounded bg-tint p-2 flex justify-between items-center text-xs font-mono">
-          <span className="flex items-center gap-2 min-w-0">{(i.payeeName ?? '').includes('@') ? <Mail size={14} /> : <Building2 size={14} />}<span className="truncate">{i.payeeName ?? 'Payee not supplied'}</span></span>
-          <span className={cn('font-semibold', i.verdict === 'PAUSE' ? 'text-bad' : i.verdict === 'ALLOW' ? 'text-electric' : 'text-warn')}>{i.verdict === 'PAUSE' ? 'CAPTURE PAUSED' : i.verdict === 'ALLOW' ? 'ALLOWED' : i.verdict === 'WARN' ? `${i.riskScore}% Anomaly` : '…'}</span></div></button>)}</div>
+      {list.length === 0
+        ? <p className="card !p-4 text-sm text-muted">No investigations yet. Run a scan or check out from a demo storefront to create one.</p>
+        : <div className="space-y-3">{list.slice(0, 3).map(i => <button key={i.id} onClick={() => nav(`/engine/${i.id}`)} className="card !p-4 w-full text-left hover:shadow-l2 hover:border-electric/20 transition">
+          <div className="flex justify-between items-start gap-2"><div><div className="font-mono font-semibold text-sm break-all">{i.domain}</div><div className="text-xs text-muted">Claimed: {i.claimedBrand}</div></div><RiskBadge verdict={i.verdict} /></div>
+          <div className="mt-3 rounded bg-tint p-2 flex justify-between items-center text-xs font-mono">
+            <span className="flex items-center gap-2 min-w-0">{(i.payeeName ?? '').includes('@') ? <Mail size={14} /> : <Building2 size={14} />}<span className="truncate">{i.payeeName ?? 'Payee not supplied'}</span></span>
+            <span className={cn('font-semibold', i.verdict === 'PAUSE' ? 'text-bad' : i.verdict === 'ALLOW' ? 'text-electric' : 'text-warn')}>{i.verdict === 'PAUSE' ? 'CAPTURE PAUSED' : i.verdict === 'ALLOW' ? 'ALLOWED' : i.verdict === 'WARN' ? `${i.riskScore}% Anomaly` : '…'}</span></div></button>)}</div>}
     </section>
 
     <section className="card">
-      <div className="flex justify-between"><h2 className="font-semibold flex items-center gap-2"><Activity size={18} className="text-electric" />Recent activity</h2><span className="mono-label !text-electric">This session</span></div>
-      <ul className="mt-3 space-y-4">{telemetry(list).map(t => <li key={t.id} className="flex gap-3"><span className={cn('mt-1.5 w-2 h-2 rounded-full shrink-0', t.tone === 'bad' ? 'bg-bad' : t.tone === 'warn' ? 'bg-warn' : t.tone === 'info' ? 'bg-electric' : 'bg-muted')} />
-        <div><div className="flex justify-between gap-4 text-sm font-semibold"><span>{t.title}</span><span className="font-mono text-xs text-muted">{t.time}</span></div><p className="text-sm text-muted">{t.text}</p></div></li>)}</ul>
+      <div className="flex justify-between"><h2 className="font-semibold flex items-center gap-2"><Activity size={18} className="text-electric" />Recent activity</h2><span className="mono-label !text-electric">Persisted</span></div>
+      {telemetry(list).length === 0
+        ? <p className="text-sm text-muted mt-2">No completed investigations yet.</p>
+        : <ul className="mt-3 space-y-4">{telemetry(list).map(t => <li key={t.id} className="flex gap-3"><span className={cn('mt-1.5 w-2 h-2 rounded-full shrink-0', t.tone === 'bad' ? 'bg-bad' : t.tone === 'warn' ? 'bg-warn' : t.tone === 'info' ? 'bg-electric' : 'bg-muted')} />
+          <div><div className="flex justify-between gap-4 text-sm font-semibold"><span>{t.title}</span><span className="font-mono text-xs text-muted">{t.time}</span></div><p className="text-sm text-muted">{t.text}</p></div></li>)}</ul>}
     </section>
   </>;
 }

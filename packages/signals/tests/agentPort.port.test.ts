@@ -36,6 +36,15 @@ test('getDomainReport maps domain age to agent severities', async () => {
   }
 });
 
+test('getDomainReport carries the registrar name from RDAP when it is present', async () => {
+  const port = createLocalSignalsPort(baseOptions({ rdapDaysAgo: 500, registrar: 'Example Registrar' }));
+  const out = await port.getDomainReport('shop.example', callOpts);
+  const age = out.find((e) => e.type === 'DOMAIN_AGE');
+  assert.ok(age);
+  assert.equal((age.data as { registrar?: string }).registrar, 'Example Registrar');
+  assert.match(age.summary, /Example Registrar/);
+});
+
 test('getDomainReport reports TLS_INVALID only for expired or untrusted certificates', async () => {
   const run = async (cert: typeof goodCert) =>
     createLocalSignalsPort(baseOptions({ rdapDaysAgo: 500 }, { tlsProbe: async () => cert })).getDomainReport(

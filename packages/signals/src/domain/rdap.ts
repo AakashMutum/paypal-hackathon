@@ -91,6 +91,36 @@ export function findRegistrationDate(rdap: unknown): string | null {
   return null;
 }
 
+function vcardName(value: unknown): string | null {
+  if (!Array.isArray(value) || value.length < 2) return null;
+  const properties = value[1];
+  if (!Array.isArray(properties)) return null;
+  for (const property of properties) {
+    if (!Array.isArray(property) || property[0] !== 'fn') continue;
+    const name = property[3];
+    if (typeof name === 'string' && name.trim().length > 0) return name.trim();
+  }
+  return null;
+}
+
+/** Reads the registrar name from RDAP entities. Missing or malformed data returns null. */
+export function findRegistrarName(rdap: unknown): string | null {
+  const entities = (rdap as { entities?: unknown })?.entities;
+  if (!Array.isArray(entities)) return null;
+  for (const entity of entities) {
+    if (!entity || typeof entity !== 'object') continue;
+    const record = entity as { roles?: unknown; vcardArray?: unknown; handle?: unknown };
+    const roles = record.roles;
+    if (!Array.isArray(roles) || !roles.includes('registrar')) continue;
+    const name = vcardName(record.vcardArray);
+    if (name) return name;
+    if (typeof record.handle === 'string' && record.handle.trim().length > 0) {
+      return record.handle.trim();
+    }
+  }
+  return null;
+}
+
 export class RdapCollector implements ISignalCollector {
   name = 'rdap';
 
@@ -132,6 +162,7 @@ export class RdapCollector implements ISignalCollector {
     }
     const registration = findRegistrationDate(body);
     const ageDays = registration ? domainAgeDays(registration) : null;
+    const registrar = findRegistrarName(body);
 
     if (registration === null || ageDays === null) {
       return [
@@ -142,7 +173,7 @@ export class RdapCollector implements ISignalCollector {
           summary: `No registration date found for ${domain}.`,
           source: this.name,
           artifactUrl: url,
-          metadata: { domain },
+          metadata: { domain, ...(registrar ? { registrar } : {}) },
         }),
       ];
     }
@@ -153,11 +184,13 @@ export class RdapCollector implements ISignalCollector {
         type: 'DOMAIN_AGE',
         severity,
         confidence: 0.9,
-        summary: `${domain} was registered ${ageDays} days ago.`,
+        summary: registrar
+          ? `${domain} was registered ${ageDays} days ago with ${registrar}.`
+          : `${domain} was registered ${ageDays} days ago.`,
         source: this.name,
         hardFail: false,
         artifactUrl: url,
-        metadata: { domain, registrationDate: registration, ageDays },
+        metadata: { domain, registrationDate: registration, ageDays, ...(registrar ? { registrar } : {}) },
       }),
     ];
   }

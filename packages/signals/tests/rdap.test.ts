@@ -4,6 +4,7 @@ import {
   RDAP_BOOTSTRAP_URL,
   RdapCollector,
   domainAgeDays,
+  findRegistrarName,
   findRegistrationDate,
   rdapUrlFor,
 } from '../src/domain/rdap.js';
@@ -25,6 +26,29 @@ test('findRegistrationDate reads the registration event', () => {
   };
   assert.equal(findRegistrationDate(rdap), '2019-05-05T00:00:00Z');
   assert.equal(findRegistrationDate({}), null);
+});
+
+test('findRegistrarName reads the registrar vcard and tolerates malformed entities', () => {
+  const vcard = ['vcard', [['version', {}, 'text', '4.0'], ['fn', {}, 'text', 'Example Registrar, Inc.']]];
+  assert.equal(findRegistrarName({ entities: [{ roles: ['registrar'], vcardArray: vcard }] }), 'Example Registrar, Inc.');
+  assert.equal(findRegistrarName({ entities: [{ roles: ['registrar'], handle: 'REG-EXAMPLE' }] }), 'REG-EXAMPLE');
+  assert.equal(findRegistrarName({ entities: [{ roles: ['registrant'], vcardArray: vcard }] }), null);
+  assert.equal(findRegistrarName({ entities: [null, { roles: 'registrar' }, { roles: ['registrar'], vcardArray: [] }] }), null);
+  assert.equal(findRegistrarName({}), null);
+  assert.equal(findRegistrarName(null), null);
+});
+
+test('RdapCollector includes the registrar name when RDAP provides it', async () => {
+  const date = new Date(Date.now() - 500 * 24 * 60 * 60 * 1000).toISOString();
+  const fetchImpl = (async () => jsonResponse({
+    events: [{ eventAction: 'registration', eventDate: date }],
+    entities: [{ roles: ['registrar'], vcardArray: ['vcard', [['fn', {}, 'text', 'Example Registrar']]] }],
+  })) as unknown as typeof fetch;
+
+  const [evidence] = await new RdapCollector().collect(request, options(fetchImpl));
+  assert.equal(evidence.type, 'DOMAIN_AGE');
+  assert.equal(evidence.metadata?.registrar, 'Example Registrar');
+  assert.match(evidence.summary, /Example Registrar/);
 });
 
 function rdapFor(daysAgo: number): typeof fetch {

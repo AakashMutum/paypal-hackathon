@@ -111,6 +111,8 @@ test('a blocked marketplace page yields explicit page evidence, not a fraud find
   assert.ok(found.has('PAGE_BLOCKED'));
   assert.ok(found.has('MERCHANT_RECOGNIZED'));
   assert.equal(found.has('PRODUCT_DATA_UNAVAILABLE'), false);
+  assert.equal(found.has('CONTACT_LEGAL_MISSING'), false);
+  assert.equal(found.has('FAVICON_OBSERVED'), false);
 
   const blocked = result.evidence.find((entry) => entry.type === 'PAGE_BLOCKED');
   assert.equal(blocked?.severity, 'low');
@@ -140,6 +142,8 @@ test('structured product metadata is surfaced without changing the score', async
           availability: 'InStock',
           source: 'json-ld',
         },
+        hasContactPage: true,
+        hasLegalPage: true,
         visibleText: 'Echo Dot (4th Gen)',
       }),
     ),
@@ -161,6 +165,50 @@ test('structured product metadata is surfaced without changing the score', async
 
   assert.equal(result.verdict.score, 0);
   assert.notEqual(result.verdict.decision, 'PAUSE');
+});
+
+test('a readable page without contact or legal disclosure is a low technical signal, not a pause', async () => {
+  const result = await runInvestigatorAgentDetailed(
+    { orderId: 'ORD-AMZ-CONTACT', merchantUrl: PRODUCT_URL },
+    depsFor(
+      claims({
+        pageAccess: { state: 'ok', httpStatus: 200 },
+        visibleText: 'A shop with a product.',
+      }),
+    ),
+    overrides,
+  );
+
+  const missing = result.evidence.find((entry) => entry.type === 'CONTACT_LEGAL_MISSING');
+  assert.ok(missing);
+  assert.equal(missing?.severity, 'low');
+  assert.equal(missing?.deterministic, true);
+  assert.equal(result.verdict.score, 5);
+  assert.notEqual(result.verdict.decision, 'PAUSE');
+});
+
+test('favicon observation is non-scoring and never invents a mismatch', async () => {
+  const result = await runInvestigatorAgentDetailed(
+    { orderId: 'ORD-AMZ-FAVICON', merchantUrl: PRODUCT_URL },
+    depsFor(
+      claims({
+        pageAccess: { state: 'ok', httpStatus: 200 },
+        hasContactPage: true,
+        hasLegalPage: true,
+        faviconUrl: 'https://cdn.example.net/icon.png',
+        faviconSameOrigin: false,
+        visibleText: 'A shop with a product.',
+      }),
+    ),
+    overrides,
+  );
+
+  const favicon = result.evidence.find((entry) => entry.type === 'FAVICON_OBSERVED');
+  assert.ok(favicon);
+  assert.equal(favicon?.severity, 'info');
+  assert.equal(favicon?.data?.sameOrigin, false);
+  assert.equal(result.evidence.some((entry) => entry.type === 'FAVICON_MISMATCH'), false);
+  assert.equal(result.verdict.score, 0);
 });
 
 test('an empty page and a replay-mode gap are explained explicitly', async () => {
