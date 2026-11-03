@@ -21,7 +21,7 @@
     "test:agent": "tsx --test \"packages/agent/tests/**/*.test.ts\"",
     "test:mcp": "tsx --test \"apps/mcp/tests/**/*.test.ts\"",
     "eval:fixtures": "tsx packages/agent/scripts/eval-fixtures.ts",
-    "record:llm": "tsx packages/agent/scripts/record-llm.ts",
+    "record:llm": "tsx apps/api/scripts/record-llm.ts",
     "memory:setup": "tsx packages/agent/scripts/memory-setup.ts",
     "mcp:dev": "tsx apps/mcp/src/index.ts",
     "demo:agent": "tsx apps/mcp/demo-agent/index.ts",
