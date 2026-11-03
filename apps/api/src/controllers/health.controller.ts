@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction } from 'express';
 import { successResponse, type HealthData, type HealthMeta } from '@checkout-guardian/contracts';
 import { checkDatabase } from '../database/health.js';
+import { getModes } from '../services/modes.service.js';
 
 export async function getHealth(_req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
@@ -11,6 +12,7 @@ export async function getHealth(_req: Request, res: Response, next: NextFunction
       service: 'checkout-guardian-api',
       version: '0.1.0',
       database,
+      modes: { ...(await getModes()) },
     };
     const healthMeta: HealthMeta = {
       timestamp: new Date().toISOString(),

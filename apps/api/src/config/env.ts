@@ -18,6 +18,10 @@ export interface EnvConfig {
   paypalClientSecret: string;
   paypalBaseUrl: string;
   paypalTimeoutMs: number;
+  /** Protects POST /api/demo/reset. Unset is refused in production. */
+  demoAdminToken: string;
+  /** When set, agent routes require Authorization: Bearer <this value>. */
+  guardianApiKey: string;
 }
 
 const rawPaypalMode = (process.env.PAYPAL_MODE || 'sandbox').toLowerCase().trim();
@@ -41,7 +45,13 @@ export const env: EnvConfig = {
   paypalClientSecret: process.env.PAYPAL_CLIENT_SECRET || '',
   paypalBaseUrl: 'https://api-m.sandbox.paypal.com',
   paypalTimeoutMs: parseInt(process.env.PAYPAL_TIMEOUT_MS || '10000', 10),
+  demoAdminToken: process.env.DEMO_ADMIN_TOKEN || '',
+  guardianApiKey: process.env.GUARDIAN_API_KEY || '',
 };
+
+export function isProduction(): boolean {
+  return env.nodeEnv === 'production';
+}
 
 /**
  * Overrides the configured database URL at runtime.

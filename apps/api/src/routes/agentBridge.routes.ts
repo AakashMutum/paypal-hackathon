@@ -7,7 +7,12 @@ import {
   getMarketplaceListings,
 } from '../controllers/agentBridge.controller.js';
 
+import { requireGuardianKey } from '../middleware/auth.js';
+
 export const agentBridgeRouter: ExpressRouter = Router();
+
+// Every agent route requires the bearer token when GUARDIAN_API_KEY is set.
+agentBridgeRouter.use(requireGuardianKey);
 
 agentBridgeRouter.post('/investigations', investigateMerchant);
 agentBridgeRouter.post('/checkout/orders', createAgentCheckout);

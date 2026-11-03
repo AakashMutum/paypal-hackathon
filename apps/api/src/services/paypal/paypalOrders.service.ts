@@ -27,6 +27,7 @@ export interface PayPalPurchaseUnit {
   description?: string;
   payments?: {
     captures?: PayPalCaptureDetails[];
+    authorizations?: Array<{ id: string; status?: string; amount?: PayPalAmount }>;
   };
 }
 
@@ -428,3 +429,67 @@ export async function voidPayPalAuthorization(
   return (await response.json()) as { id: string; status: string };
 }
 
+
+/** The authorization id inside an authorized order, or undefined if PayPal returned none. */
+export function extractAuthorizationId(order: PayPalOrderResponse): string | undefined {
+  return order.purchase_units?.[0]?.payments?.authorizations?.[0]?.id;
+}
+
+export interface PayPalAuthorizationCapture {
+  id: string;
+  status: string;
+}
+
+/**
+ * Captures an authorized payment through the Payments API v2:
+ * POST /v2/payments/authorizations/{authorization_id}/capture.
+ * This is the capture that follows an AUTHORIZE order; the order id is not used here.
+ */
+export async function capturePayPalAuthorization(
+  authorizationId: string,
+  requestId?: string
+): Promise<PayPalAuthorizationCapture> {
+  if (!authorizationId || !authorizationId.trim()) {
+    throw new PayPalOrderError('Valid authorization ID is required to capture', 'VALIDATION_ERROR', 400);
+  }
+
+  const token = await getAccessToken();
+  const activeFetch = customFetch || fetch;
+  const url = `${env.paypalBaseUrl}/v2/payments/authorizations/${encodeURIComponent(authorizationId.trim())}/capture`;
+
+  const headers: Record<string, string> = {
+    Authorization: `Bearer ${token}`,
+    'Content-Type': 'application/json',
+    Accept: 'application/json',
+  };
+  if (requestId) headers['PayPal-Request-Id'] = requestId;
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), env.paypalTimeoutMs);
+
+  let response: Response;
+  try {
+    response = await activeFetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ final_capture: true }),
+      signal: controller.signal,
+    });
+  } catch (error: unknown) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new PayPalOrderError(`PayPal Capture Authorization timed out after ${env.paypalTimeoutMs}ms`, 'TIMEOUT');
+    }
+    const message = error instanceof Error ? error.message : 'Network request failed';
+    throw new PayPalOrderError(`PayPal Capture Authorization network failure: ${message}`, 'NETWORK_ERROR');
+  } finally {
+    clearTimeout(timeoutId);
+  }
+
+  if (!response.ok) {
+    const errorJson = (await response.json().catch(() => ({}))) as { message?: string; details?: unknown };
+    const message = errorJson.message || `PayPal capture failed with status ${response.status}`;
+    throw new PayPalOrderError(message, 'CAPTURE_FAILED', response.status, errorJson.details);
+  }
+
+  return (await response.json()) as PayPalAuthorizationCapture;
+}

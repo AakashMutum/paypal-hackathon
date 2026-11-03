@@ -22,21 +22,21 @@ export default function Engine() {
   if (!inv) return <p className="text-sm text-muted p-4">Loading investigation…</p>;
 
   const done = inv.status === 'COMPLETE', v = inv.verdict ? VERDICT[inv.verdict] : null;
-  const phaseTone = !done ? 'text-electric' : inv.verdict === 'BLOCK' ? 'text-bad-deep' : inv.verdict === 'WARN' ? 'text-warn' : 'text-ok';
+  const phaseTone = !done ? 'text-electric' : inv.verdict === 'PAUSE' ? 'text-bad-deep' : inv.verdict === 'WARN' ? 'text-warn' : 'text-ok';
   const act = async () => {
     setBusy(true);
     try { if (inv.orderId) { await api.cancelOrder(inv.id); toast('Purchase aborted. PayPal authorization voided.', 'ok'); } else { await api.reportMerchant({ domain: inv.domain, reason: 'Blocked from scanner', investigationId: inv.id }); toast(`${inv.domain} added to your blocklist`, 'ok'); } refresh(); }
     catch (e) { toast((e as Error).message, 'bad'); } finally { setBusy(false); }
   };
   const voided = inv.captureState === 'VOIDED';
-  const bannerCls = inv.verdict === 'BLOCK' ? 'bg-bad-deep text-white' : inv.verdict === 'WARN' ? 'bg-warn text-ink' : 'bg-ok text-white';
+  const bannerCls = inv.verdict === 'PAUSE' ? 'bg-bad-deep text-white' : inv.verdict === 'WARN' ? 'bg-warn text-ink' : 'bg-ok text-white';
   return <>
     <section className="card space-y-3">
       <div className="flex justify-between gap-2"><Pill tone="info"><Cpu size={12} />ENGINE CORE ACTIVE</Pill><Pill tone="neutral" className="font-mono">LATENCY: {latency}ms</Pill></div>
       <h1 className="text-[22px] font-semibold leading-7">Merchant Identity & Offer Consistency Engine</h1>
       <p className="text-sm text-muted">Deterministic multi-tier verification between website representation and live PayPal ledger capture.</p>
       <div className="grid grid-cols-3 gap-2 rounded-lg bg-tint p-3">
-        <div><div className="mono-label">Pipeline phase</div><div className={cn('font-mono font-semibold text-sm mt-1', phaseTone)}>T-{inv.evidence.length} {done ? (inv.verdict === 'BLOCK' ? 'Blocked' : inv.verdict === 'WARN' ? 'Review' : 'Verified') : 'Running'}</div></div>
+        <div><div className="mono-label">Pipeline phase</div><div className={cn('font-mono font-semibold text-sm mt-1', phaseTone)}>T-{inv.evidence.length} {done ? (inv.verdict === 'PAUSE' ? 'Blocked' : inv.verdict === 'WARN' ? 'Review' : 'Verified') : 'Running'}</div></div>
         <div><div className="mono-label">Confidence</div><div className="font-mono font-semibold text-sm mt-1">{done ? `${inv.confidence}%` : '—'}</div></div>
         <div><div className="mono-label">Capture state</div><div className={cn('font-mono font-semibold text-sm mt-1', phaseTone)}>{inv.orderId ? CAPTURE_LABEL[inv.captureState] : 'No order'}</div></div></div>
     </section>
