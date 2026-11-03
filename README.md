@@ -89,18 +89,42 @@ npm run build
 ### Demo mode (no accounts, no database)
 
 ```bash
-# API: runs without PayPal credentials or a database (investigations are kept in memory)
+# API: runs without PayPal credentials or a database (payments are simulated, data stays in memory)
 npm start
 
-# Web app, in a second terminal. With VITE_USE_MOCK=true it uses its built-in simulated backend.
+# Web app, in a second terminal
 cp apps/web/.env.example apps/web/.env
 npm run dev:web      # http://localhost:5173
 ```
 
+Without `VITE_API_URL` the web app uses its built-in simulated backend (badge: "Simulated
+backend"). To make it call the API, set `VITE_API_URL=http://localhost:3000` in `apps/web/.env`
+(badge: "Live API").
+
 Open `/stores` and buy from each of the three demo storefronts: the genuine one is captured, the
-heavy-discount one is held for review, and the impersonator is paused. `/analyst` is the live
-console. To make the web app call the API instead of its simulator, set `VITE_USE_MOCK=false` and
-`VITE_API_TARGET=http://localhost:3000` in `apps/web/.env`.
+heavy-discount one is held until you acknowledge the warning, and the impersonator is paused.
+`/analyst` is the analyst console. To watch an AI shopping agent do the same through the MCP server:
+
+```bash
+npm run demo:agent -- --auto-human yes     # needs the API running; no keys
+```
+
+See `docs/agentic-demo.md`.
+
+### Modes
+
+`GET /health` reports how the API runs:
+
+| Mode | Values | Meaning |
+| --- | --- | --- |
+| `paypal` | `sandbox`, `simulated` | `sandbox` when `PAYPAL_CLIENT_ID` and `PAYPAL_CLIENT_SECRET` are set, otherwise payments are simulated and marked `simulated: true` |
+| `store` | `database`, `memory` | PostgreSQL when `DATABASE_URL` is set and migrated, otherwise memory (a warning is logged) |
+| `signals` (`SIGNALS_MODE`) | `replay`, `live`, `auto` | Recorded signals for the demo stores; live signals; or replay for the demo stores and live for any other domain |
+| `llm` (`LLM_MODE`) | `live`, `replay`, `none` | A language model (needs `LLM_API_KEY`), recorded answers, or the agent's deterministic fallbacks |
+| `memory` | `elastic`, `memory` | Elasticsearch when `ELASTIC_URL` and `ELASTIC_API_KEY` are set |
+
+Every investigation also carries a `provenance` object with the signals, LLM and memory it used.
+The API refuses to start if `PAYPAL_MODE` is anything but `sandbox`.
 
 ### With a database
 
@@ -110,7 +134,8 @@ npm run migrate
 npm start
 ```
 
-Deployment on Render is described in `docs/deploy.md`.
+Deployment on Render is described in `docs/deploy.md`. Using the real PayPal sandbox is described in
+`docs/paypal-sandbox.md`.
 
 ## Environment variables
 
@@ -121,13 +146,16 @@ Names only; values never belong in the repository. See `.env.example` and `apps/
 | `NODE_ENV`, `HOST`, `PORT`, `CORS_ORIGIN`, `RATE_LIMIT_WINDOW_MS`, `RATE_LIMIT_MAX` | `apps/api/src/config/env.ts` |
 | `DATABASE_URL`, `DATABASE_SSL`, `DATABASE_TIMEOUT_MS`, `DATABASE_MAX_CONNECTIONS` | `apps/api/src/config/env.ts` |
 | `PAYPAL_MODE`, `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`, `PAYPAL_TIMEOUT_MS` | `apps/api/src/config/env.ts` |
+| `DEMO_ADMIN_TOKEN`, `GUARDIAN_API_KEY` | `apps/api/src/config/env.ts` |
+| `STORE_GENUINE_PAYEE_EMAIL`, `STORE_GENUINE_PAYEE_MERCHANT_ID`, and the same for `DISCOUNT` and `IMPERSONATOR` | `apps/api/src/config/storeCatalog.ts` |
+| `SIGNALS_MODE`, `LLM_MODE`, `LLM_API_KEY`, `LLM_BASE_URL`, `LLM_MODEL_FAST`, `LLM_MODEL_STRONG`, `LLM_FIXTURE_DIR`, `KERNEL_API_KEY`, `CHANNEL3_API_KEY`, `ELASTIC_URL`, `ELASTIC_API_KEY`, `ELASTIC_INDEX` | `apps/api/src/services/agent/agentPorts.ts` |
 | `AGENT_TIMEOUT_MS`, `AGENT_MAX_FOLLOWUPS`, `AGENT_CONF_THRESHOLD`, `FEATURE_*`, `MEMORY_MATCH_MIN` | `packages/agent/src/config.ts` |
-| `LLM_PROVIDER`, `LLM_API_KEY`, `LLM_BASE_URL`, `LLM_MODEL_FAST`, `LLM_MODEL_STRONG`, `LLM_MODE`, `LLM_FIXTURE_DIR` | `packages/agent/src/config.ts` |
-| `SIGNALS_MODE`, `SIGNALS_BASE_URL`, `SIGNALS_FIXTURE_DIR` | `packages/agent/src/config.ts` |
+| `LLM_PROVIDER` | `packages/agent/src/config.ts` |
+| `SIGNALS_BASE_URL`, `SIGNALS_FIXTURE_DIR` | `packages/agent/src/config.ts` |
 | `ELASTIC_URL`, `ELASTIC_API_KEY`, `ELASTIC_INDEX`, `ELASTIC_INFERENCE_ID` | `packages/agent/src/config.ts`; `ELASTIC_NODE` also in `packages/memory/src/store/factory.ts` |
 | `MCP_TRANSPORT`, `MCP_PORT`, `MCP_BEARER_TOKEN`, `GUARDIAN_API_URL`, `GUARDIAN_API_KEY`, `GUARDIAN_REQUEST_TIMEOUT_MS`, `GUARDIAN_FINALIZE_TIMEOUT_MS` | `apps/mcp/src/config.ts` |
 | `CHANNEL3_API_KEY`, `CHANNEL3_BASE_URL`, `LLM_*` | `apps/mcp/demo-agent` |
-| `VITE_API_URL`, `VITE_USE_MOCK` | `apps/web/src/api/apiClient.ts` |
+| `VITE_API_URL`, `VITE_USE_MOCK` | `apps/web/src/api/apiClient.ts` (the API is used when `VITE_API_URL` is set and `VITE_USE_MOCK` is not `true`) |
 | `VITE_PAYPAL_CLIENT_ID` | `apps/web/src/hooks/usePaypalAuth.ts` |
 | `VITE_API_TARGET` | `apps/web/vite.config.ts` (local dev proxy) |
 
@@ -136,6 +164,8 @@ Names only; values never belong in the repository. See `.env.example` and `apps/
 | Command | What it runs |
 | --- | --- |
 | `npm run test:integration` | API tests with mocked PayPal (no network, no credentials) |
+| `npm run test:e2e` | End-to-end API tests for the demo flow, the agent routes and the PayPal authorize, capture and void flow (fake `fetch`) |
+| `npm run test:packages` | Agent, MCP, signals, memory and eval package tests |
 | `npm run test:contracts` | Contracts type check and fixture validation |
 | `npm run test:agent` | Investigator agent |
 | `npm run test:mcp` | MCP server |
@@ -150,23 +180,37 @@ Names only; values never belong in the repository. See `.env.example` and `apps/
 labelled benchmark and writes `docs/eval-results.md`. It is a small synthetic benchmark written by
 the team, not a claim about real-world accuracy.
 
-## What is real and what is simulated in the demo
+## What is real and what is simulated
 
-Real: the API and its routes; the investigator agent's scoring, hard rules and explanation
-checks, which run on every scan and order; the in-process scam-pattern memory; the rule that, in the web flow, only
-an ALLOW reaches capture (the agent routes also let a person approve a WARN); and calls to the PayPal sandbox when sandbox credentials are set.
+| Part | Real | Simulated or not yet live |
+| --- | --- | --- |
+| API, validation, tokens, spend policies, audit trail | Yes | |
+| Investigator agent (scoring, hard rules, identity, explanations) | Yes: runs on every scan, order and agent route | |
+| Signals for the three demo stores | | Recorded (`SIGNALS_MODE=replay` or `auto`) |
+| Signals for any other domain | Live RDAP, TLS and payee-binding checks in `live` or `auto` mode (Kernel and Channel3 with keys) | Not cleared without evidence in `replay` mode |
+| Payments | PayPal sandbox calls when sandbox credentials are set | Simulated otherwise: `SIM-` ids and `simulated: true` |
+| Language model | Used when `LLM_MODE=live` and a key is set | Off by default; `replay` has no committed recordings yet |
+| Memory | In process; Elasticsearch when configured | The demo stores are not written to memory |
+| Persistence | PostgreSQL when `DATABASE_URL` is set | Memory otherwise |
+| Web app | Calls the API when `VITE_API_URL` is set | Built-in simulated backend otherwise |
 
-Simulated (read from `apps/api/src/services/agent/agentRunner.service.ts`):
+Only an ALLOW is captured. A WARN waits for a person to acknowledge it. A PAUSE, and any payee
+mismatch, is never captured. The defects that remain are listed in `docs/e2e-report.md`.
 
-- The three demo storefronts are decided from the agent's recorded scenarios, not from live
-  signals. The numbers on the evidence cards (domain age, registry records, price benchmark,
-  payee details) come from fixed profiles.
-- Unknown domains are classified partly by keywords in the name.
-- With no PayPal credentials, order ids and capture results are generated locally.
-- Merchant reports, merchant registration and spend policies answer without storing anything.
-- Investigations are kept in the API's memory, not in the database.
-- Capture and void are sent with the order id; PayPal's AUTHORIZE flow needs the authorization
-  id. The team is tracking this.
+## Known limitations
+
+Be clear about what has not been run live. These parts are written and tested against fakes, but
+**have not been run against the real service from this repository**:
+
+- PayPal sandbox authorize, capture and void (tested with a fake `fetch`).
+- Kernel remote browser and Channel3 catalogue (tested with fake clients).
+- A language model (`LLM_MODE=live`), and recorded model answers (none are committed).
+- Elasticsearch scam memory (tested with a fake `fetch`; the live test skips without credentials).
+- The PostgreSQL migration and the database store (the migration test uses a mock pool).
+- The web app in a browser (it builds and type-checks).
+
+Other limits: the evaluation is a small synthetic benchmark; retrieved similar cases are shown but
+are not passed to the explanation writer; PayPal webhooks are not handled.
 
 Hosted demo: TO BE ADDED after deployment
 
@@ -176,10 +220,11 @@ Runtime components that exist in the code:
 
 | Component | Where | Use |
 | --- | --- | --- |
-| Language model through an OpenAI-compatible HTTP provider (`LLM_PROVIDER`, `LLM_BASE_URL`, `LLM_MODEL_FAST`, `LLM_MODEL_STRONG`) | `packages/agent/src/config.ts`, `packages/agent/src/llm` | Follow-up investigation steps, name comparison, the memory pattern sentence, the plain-language explanation. Optional: the API passes no model client today, so the agent uses its deterministic fallbacks |
+| Language model through an OpenAI-compatible HTTP provider (`LLM_PROVIDER`, `LLM_BASE_URL`, `LLM_MODEL_FAST`, `LLM_MODEL_STRONG`) | `packages/agent/src/config.ts`, `packages/agent/src/llm` | Follow-up investigation steps, name comparison, the memory pattern sentence, the plain-language explanation. Optional: used only when `LLM_MODE=live` and a key is set (see Modes), otherwise the agent uses its deterministic fallbacks |
 | Elasticsearch (`semantic_text`) | `packages/agent/src/adapters/memoryElastic.ts`, `packages/memory/src/patterns/elasticPatternStore.ts` | Scam-pattern memory when `ELASTIC_URL` and `ELASTIC_API_KEY` are set; otherwise an in-memory store |
 | Channel3 catalogue (`@channel3/sdk`) | `apps/mcp/demo-agent/marketplace.ts` | Market context for the demo shopping agent, with a fixture fallback |
-| Kernel remote browser | evidence source name in `packages/agent/src/types.ts` | A client is in an open pull request and is not on `main` yet |
+| Kernel remote browser | `packages/signals/src/agentPort/kernelClient.ts` | Loads the checkout page in a remote browser for live signals (needs `KERNEL_API_KEY`) |
+| Channel3 catalogue | `packages/signals/src/agentPort/channel3Client.ts` | Price comparison for live signals (needs `CHANNEL3_API_KEY`) |
 | MCP server | `apps/mcp` | Lets an AI shopping agent call `investigate_merchant`, `safe_checkout` and `set_spend_policy` |
 
 **TEAM TO COMPLETE BEFORE SUBMISSION: development tools used (the hackathon requires disclosure).**

@@ -174,7 +174,7 @@ export async function createPayPalOrder(params: CreateOrderParams): Promise<PayP
     try {
       errorJson = (await response.json()) as typeof errorJson;
     } catch {
-      // ignore JSON parse failure
+      console.warn('[paypal] the error response body was not JSON');
     }
     const message = errorJson.message || `PayPal API responded with status ${response.status}`;
     throw new PayPalOrderError(message, 'API_ERROR', response.status, errorJson.details);
@@ -228,7 +228,7 @@ export async function getPayPalOrder(orderId: string): Promise<PayPalOrderRespon
     try {
       errorJson = (await response.json()) as typeof errorJson;
     } catch {
-      // ignore JSON parse failure
+      console.warn('[paypal] the error response body was not JSON');
     }
     const message = errorJson.message || `PayPal API error on get order (status ${response.status})`;
     throw new PayPalOrderError(message, 'API_ERROR', response.status);
@@ -290,7 +290,7 @@ export async function capturePayPalOrder(orderId: string, requestId?: string): P
     try {
       errorJson = (await response.json()) as typeof errorJson;
     } catch {
-      // ignore JSON parse failure
+      console.warn('[paypal] the error response body was not JSON');
     }
 
     if (
@@ -357,7 +357,7 @@ export async function authorizePayPalOrder(orderId: string, requestId?: string):
     try {
       errorJson = (await response.json()) as typeof errorJson;
     } catch {
-      // ignore
+      console.warn('[paypal] the error response body was not JSON');
     }
     const message = errorJson.message || `PayPal authorization failed with status ${response.status}`;
     throw new PayPalOrderError(message, 'API_ERROR', response.status);
@@ -420,7 +420,7 @@ export async function voidPayPalAuthorization(
     try {
       errorJson = (await response.json()) as typeof errorJson;
     } catch {
-      // ignore
+      console.warn('[paypal] the error response body was not JSON');
     }
     const message = errorJson.message || `PayPal void failed with status ${response.status}`;
     throw new PayPalOrderError(message, 'API_ERROR', response.status);
