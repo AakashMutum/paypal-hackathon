@@ -19,7 +19,7 @@ interface UserProfile {
 const DEFAULT_PROFILE: UserProfile = {
   firstName: 'Alex',
   lastName: 'Walker',
-  email: 'alex.walker@gmail.com',
+  email: 'alex.walker@mail.example',
   phone: '+1 (555) 012-3456',
   location: 'San Francisco, CA',
   bio: 'Fraud analyst with 5+ years of experience in payment security.',

@@ -9,7 +9,7 @@ import { api } from '../api/apiClient';
 import { money } from '../lib/format';
 export default function Checkout() {
   const { id } = useParams(); const s = storeById(id); const cart = useCart(); const nav = useNavigate(); const { setLatestId, protection, toast } = useApp();
-  const [email, setEmail] = useState('alex.walker@gmail.com');
+  const [email, setEmail] = useState('alex.walker@mail.example');
   const order = useRef<{ orderId: string; invId: string } | null>(null);
   if (!s) return <Navigate to="/stores" replace />;
   const items = cart.storeId === s.id && cart.items.length ? cart.items : [{ sku: s.product.sku, name: s.product.name, price: s.product.price, qty: 1 }];
