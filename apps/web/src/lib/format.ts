@@ -8,7 +8,7 @@ export const cn = (...a: (string | false | null | undefined)[]) => a.filter(Bool
 export const money = (n: number, c = 'USD') => new Intl.NumberFormat('en-US', { style: 'currency', currency: c }).format(n);
 export const clock = (iso: string) => new Date(iso).toLocaleTimeString('en-GB', { hour12: false });
 export const VERDICT: Record<Verdict, { risk: string; tone: Tone; state: string; headline: string }> = {
-  ALLOW: { risk: 'LOW RISK', tone: 'ok', state: 'ALLOWED', headline: 'Merchant verified' },
+  ALLOW: { risk: 'LOW RISK', tone: 'ok', state: 'ALLOWED', headline: 'No problems found' },
   WARN: { risk: 'MEDIUM RISK', tone: 'warn', state: 'REVIEW HOLD', headline: 'Inconsistencies detected' },
   PAUSE: { risk: 'HIGH RISK', tone: 'bad', state: 'CAPTURE PAUSED', headline: 'High-risk mismatch detected' },
 };
@@ -23,9 +23,9 @@ export function telemetry(list: Investigation[]) {
   const ev = list.filter(i => i.status === 'COMPLETE').slice(0, 3).map(i => ({
     id: i.id, time: clock(i.createdAt),
     tone: (i.verdict === 'PAUSE' ? 'bad' : i.verdict === 'WARN' ? 'warn' : 'info') as Tone,
-    title: i.verdict === 'PAUSE' ? 'Pre-Auth Block Dispatched' : i.verdict === 'WARN' ? 'Review Hold Placed' : 'PayPal Token Handshake Validated',
-    text: i.verdict === 'ALLOW' ? `Recipient profile for ${i.domain} matched with ${i.confidence}% confidence.` : `Intercepted ${i.verdict === 'PAUSE' ? 'fraudulent' : 'suspicious'} checkout from ${i.domain}.`,
+    title: i.verdict === 'PAUSE' ? 'Capture blocked' : i.verdict === 'WARN' ? 'Held for review' : 'Checkout cleared',
+    text: i.verdict === 'ALLOW' ? `No problems found for ${i.domain} (confidence ${i.confidence}%).` : `${i.verdict === 'PAUSE' ? 'Blocked capture for' : 'Held a checkout from'} ${i.domain}.`,
   }));
-  ev.push({ id: 'model', time: '11:12:49', tone: 'neutral', title: 'Sentinel Neural Model Reloaded', text: 'Risk patterns updated against global fraud database (v4.18.2).' });
+  ev.push({ id: 'model', time: '11:12:49', tone: 'neutral', title: 'About this log', text: 'Shows the latest investigations from this session.' });
   return ev;
 }
