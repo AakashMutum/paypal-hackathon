@@ -17,7 +17,11 @@ import {
   type RegistryRecord,
   type SignalsPort,
 } from '@checkout-guardian/agent';
-import { createLiveClientsFromEnv, createLocalSignalsPort } from '@checkout-guardian/signals';
+import {
+  createLiveClientsFromEnv,
+  createLocalSignalsPort,
+  type KernelClientDeps,
+} from '@checkout-guardian/signals';
 import {
   ElasticPatternStore,
   asAgentMemoryPort,
@@ -47,7 +51,7 @@ export function llmMode(env: NodeJS.ProcessEnv = process.env): LlmMode {
   const raw = env.LLM_MODE?.trim().toLowerCase();
   const hasKey = Boolean(env.LLM_API_KEY?.trim());
   if (raw === 'none') return 'none';
-  if (raw === 'replay') return 'replay';
+  if (raw === 'mock' || raw === 'replay') return 'replay';
   if (raw === 'record' || raw === 'live') {
     if (!hasKey) {
       console.warn(`[agent] LLM_MODE=${raw} needs LLM_API_KEY. The language model is off; deterministic fallbacks are used.`);
@@ -85,6 +89,17 @@ export function llmRecordingsDir(): string {
 // ---------------------------------------------------------------------------------------------
 
 let signalsPort: SignalsPort | undefined;
+let customSignalsFetch: typeof fetch | null = null;
+let customKernelDeps: KernelClientDeps | null = null;
+
+export function setCustomSignalsClients(options: {
+  fetchImpl?: typeof fetch | null;
+  kernelDeps?: KernelClientDeps | null;
+}): void {
+  if (options.fetchImpl !== undefined) customSignalsFetch = options.fetchImpl;
+  if (options.kernelDeps !== undefined) customKernelDeps = options.kernelDeps;
+  signalsPort = undefined;
+}
 
 export function getSignalsPort(): SignalsPort {
   if (signalsPort) return signalsPort;
@@ -94,7 +109,10 @@ export function getSignalsPort(): SignalsPort {
     .map((s) => s.domain.replace(/^www\./, ''));
   const replay = createLocalSignalsPort({ mode: 'mock' });
   const live = (): SignalsPort => {
-    const clients = createLiveClientsFromEnv(process.env);
+    const clients = createLiveClientsFromEnv(process.env, {
+      fetchImpl: customSignalsFetch ?? undefined,
+      kernelDeps: customKernelDeps ?? undefined,
+    });
     return createLocalSignalsPort({ mode: 'live', knownBrandDomains, ...clients });
   };
 
@@ -123,6 +141,12 @@ export function getSignalsPort(): SignalsPort {
 // ---------------------------------------------------------------------------------------------
 
 let llmClient: LlmClient | undefined | null = null;
+let customLlmFetch: typeof fetch | null = null;
+
+export function setCustomLlmFetch(fn: typeof fetch | null): void {
+  customLlmFetch = fn;
+  llmClient = null;
+}
 
 /** The model client for the current LLM_MODE, or undefined for the deterministic fallbacks. */
 export function getLlmClient(): LlmClient | undefined {
@@ -145,6 +169,7 @@ export function getLlmClient(): LlmClient | undefined {
             fast: process.env.LLM_MODEL_FAST?.trim() || 'gpt-4o-mini',
             strong: process.env.LLM_MODEL_STRONG?.trim() || 'gpt-4o-mini',
           },
+          fetchImpl: customLlmFetch ?? undefined,
         }),
         { log },
       )
@@ -158,16 +183,35 @@ export function getLlmClient(): LlmClient | undefined {
 // ---------------------------------------------------------------------------------------------
 
 let patternStore: Promise<PatternStore> | undefined;
+let customMemoryFetch: typeof fetch | null = null;
+
+export function setCustomMemoryFetch(fn: typeof fetch | null): void {
+  customMemoryFetch = fn;
+  patternStore = undefined;
+}
 
 export function getPatternStore(): Promise<PatternStore> {
   patternStore ??= (async () => {
-    const store = await createPatternStore({ env: process.env });
-    if (store instanceof ElasticPatternStore) {
-      // The in-memory store loads its seeds itself; Elasticsearch gets them once, when empty.
-      await store.ensureIndex();
-      if ((await store.size()) === 0) await loadSeeds(store);
+    try {
+      const store = await createPatternStore({
+        env: process.env,
+        fetchImpl: customMemoryFetch ?? undefined,
+      });
+      if (store instanceof ElasticPatternStore) {
+        // The in-memory store loads its seeds itself; Elasticsearch gets them once, when empty.
+        try {
+          await store.ensureIndex();
+          if ((await store.size()) === 0) await loadSeeds(store);
+        } catch (err) {
+          console.warn('[agentPorts] Elastic connection/indexing failed, falling back to in-memory store:', err);
+          return await createPatternStore({ env: {}, seed: true });
+        }
+      }
+      return store;
+    } catch (err) {
+      console.warn('[agentPorts] Failed to initialize pattern store from env, using in-memory fallback:', err);
+      return await createPatternStore({ env: {}, seed: true });
     }
-    return store;
   })();
   return patternStore;
 }
@@ -261,4 +305,8 @@ export function resetAgentPorts(): void {
   signalsPort = undefined;
   llmClient = null;
   patternStore = undefined;
+  customLlmFetch = null;
+  customSignalsFetch = null;
+  customKernelDeps = null;
+  customMemoryFetch = null;
 }

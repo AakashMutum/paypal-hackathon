@@ -1,6 +1,6 @@
 # Evaluation results
 
-Generated 2026-11-02 at commit `b693f4e` by `npm run eval -w @checkout-guardian/eval`.
+Generated 2026-11-03 at commit `f11a055` by `npm run eval -w @checkout-guardian/eval`.
 
 These numbers describe how the systems behave on a small synthetic benchmark. They are not a claim about real-world accuracy. See the limitations below.
 
@@ -28,10 +28,10 @@ Wall-clock time per case on the machine that ran the evaluation, with in-process
 
 | System | p50 | p95 | max |
 | --- | --- | --- | --- |
-| Baseline A | 0.02 ms | 0.09 ms | 1.49 ms |
-| Baseline B | 0.07 ms | 0.26 ms | 5.97 ms |
-| Full, cold memory | 0.78 ms | 4.05 ms | 20.86 ms |
-| Full, warm memory | 0.97 ms | 1.99 ms | 2.96 ms |
+| Baseline A | 0.01 ms | 0.07 ms | 1.32 ms |
+| Baseline B | 0.05 ms | 0.20 ms | 4.96 ms |
+| Full, cold memory | 0.51 ms | 2.65 ms | 14.92 ms |
+| Full, warm memory | 0.65 ms | 1.28 ms | 1.90 ms |
 
 ## Method
 
