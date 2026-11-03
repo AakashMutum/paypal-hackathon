@@ -3,6 +3,7 @@ import { Link, NavLink, Outlet } from 'react-router-dom';
 import { Bell, LayoutDashboard, ScanLine, Radar, ShieldCheck, History, User, Store, Gauge, BadgeCheck, RotateCcw } from 'lucide-react';
 import { cn, telemetry } from '../lib/format';
 import { Modal } from './ui';
+import { ModeBadge, ModesFooter } from './Provenance';
 import { useInvestigations } from '../hooks/useOrderPolling';
 import { api } from '../api/apiClient';
 import { useApp } from '../context/OrderStateContext';
@@ -21,7 +22,7 @@ function Account({ onClose }: { onClose: () => void }) {
   const { toast } = useApp();
   const row = 'flex items-center gap-3 p-3 rounded-lg hover:bg-canvas text-sm font-medium';
   return <Modal open onClose={onClose} title="Alex Walker">
-    <p className="text-sm text-muted mb-3 font-mono">alex.walker@gmail.com</p>
+    <p className="text-sm text-muted mb-3 font-mono">alex.walker@mail.example</p>
     <Link to="/profile" onClick={onClose} className={row}><User size={18} />My Profile</Link>
     <Link to="/stores" onClick={onClose} className={row}><Store size={18} />Demo storefronts</Link>
     <Link to="/analyst" onClick={onClose} className={row}><Gauge size={18} />Analyst console</Link>
@@ -43,12 +44,14 @@ export default function Layout() {
             </span>
           </span>
         </Link>
+        <span className="hidden sm:block"><ModeBadge /></span>
         <nav className="hidden md:flex gap-1 ml-auto mr-2">{NAV.map(n => <NavLink key={n.to} to={n.to} end={n.end} className={({ isActive }) => cn('px-3 py-1.5 rounded text-sm font-medium', isActive ? 'bg-navy text-white' : 'text-muted hover:text-ink')}>{n.label}</NavLink>)}</nav>
         <div className="flex items-center gap-2 ml-auto md:ml-0">
           <button aria-label="Notifications" onClick={() => setPanel('bell')} className="p-2 rounded hover:bg-canvas"><Bell size={20} /></button>
           <button aria-label="Account" onClick={() => setPanel('user')} className="w-9 h-9 rounded-full bg-navy text-white grid place-items-center"><User size={18} /></button></div>
       </div></header>
-    <main className="max-w-3xl mx-auto px-4 py-4 space-y-4"><Outlet /></main>
+    <main className="max-w-3xl mx-auto px-4 py-4 space-y-4"><Outlet /><div className="sm:hidden"><ModeBadge /></div></main>
+    <footer className="max-w-3xl mx-auto px-4 pb-24 md:pb-6"><ModesFooter /></footer>
     <nav className="md:hidden fixed bottom-0 inset-x-0 z-30 bg-white border-t border-ink/10 px-2 pb-3 pt-2 flex justify-around" aria-label="Primary">
       {NAV.map(n => <NavLink key={n.to} to={n.to} end={n.end} className={({ isActive }) => tab(isActive)}><n.icon size={20} />{n.label}</NavLink>)}</nav>
     {panel === 'bell' && <Notifications onClose={() => setPanel(null)} />}

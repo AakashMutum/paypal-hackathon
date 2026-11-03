@@ -14,7 +14,7 @@ export default function Onboarding() {
   return <>
     <section><h1 className="text-2xl font-bold">Verify a merchant</h1><p className="text-sm text-muted mt-1">Register a storefront so TrustOra can match its claims to its PayPal account.</p></section>
     <form onSubmit={submit} className="card space-y-4">
-      {([['legalName', 'Legal business name', 'Acme Audio Inc.'], ['domain', 'Storefront domain', 'acme-audio.com'], ['paypalEmail', 'PayPal account email', 'payee@acmeaudio.com']] as const).map(([k, l, p]) => <div key={k}>
+      {([['legalName', 'Legal business name', 'Example Trading Ltd'], ['domain', 'Storefront domain', 'example-trading.example'], ['paypalEmail', 'PayPal account email', 'payee@example-trading.example']] as const).map(([k, l, p]) => <div key={k}>
         <label htmlFor={k} className="mono-label">{l}</label><input id={k} required className="input mt-1" placeholder={p} value={f[k]} onChange={set(k)} type={k === 'paypalEmail' ? 'email' : 'text'} /></div>)}
       <div><span className="mono-label">Account type</span>
         <div className="mt-1 bg-canvas border border-ink/10 p-0.5 rounded-md grid grid-cols-2">{(['REGISTERED', 'INDIVIDUAL'] as const).map(t => <button type="button" key={t} onClick={() => setF({ ...f, type: t })} className={cn('py-2 rounded text-sm font-semibold', f.type === t ? 'bg-white shadow-l1' : 'text-muted')}>{t === 'REGISTERED' ? 'Registered business' : 'Individual'}</button>)}</div></div>
