@@ -63,7 +63,7 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npm run build -w @checkout-guardian/contracts
+      - run: npm run build:packages
       - run: npm run test:integration
 
   brands:
