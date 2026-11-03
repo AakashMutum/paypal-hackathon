@@ -161,3 +161,34 @@ Notes:
 - `src/agentPort/types.ts` holds local mirrors of the agent's types. A contract test loads
   `packages/agent/src/fixtures/scenario-*.ts` and checks the port uses only type names those
   scenarios use.
+
+## Live clients
+
+`createLocalSignalsPort` runs without network access by default. To use the real Kernel browser
+and Channel3 catalogue, build the live clients from the environment and pass them in:
+
+```ts
+import { createLiveClientsFromEnv, createLocalSignalsPort } from '@checkout-guardian/signals';
+
+// Reads KERNEL_API_KEY and CHANNEL3_API_KEY. A missing key gives undefined; nothing throws.
+const { kernel, channel3 } = createLiveClientsFromEnv(process.env);
+
+const signals = createLocalSignalsPort({ mode: 'live', kernel, channel3 });
+```
+
+| Variable | Used for |
+| --- | --- |
+| `KERNEL_API_KEY` | `KernelBrowserClient`: loads the checkout page in a remote browser and returns the page claims |
+| `CHANNEL3_API_KEY` | `Channel3ApiClient`: price comparison through Channel3's `POST /v1/search` |
+
+Notes:
+
+- `KernelBrowserClient` connects to a remote browser with `playwright-core`; no browser is
+  downloaded. Only `http` and `https` URLs are accepted. One timeout covers creating the session,
+  connecting and loading the page, the caller's `AbortSignal` is honoured at every step, and the
+  browser and Kernel session are always closed.
+- `Channel3ApiClient` follows Channel3's published v1 search reference (checked 2026-11-03):
+  `x-api-key` header, `{ query, filters: { price: { max_price } }, limit }` body, and a
+  `{ products: [{ offers: [{ url, domain, price: { price, currency } }] }] }` response. It never
+  puts the key in an error message.
+- Keys come only from the environment. Tests use fake clients and a fake `fetch`.
