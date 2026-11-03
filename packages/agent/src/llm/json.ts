@@ -147,15 +147,19 @@ async function attemptCompletion<T>(
   });
 
   try {
+    const providerPromise = provider.complete({
+      tier: request.tier,
+      system: request.system,
+      user,
+      maxOutputTokens: request.maxOutputTokens,
+      timeoutMs: request.timeoutMs,
+      signal: controller.signal,
+    });
+    // Prevent floating unhandled rejection if timeout rejects first and provider rejects later on abort
+    providerPromise.catch(() => {});
+
     const response = await Promise.race([
-      provider.complete({
-        tier: request.tier,
-        system: request.system,
-        user,
-        maxOutputTokens: request.maxOutputTokens,
-        timeoutMs: request.timeoutMs,
-        signal: controller.signal,
-      }),
+      providerPromise,
       timeout,
     ]);
 

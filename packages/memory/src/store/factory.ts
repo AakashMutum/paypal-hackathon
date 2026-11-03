@@ -56,6 +56,8 @@ export async function createMemoryStore(
     let timer: NodeJS.Timeout | undefined;
     try {
       const pingPromise = client.ping();
+      // Prevent unhandled rejection if timeout rejects first
+      pingPromise.catch(() => {});
       const timeoutPromise = new Promise<never>((_, reject) => {
         timer = setTimeout(
           () => reject(new Error(`Elasticsearch ping timed out after ${timeoutMs}ms`)),

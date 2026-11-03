@@ -1,4 +1,4 @@
-import { test, describe, beforeEach, afterEach } from 'node:test';
+import { test, describe, beforeEach, afterEach, after } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   signalsMode,
@@ -12,6 +12,7 @@ import {
   setCustomSignalsClients,
   setCustomMemoryFetch,
 } from '../src/services/agent/agentPorts.js';
+import { closeDatabase } from '../src/database/connection.js';
 import { ElasticPatternStore, InMemoryPatternStore } from '@checkout-guardian/memory';
 
 const originalEnv = { ...process.env };
@@ -25,6 +26,11 @@ describe('Live Integration Suite (LLM, Signals, Elastic)', () => {
   afterEach(() => {
     resetAgentPorts();
     process.env = { ...originalEnv };
+  });
+
+  after(async () => {
+    resetAgentPorts();
+    await closeDatabase();
   });
 
   // -------------------------------------------------------------------------------------------
@@ -122,7 +128,21 @@ describe('Live Integration Suite (LLM, Signals, Elastic)', () => {
       setCustomLlmFetch(async (_input, init) => {
         return new Promise<Response>((_, reject) => {
           if (init?.signal) {
-            init.signal.addEventListener('abort', () => reject(new Error('AbortError')));
+            if (init.signal.aborted) {
+              const err = new Error('The operation was aborted');
+              err.name = 'AbortError';
+              reject(err);
+              return;
+            }
+            init.signal.addEventListener(
+              'abort',
+              () => {
+                const err = new Error('The operation was aborted');
+                err.name = 'AbortError';
+                reject(err);
+              },
+              { once: true }
+            );
           }
         });
       });
@@ -142,6 +162,11 @@ describe('Live Integration Suite (LLM, Signals, Elastic)', () => {
       });
 
       assert.equal(res.ok, false);
+      if (!res.ok) {
+        assert.ok(['timeout', 'provider', 'aborted'].includes(res.error));
+      }
+      // Allow any microtasks / pending abort rejections to settle before test exits
+      await new Promise((resolve) => setTimeout(resolve, 60));
     });
 
     test('provider HTTP error returns provider failure without leaking key', async () => {
