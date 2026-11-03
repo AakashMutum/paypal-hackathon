@@ -299,13 +299,19 @@ test('agent routes need the bearer token when GUARDIAN_API_KEY is set', async ()
 // Agent routes (request shapes from apps/mcp/src/apiClient.ts)
 // ---------------------------------------------------------------------------------------------
 
+const PAYEES: Record<StoreKey, { merchantId: string; email: string; brand: string }> = {
+  genuine: { merchantId: 'MERCH-HARBORLINE', email: 'payments@harborline-outfitters.example', brand: 'Harborline Outfitters' },
+  discount: { merchantId: 'MERCH-BARGAINBARN', email: 'orders@bargainbarn-outlet.example', brand: 'Bargain Barn Outlet' },
+  impersonator: { merchantId: 'MERCH-QUICKPAY-HOLDINGS', email: 'collect@quickpay-holdings.example', brand: 'Harborline Outfitters' },
+};
+
 const investigatePayload = (key: StoreKey) => ({
   orderId: `ORD-${key}`,
   merchantUrl: `https://${STORES[key].domain}`,
-  claimedBrand: 'Harborline Outfitters',
+  claimedBrand: PAYEES[key].brand,
   transactionAmount: 84.5,
   currency: 'USD',
-  payee: { merchantId: 'MERCH-TEST', email: 'billing@shop.example' },
+  payee: { merchantId: PAYEES[key].merchantId, email: PAYEES[key].email },
 });
 
 test('POST /api/v1/investigations accepts the MCP request shape', async () => {
@@ -537,16 +543,47 @@ test('GET /health reports the modes', async () => {
 });
 
 // ---------------------------------------------------------------------------------------------
-// Defects fixed later in this stack (build/agent-pipeline)
+// The real pipeline
 // ---------------------------------------------------------------------------------------------
 
-test('DEFECT E3: evidence cards and reasons come from the agent evidence', { todo: 'E3: cards are still built from catalog data; fixed by build/agent-pipeline' }, async () => {
+test('evidence cards and reasons come from the agent evidence', async () => {
   const res = await request(app).post('/api/scan').send({ url: STORES.impersonator.domain });
-  assert.match(JSON.stringify(res.body.evidence), /mismatch/i);
+  const payee = res.body.evidence.find((e: { node: string }) => e.node === 'PAYEE');
+  assert.equal(payee.status, 'FAIL');
+  assert.match(JSON.stringify(payee.fields), /payee email domain is unrelated/i);
+  assert.ok(payee.sources.length > 0, 'each card names where its evidence came from');
+  assert.deepEqual(res.body.hardRules.sort(), ['HF1', 'HF2']);
 });
 
-test('DEFECT E4: an unknown store is decided by evidence, not by words in the domain', { todo: 'E4: fixed by build/agent-pipeline' }, async () => {
+test('an unknown store is decided by evidence, not by words in the domain', async () => {
   const a = await request(app).post('/api/scan').send({ url: 'boutique-deals-clearance.example' });
   const b = await request(app).post('/api/scan').send({ url: 'garden-tools-supply.example' });
   assert.equal(a.body.verdict, b.body.verdict);
+  assert.equal(a.body.verdict, 'WARN', 'with no evidence a merchant is not cleared');
+  assert.match(a.body.reasons[0], /live signals|enough evidence/i);
+});
+
+test('every investigation carries its provenance and up to three similar past cases', async () => {
+  for (const key of Object.keys(STORES) as StoreKey[]) {
+    const res = await request(app).post('/api/scan').send({ url: STORES[key].domain });
+    assert.deepEqual(Object.keys(res.body.provenance).sort(), ['llm', 'memory', 'signals', 'signalsMode']);
+    assert.equal(res.body.provenance.signals, 'replay');
+    assert.ok(Array.isArray(res.body.similarCases) && res.body.similarCases.length <= 3);
+    for (const c of res.body.similarCases) {
+      assert.deepEqual(Object.keys(c).sort(), ['decision', 'matchType', 'patternSentence', 'score']);
+    }
+  }
+});
+
+test('the payee-binding hard rule forces PAUSE whatever the score', async () => {
+  const res = await request(app).post('/api/v1/investigations').send(investigatePayload('impersonator'));
+  assert.equal(res.body.data.decision, 'PAUSE');
+  assert.ok(res.body.meta.hardRules.includes('HF1'));
+});
+
+test('GET /health reports the signals, llm and memory modes the pipeline uses', async () => {
+  const res = await request(app).get('/health');
+  assert.equal(res.body.data.modes.signals, 'replay');
+  assert.equal(res.body.data.modes.llm, 'none');
+  assert.equal(res.body.data.modes.memory, 'memory');
 });
