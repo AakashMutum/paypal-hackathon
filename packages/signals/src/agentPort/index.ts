@@ -14,3 +14,8 @@ export type {
   SectionHint,
   SectionResult,
 } from './types.js';
+export { KernelBrowserClient } from './kernelClient.js';
+export type { KernelClientDeps, KernelSdkLike, ChromiumLike, BrowserLike, PageLike, ContextLike, KernelSession } from './kernelClient.js';
+export { Channel3ApiClient, CHANNEL3_SEARCH_URL } from './channel3Client.js';
+export { createLiveClientsFromEnv } from './liveClients.js';
+export type { LiveClients } from './liveClients.js';

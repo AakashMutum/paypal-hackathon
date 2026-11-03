@@ -73,3 +73,17 @@ export type {
   KernelClient,
   LocalSignalsPortOptions,
 } from './agentPort/index.js';
+export {
+  KernelBrowserClient,
+  Channel3ApiClient,
+  createLiveClientsFromEnv,
+} from './agentPort/index.js';
+export type {
+  KernelClientDeps,
+  KernelSdkLike,
+  ChromiumLike,
+  BrowserLike,
+  PageLike,
+  ContextLike,
+  LiveClients,
+} from './agentPort/index.js';

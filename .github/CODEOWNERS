@@ -1,20 +1,23 @@
-# Ownership by area. Replace the @TODO-* placeholders with real GitHub handles.
-# Later matches take precedence over earlier ones.
+# Ownership by area. Later matches take precedence over earlier ones.
+#
+# Keep "Require review from Code Owners" OFF in the repository ruleset. These entries request
+# reviewers automatically; they must not make a review from one specific person mandatory.
 
 # Root config (default)
 *                          @AakashMutum
 
-/apps/api/                 @TODO-api
-/packages/contracts/       @TODO-api @TODO-agent
-/packages/agent/           @TODO-agent
-/apps/mcp/                 @TODO-agent
-/packages/signals/         @TODO-signals
-/apps/web/                 @TODO-web
-/demo-sites/               @TODO-web
-/packages/memory/          @TODO-memory
-/packages/eval/            @TODO-memory
+/apps/api/                 @Shravan2307
+/packages/contracts/       @Shravan2307
+/packages/agent/           @TheDeductor
+/apps/mcp/                 @TheDeductor
+/packages/signals/         @parnikasen
+/apps/web/                 @gargipatel5106abc
+/demo-sites/               @gargipatel5106abc
+/packages/memory/          @Anmol4679
+/packages/eval/            @Anmol4679
 
-/infra/                    @AakashMutum
-/tests/                    @AakashMutum
 /.github/                  @AakashMutum
 /scripts/                  @AakashMutum
+/infra/                    @AakashMutum
+/tests/                    @AakashMutum
+/docs/                     @AakashMutum
