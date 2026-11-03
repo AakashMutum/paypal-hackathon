@@ -56,19 +56,18 @@ Everything the API and web app read, and where:
 | `DATABASE_URL`, `DATABASE_SSL`, `DATABASE_TIMEOUT_MS`, `DATABASE_MAX_CONNECTIONS` | `apps/api/src/config/env.ts` |
 | `PAYPAL_MODE`, `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`, `PAYPAL_TIMEOUT_MS` | `apps/api/src/config/env.ts` |
 | `AGENT_*`, `FEATURE_*`, `LLM_*`, `SIGNALS_*`, `ELASTIC_*`, `MEMORY_MATCH_MIN` | `packages/agent/src/config.ts`, read when the agent runs; all optional |
-| `KERNEL_API_KEY`, `CHANNEL3_API_KEY` | `packages/signals/src/agentPort/liveClients.ts`, wired into API runtime via `apps/api/src/services/agent/agentRunner.service.ts` |
+| `KERNEL_API_KEY`, `CHANNEL3_API_KEY` | `packages/signals/src/agentPort/liveClients.ts` (`createLiveClientsFromEnv`); the live clients are chosen in `apps/api/src/services/agent/agentPorts.ts` |
 | `DEMO_ADMIN_TOKEN`, `GUARDIAN_API_KEY` | `apps/api/src/config/env.ts` |
 | `SIGNALS_MODE`, `LLM_MODE`, `LLM_API_KEY`, `LLM_BASE_URL`, `LLM_MODEL_FAST`, `LLM_MODEL_STRONG`, `LLM_FIXTURE_DIR`, `KERNEL_API_KEY`, `CHANNEL3_API_KEY`, `ELASTIC_URL`, `ELASTIC_API_KEY`, `ELASTIC_INDEX` | `apps/api/src/services/agent/agentPorts.ts` |
 | `STORE_GENUINE_PAYEE_EMAIL`, `STORE_GENUINE_PAYEE_MERCHANT_ID`, and the same for `DISCOUNT` and `IMPERSONATOR` | `apps/api/src/config/storeCatalog.ts` |
-| `AGENT_*`, `FEATURE_*`, `MEMORY_MATCH_MIN` | `packages/agent/src/config.ts`, read when the agent runs; all optional |
 | `VITE_API_URL`, `VITE_USE_MOCK` | `apps/web/src/api/apiClient.ts` |
 | `VITE_PAYPAL_CLIENT_ID` | `apps/web/src/hooks/usePaypalAuth.ts` |
 | `VITE_API_TARGET` | `apps/web/vite.config.ts` (local dev proxy only) |
 
 `KERNEL_API_KEY` and `CHANNEL3_API_KEY` are read by `createLiveClientsFromEnv` in
-`packages/signals` and wired into the agent runner. When present, live signals are collected;
-when absent, the runtime falls back cleanly to local mock and scenario behavior.
-`packages/signals`, which the API uses when `SIGNALS_MODE` is `live` or `auto`.
+`packages/signals`, which the API uses when `SIGNALS_MODE` is `live` or `auto`. When they are
+set, live signals are collected; when they are absent, the runtime falls back to the recorded
+signals.
 
 ## After the first deploy
 
