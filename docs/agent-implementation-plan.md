@@ -1,4 +1,4 @@
-# Checkout Guardian — P2 (Agent + MCP) Phase-Wise Implementation Plan
+# Checkout Guardian — Agent and MCP Phase-Wise Implementation Plan
 
 Source spec: `D:/Downloads/P2_AGENT_MCP_IMPLEMENTATION_PLAN.md` (1519 lines, Oct 31 2026).
 This document converts it into an executable phase order **adapted to what actually exists in this repo on `main`**.
@@ -18,7 +18,7 @@ The source spec was written against assumptions that do not hold here. These are
 | R4 | `RecommendedAction = CAPTURE \| REVIEW \| VOID` | `ActionTaken = EVALUATED \| PROCEED \| WARN_DISPLAYED \| CAPTURE_PAUSED \| USER_OVERRIDE \| USER_ABANDONED` | Agent emits **`PROCEED` / `WARN_DISPLAYED` / `CAPTURE_PAUSED`** so verdicts are structurally contract-compatible with no mapping layer. |
 | R5 | `riskScore` 0–1 | Contracts/DB use `overallScore` 0–100 | Agent exposes `score` 0–100 (integer) and `riskScore = score / 100` as an extra convenience field only. |
 | R6 | Backend endpoints exist (`/investigations`, `/checkout/orders`, `/policies`, `/demo/*`) | Only `/health` and `/api/v1/orders` (`POST /`, `GET /:id`, `GET /:id/decision`, `POST /:id/capture`) exist | Phases 0–11 build agent + MCP against a mock backend. **Phase 12** adds the missing routes in `apps/api`, additively. |
-| R7 | Contracts can be extended | `packages/contracts` is owned by P1 and has **no** `Evidence` / `Verdict` / `InvestigationRequest` / `TraceStep` | Define these in `packages/agent/src/types.ts` (Zod-first). Do **not** edit `packages/contracts`. `contractsAdapter.ts` maps to the existing contract shapes. |
+| R7 | Contracts can be extended | `packages/contracts` is owned by the api area and has **no** `Evidence` / `Verdict` / `InvestigationRequest` / `TraceStep` | Define these in `packages/agent/src/types.ts` (Zod-first). Do **not** edit `packages/contracts`. `contractsAdapter.ts` maps to the existing contract shapes. |
 | R8 | Appendices A (prompts) and B (injection patterns) exist | The spec file **ends at §18**; both appendices are missing | Author `prompts.ts` and `patterns.ts` from scratch in Phases 4 and 2 (tasks included below). |
 | R9 | §19 day-by-day plan | Missing | The phases in this file replace it. |
 | R10 | Existing risk engine irrelevant | `apps/api/src/services/risk/riskEngine.service.ts` is a **different** model (weighted defaults, baseline risk ≈ 23) and is already enforced by `POST /:orderId/capture` | Do not modify it and do not delete it. The agent is authoritative **only** for agent-originated checkouts created by Phase 12's new routes. |
@@ -300,7 +300,7 @@ Exit criteria: `npm run demo:agent -- --scenario D --guardian on --llm replay` r
 
 ---
 
-## Phase 12 — Backend bridge in `apps/api` (additive, needs P1 sign-off)
+## Phase 12 — Backend bridge in `apps/api` (additive, needs api sign-off)
 
 Files listed in §1. Only `app.ts` is edited.
 
@@ -362,13 +362,13 @@ Manual gates: MCP Inspector lists exactly 3 tools; Scenario D replay reaches `CA
 
 | # | Item | Owner | Fallback if unanswered |
 |---|---|---|---|
-| H1 | `Evidence`/`Verdict`/`TraceStep` should move into `packages/contracts` (contracts PR) | P1 | keep in `packages/agent/src/types.ts` (R7) — nothing breaks |
-| H2 | Merchant Trust Registry source (table `merchant_records` vs new endpoint) | P1 | `RegistryPort` adapter reads `merchant_records` via a new `GET /api/v1/registry/lookup` in Phase 12 |
+| H1 | `Evidence`/`Verdict`/`TraceStep` should move into `packages/contracts` (contracts PR) | api | keep in `packages/agent/src/types.ts` (R7) — nothing breaks |
+| H2 | Merchant Trust Registry source (table `merchant_records` vs new endpoint) | api | `RegistryPort` adapter reads `merchant_records` via a new `GET /api/v1/registry/lookup` in Phase 12 |
 | H3 | Discount anomaly threshold: PRD says both >70 % and >80 % | team | points table `≥80 → 20`, `≥70 → 14`, `≥50 → 8` (§11.1), documented in README |
-| H4 | Elastic `semantic_text` inference endpoint availability | P2 | keyword fallback + note in README |
-| H5 | Channel3 package name / API key | P2 | REST via `fetch`, fixture context fallback |
-| H6 | Real sandbox order payee fields (`merchant_id` present?) | P1/P2 | `PAYEE_BINDING = UNKNOWN_MERCHANT` path already covered |
-| H7 | Missing Appendices A and B | P2 | author prompts and pattern packs in Phases 4 and 2 (tasks included) |
+| H4 | Elastic `semantic_text` inference endpoint availability | agent | keyword fallback + note in README |
+| H5 | Channel3 package name / API key | agent | REST via `fetch`, fixture context fallback |
+| H6 | Real sandbox order payee fields (`merchant_id` present?) | api, agent | `PAYEE_BINDING = UNKNOWN_MERCHANT` path already covered |
+| H7 | Missing Appendices A and B | agent | author prompts and pattern packs in Phases 4 and 2 (tasks included) |
 
 ---
 
