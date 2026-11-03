@@ -6,6 +6,7 @@ import { useInvestigations, useOrderPolling } from '../hooks/useOrderPolling';
 import { api } from '../api/apiClient';
 import { Empty, Modal, Pill } from '../components/ui';
 import { Timeline } from '../components/Timeline';
+import { ProvenanceChips, SimilarCases } from '../components/Provenance';
 import { ageLabel, CAPTURE_LABEL, cn, download, money, VERDICT } from '../lib/format';
 
 export default function Engine() {
@@ -51,6 +52,9 @@ export default function Engine() {
     <section className="card">
       <div className="flex justify-between items-center mb-4"><h2 className="font-semibold">Inspection Telemetry Pipeline</h2><span className="mono-label bg-tint rounded px-2 py-1">4 checkpoints</span></div>
       <Timeline evidence={inv.evidence} /></section>
+
+    {done && <ProvenanceChips inv={inv} />}
+    {done && <SimilarCases cases={inv.similarCases} />}
 
     {done && <section className="card space-y-3">
       <div className="flex justify-between items-center"><h2 className="font-semibold">Ledger Discrepancy Matrix</h2>{inv.verdict !== 'ALLOW' && <Pill tone="bad">CRITICAL MISMATCH</Pill>}</div>
