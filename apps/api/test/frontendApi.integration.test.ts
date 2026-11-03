@@ -23,6 +23,24 @@ before(() => {
   });
   setCustomOrdersFetch(async (input, _init) => {
     const url = typeof input === 'string' ? input : input.toString();
+    if (url.includes('/authorize')) {
+      return new Response(
+        JSON.stringify({
+          id: 'MOCK-PP-ORDER-ID-999',
+          status: 'COMPLETED',
+          intent: 'AUTHORIZE',
+          purchase_units: [
+            {
+              amount: { currency_code: 'USD', value: '299.00' },
+              payments: {
+                authorizations: [{ id: 'MOCK-AUTH-ID', status: 'CREATED' }],
+              },
+            },
+          ],
+        }),
+        { status: 201, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
     if (url.includes('/capture')) {
       return new Response(
         JSON.stringify({

@@ -1,31 +1,6 @@
 import {
   buildPatternFacts,
   runInvestigatorAgentDetailed,
-  createFixtureSignals,
-  createFixtureRegistry,
-  createHttpProvider,
-  createJsonClient,
-  SCENARIOS,
-  type AgentDeps,
-  type InvestigationRequest,
-  type Verdict,
-  type Decision,
-  type RegistryPort,
-  type RegistryRecord,
-  type RegistryLookup,
-  type CallOpts,
-  type LlmClient,
-} from '@checkout-guardian/agent';
-import { createLocalSignalsPort, createLiveClientsFromEnv } from '@checkout-guardian/signals';
-import { InMemoryPatternStore, asAgentMemoryPort, createPatternStore } from '@checkout-guardian/memory';
-
-export interface FrontendEvidenceField {
-  label: string;
-  value: string;
-  flag?: boolean;
-  strike?: boolean;
-  meter?: number;
-}
   templatePatternSentence,
   type AgentResult,
   type Evidence,
@@ -129,37 +104,6 @@ function provenanceFor(domain: string, memory: 'elastic' | 'memory'): Provenance
   return { signals, llm: llmMode(), memory, signalsMode: configured };
 }
 
-/** Pattern store initialized with default seeds; upgrades to Elastic if configured */
-let memoryPort = asAgentMemoryPort(new InMemoryPatternStore());
-createPatternStore()
-  .then((store) => {
-    memoryPort = asAgentMemoryPort(store);
-  })
-  .catch((err) => {
-    console.warn('[agentRunner] Failed to initialize pattern store from env, using in-memory fallback:', err);
-  });
-
-/**
- * Creates an LLM client when LLM_MODE=live and LLM_API_KEY is configured.
- * When absent or in fallback mode, returns undefined so the agent uses
- * deterministic security rules and templates.
- */
-export function createLlmClientFromEnv(): LlmClient | undefined {
-  const mode = (process.env.LLM_MODE || 'live').toLowerCase();
-  const apiKey = process.env.LLM_API_KEY?.trim();
-  if (mode !== 'live' || !apiKey) {
-    return undefined;
-  }
-  const provider = createHttpProvider({
-    apiKey,
-    baseUrl: process.env.LLM_BASE_URL || 'https://api.openai.com/v1',
-    models: {
-      fast: process.env.LLM_MODEL_FAST || 'gpt-4o-mini',
-      strong: process.env.LLM_MODEL_STRONG || 'gpt-4o-mini',
-    },
-  });
-  return createJsonClient(provider);
-}
 /**
  * Runs the investigator agent with the configured ports. Errors propagate: nothing is invented
  * on failure. The top three similar past cases are attached for display; they are never an
@@ -280,45 +224,6 @@ export interface MapMeta {
  * rules sit on top of the agent's decision: a payee-binding hard rule is always PAUSE, and an
  * ALLOW needs at least some deterministic evidence behind it.
  */
-export function createAgentDeps(scenario?: 'A' | 'B' | 'C' | 'D2' | 'CUSTOM'): AgentDeps {
-  const llm = createLlmClientFromEnv();
-
-  if (scenario && scenario !== 'CUSTOM' && SCENARIOS[scenario]) {
-    const fixture = SCENARIOS[scenario];
-    return {
-      signals: createFixtureSignals(fixture),
-      memory: memoryPort,
-      registry: createFixtureRegistry(fixture),
-      ...(llm ? { llm } : {}),
-      now: () => Date.now(),
-      log: () => {},
-    };
-  }
-
-  // Wire live Kernel / Channel3 clients when API keys are present in the environment.
-  // createLiveClientsFromEnv() reads KERNEL_API_KEY and CHANNEL3_API_KEY; a missing or
-  // blank key returns undefined for that client so we fall back silently to the local
-  // mock behaviour. This keeps unit tests and local dev without credentials working.
-  const liveClients = createLiveClientsFromEnv();
-  const hasLiveClients = liveClients.kernel !== undefined || liveClients.channel3 !== undefined;
-  if (!hasLiveClients) {
-    console.warn(
-      '[agentRunner] KERNEL_API_KEY and CHANNEL3_API_KEY are not set — using mock signals. ' +
-      'Set these environment variables to enable live Kernel and Channel3 signal collection.',
-    );
-  }
-  const signals = createLocalSignalsPort(
-    hasLiveClients
-      ? { mode: 'live', kernel: liveClients.kernel, channel3: liveClients.channel3 }
-      : { mode: 'mock' },
-  );
-  return {
-    signals,
-    memory: memoryPort,
-    registry: registryPort,
-    ...(llm ? { llm } : {}),
-    now: () => Date.now(),
-    log: () => {},
 export function mapRunToFrontend(run: AgentRun, meta: MapMeta): FrontendInvestigation {
   const { result, provenance, similarCases } = run;
   const verdict = result.verdict;
