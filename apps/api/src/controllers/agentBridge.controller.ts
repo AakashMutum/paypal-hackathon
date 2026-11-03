@@ -134,6 +134,7 @@ const summary = (record: AgentCheckoutRecord, extra: Record<string, unknown> = {
   decision: record.verdict,
   captureState: record.captureState,
   captureReason: record.captureReason,
+  captureId: record.captureId,
   simulated: record.simulated,
   mode: record.mode,
   ...extra,
@@ -235,16 +236,29 @@ export async function setSpendPolicy(req: Request, res: Response, next: NextFunc
   }
 }
 
+/**
+ * The demo marketplace: the canonical stores as a shopping agent sees them. The merchant id and
+ * payee email are the account the store's checkout would pay.
+ */
 export async function getMarketplaceListings(_req: Request, res: Response): Promise<void> {
+  const catalog = loadStoreCatalog();
+  const genuine = catalog.find((s) => s.kind === 'genuine');
   res.status(200).json({
     success: true,
-    data: loadStoreCatalog().map((s) => ({
-      id: s.storeId,
-      title: s.product,
-      domain: s.domain,
-      price: s.price,
-      currency: s.currency,
-    })),
+    data: {
+      listings: catalog.map((s) => ({
+        id: s.storeId,
+        title: `${s.product} - ${s.brand}`,
+        merchant: s.payeeName,
+        merchantId: s.payeeMerchantId,
+        payeeEmail: s.payeeEmail,
+        claimedBrand: s.brand,
+        url: `https://${s.domain}/products/${s.product.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
+        price: s.price,
+        currency: s.currency,
+        condition: 'new',
+      })),
+      marketContext: { medianPrice: genuine?.price ?? 0, offerCount: 9, currency: genuine?.currency ?? 'USD' },
+    },
   });
 }
-
