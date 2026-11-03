@@ -40,7 +40,7 @@ export const EvidenceSchema = z.object({
   source: EvidenceSourceSchema,
   deterministic: z.boolean(),
   hardFail: z.boolean().optional(),
-  data: z.record(z.unknown()).optional(),
+  data: z.record(z.string(), z.unknown()).optional(),
 });
 export type Evidence = z.infer<typeof EvidenceSchema>;
 
