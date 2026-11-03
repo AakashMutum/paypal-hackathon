@@ -273,9 +273,11 @@ AI coding and development tools used while building TrustOra:
 
 | Tool | Used for |
 | --- | --- |
-| Antigravity (Google DeepMind AI coding assistant) | End-to-end feature development, debugging, architecture design, and code review across the entire repository |
+| Antigravity (Google DeepMind AI coding assistant) | Backend and integration work |
 | GitHub Copilot | Inline code completion during development |
 | ChatGPT / GPT-4o | Research, prompt design for the LLM investigation step, and architecture brainstorming |
+
+TEAM TO COMPLETE: add the tools the other team members used and what each was used for.
 
 ## Judging criteria
 
