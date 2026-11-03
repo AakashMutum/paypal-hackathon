@@ -12,7 +12,6 @@ import {
   setCustomSignalsClients,
   setCustomMemoryFetch,
 } from '../src/services/agent/agentPorts.js';
-import { runAgent } from '../src/services/agent/agentRunner.service.js';
 import { ElasticPatternStore, InMemoryPatternStore } from '@checkout-guardian/memory';
 
 const originalEnv = { ...process.env };
@@ -251,7 +250,7 @@ describe('Live Integration Suite (LLM, Signals, Elastic)', () => {
       const port = getSignalsPort();
       const report = await port.getPriceReport(
         {
-          claims: { domain: 'shop.example', siteName: 'Canvas Bag', contacts: { emails: [], phones: [] }, linkedDomains: [], visibleText: '', hiddenText: '', sectionLinks: {}, hasContactPage: false, hasLegalPage: false },
+          claims: { finalUrl: 'https://shop.example', domain: 'shop.example', siteName: 'Canvas Bag', contacts: { emails: [], phones: [] }, linkedDomains: [], visibleText: '', hiddenText: '', sectionLinks: {}, hasContactPage: false, hasLegalPage: false },
           amount: 50,
           currency: 'USD',
           items: [{ name: 'Canvas Bag', unitPrice: 50, quantity: 1 }],
@@ -277,7 +276,7 @@ describe('Live Integration Suite (LLM, Signals, Elastic)', () => {
       const port = getSignalsPort();
       const report = await port.getPriceReport(
         {
-          claims: { domain: 'shop.example', siteName: 'Canvas Bag', contacts: { emails: [], phones: [] }, linkedDomains: [], visibleText: '', hiddenText: '', sectionLinks: {}, hasContactPage: false, hasLegalPage: false },
+          claims: { finalUrl: 'https://shop.example', domain: 'shop.example', siteName: 'Canvas Bag', contacts: { emails: [], phones: [] }, linkedDomains: [], visibleText: '', hiddenText: '', sectionLinks: {}, hasContactPage: false, hasLegalPage: false },
           amount: 50,
           currency: 'USD',
           items: [{ name: 'Canvas Bag', unitPrice: 50, quantity: 1 }],

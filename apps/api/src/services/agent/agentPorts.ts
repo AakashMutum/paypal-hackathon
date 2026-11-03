@@ -17,7 +17,11 @@ import {
   type RegistryRecord,
   type SignalsPort,
 } from '@checkout-guardian/agent';
-import { createLiveClientsFromEnv, createLocalSignalsPort } from '@checkout-guardian/signals';
+import {
+  createLiveClientsFromEnv,
+  createLocalSignalsPort,
+  type KernelClientDeps,
+} from '@checkout-guardian/signals';
 import {
   ElasticPatternStore,
   asAgentMemoryPort,
@@ -86,11 +90,11 @@ export function llmRecordingsDir(): string {
 
 let signalsPort: SignalsPort | undefined;
 let customSignalsFetch: typeof fetch | null = null;
-let customKernelDeps: Record<string, unknown> | null = null;
+let customKernelDeps: KernelClientDeps | null = null;
 
 export function setCustomSignalsClients(options: {
   fetchImpl?: typeof fetch | null;
-  kernelDeps?: Record<string, unknown> | null;
+  kernelDeps?: KernelClientDeps | null;
 }): void {
   if (options.fetchImpl !== undefined) customSignalsFetch = options.fetchImpl;
   if (options.kernelDeps !== undefined) customKernelDeps = options.kernelDeps;
@@ -107,7 +111,7 @@ export function getSignalsPort(): SignalsPort {
   const live = (): SignalsPort => {
     const clients = createLiveClientsFromEnv(process.env, {
       fetchImpl: customSignalsFetch ?? undefined,
-      kernelDeps: (customKernelDeps as any) ?? undefined,
+      kernelDeps: customKernelDeps ?? undefined,
     });
     return createLocalSignalsPort({ mode: 'live', knownBrandDomains, ...clients });
   };
