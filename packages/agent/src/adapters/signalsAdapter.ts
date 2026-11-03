@@ -53,7 +53,7 @@ export function createFixtureSignals(
 
 /**
  * Live implementation. Endpoint paths are provisional until the Signals service
- * (Person 3) is available; they are all declared here so only this file changes.
+ * (signals area) is available; they are all declared here so only this file changes.
  */
 export function createHttpSignals(baseUrl: string, fetchImpl: typeof fetch = fetch): SignalsPort {
   const base = baseUrl.replace(/\/+$/, '');
