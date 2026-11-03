@@ -37,7 +37,8 @@
     "check:hygiene": "node scripts/check-hygiene.mjs",
     "pretest:e2e": "npm run build:packages",
     "test:e2e": "tsx --test apps/api/test/e2e.demo.test.ts",
-    "test:packages": "npm run test:agent && npm run test:mcp && npm test -w @checkout-guardian/signals -w @checkout-guardian/memory -w @checkout-guardian/eval"
+    "test:packages": "npm run test:agent && npm run test:mcp && npm test -w @checkout-guardian/signals -w @checkout-guardian/memory -w @checkout-guardian/eval",
+    "smoke:deploy": "node scripts/smoke-deploy.mjs"
   },
   "dependencies": {
     "cors": "^2.8.5",

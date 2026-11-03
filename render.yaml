@@ -1,0 +1,64 @@
+# Render blueprint for TrustOra: one Postgres database, the API, and the static web app.
+# Field names follow Render's blueprint spec (https://render.com/docs/blueprint-spec).
+# Lines marked "verify" use a nesting the spec page did not show in full; check them in the
+# Render dashboard's blueprint preview before the first sync.
+#
+# No secret values live in this file. Every key declared with `sync: false` is asked for once
+# in the dashboard when the blueprint is first created. See docs/deploy.md.
+
+databases:
+  - name: trustora-db
+    plan: free # Render's free Postgres expires 30 days after creation; see docs/deploy.md
+    databaseName: trustora
+    user: trustora
+
+services:
+  # --- API -------------------------------------------------------------------------------------
+  - type: web
+    name: trustora-api
+    runtime: node
+    plan: free
+    # devDependencies are needed to compile TypeScript, so install them explicitly.
+    # The api build first builds contracts, signals, memory and agent (prebuild script).
+    buildCommand: npm ci --include=dev && npm run build -w @checkout-guardian/api
+    # Apply migrations from the compiled output, then start the server.
+    startCommand: node apps/api/dist/src/database/migrate.js && node apps/api/dist/src/server.js
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: DATABASE_URL
+        fromDatabase: # verify nesting
+          name: trustora-db
+          property: connectionString
+      - key: PAYPAL_MODE
+        value: sandbox
+      - key: PAYPAL_CLIENT_ID
+        sync: false
+      - key: PAYPAL_CLIENT_SECRET
+        sync: false
+      # Set by hand after the first deploy to the public URL of the static site (no trailing slash).
+      - key: CORS_ORIGIN
+        sync: false
+
+  # --- Web app (static) ------------------------------------------------------------------------
+  - type: web
+    name: trustora-web
+    runtime: static
+    buildCommand: npm ci --include=dev && npm run build -w @checkout-guardian/web
+    staticPublishPath: apps/web/dist
+    routes: # verify nesting
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: VITE_USE_MOCK
+        value: "false"
+      # Set by hand after the first deploy to the public URL of the API (no trailing slash).
+      - key: VITE_API_URL
+        sync: false
+      # PayPal sandbox client id for the checkout button. Leave empty to use the simulated button.
+      - key: VITE_PAYPAL_CLIENT_ID
+        sync: false

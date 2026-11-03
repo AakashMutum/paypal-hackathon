@@ -1,0 +1,133 @@
+# Deploying TrustOra on Render
+
+`render.yaml` at the repository root is a Render blueprint with three resources:
+
+| Resource | Type | What it does |
+| --- | --- | --- |
+| `trustora-db` | Postgres | Holds the schema from `apps/api/src/database/migrations` |
+| `trustora-api` | Web service (Node 22) | Builds the API, runs migrations, then starts it. Health check `/health` |
+| `trustora-web` | Static site | Builds `apps/web`, publishes `apps/web/dist`, rewrites every path to `/index.html` |
+
+The blueprint was written against Render's blueprint spec. Two fields (`fromDatabase` and the
+static `routes` rewrite) use a nesting the spec page did not show in full; the dashboard preview
+shows an error before anything is created if either is wrong.
+
+No file in the repository holds a secret, a connection string or a database dump. Do not paste
+any into chat, issues or commits.
+
+## Create the blueprint
+
+1. Push the branch you want to deploy to GitHub.
+2. In the Render dashboard choose **New**, then **Blueprint**, and connect the repository.
+3. Pick the branch. Render reads `render.yaml` and lists the three resources.
+4. Render asks for the values of every variable marked `sync: false` (table below). You can
+   leave `CORS_ORIGIN` and `VITE_API_URL` empty for now and set them after the first deploy.
+5. Choose **Apply**. The first build takes several minutes.
+
+## Environment variables to set in the dashboard
+
+Names only. Values come from the places listed here.
+
+| Variable | Service | Where to get it |
+| --- | --- | --- |
+| `PAYPAL_CLIENT_ID` | API | PayPal developer dashboard, Apps and Credentials, the sandbox app |
+| `PAYPAL_CLIENT_SECRET` | API | Same sandbox app. Keep it private |
+| `CORS_ORIGIN` | API | The public URL of `trustora-web` (after the first deploy) |
+| `VITE_API_URL` | Web | The public URL of `trustora-api` (after the first deploy) |
+| `VITE_PAYPAL_CLIENT_ID` | Web | The sandbox client id again (public). Leave empty for the simulated button |
+
+Set automatically by the blueprint: `DATABASE_URL` (from the database), `PAYPAL_MODE=sandbox`,
+`VITE_USE_MOCK=false`, `NODE_VERSION=22`. Render provides `PORT`; the API reads it.
+
+Everything the API and web app read, and where:
+
+| Variable | Read in |
+| --- | --- |
+| `NODE_ENV`, `HOST`, `PORT`, `CORS_ORIGIN`, `RATE_LIMIT_WINDOW_MS`, `RATE_LIMIT_MAX` | `apps/api/src/config/env.ts` |
+| `DATABASE_URL`, `DATABASE_SSL`, `DATABASE_TIMEOUT_MS`, `DATABASE_MAX_CONNECTIONS` | `apps/api/src/config/env.ts` |
+| `PAYPAL_MODE`, `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`, `PAYPAL_TIMEOUT_MS` | `apps/api/src/config/env.ts` |
+| `AGENT_*`, `FEATURE_*`, `LLM_*`, `SIGNALS_*`, `ELASTIC_*`, `MEMORY_MATCH_MIN` | `packages/agent/src/config.ts`, read when the agent runs; all optional |
+| `VITE_API_URL`, `VITE_USE_MOCK` | `apps/web/src/api/apiClient.ts` |
+| `VITE_PAYPAL_CLIENT_ID` | `apps/web/src/hooks/usePaypalAuth.ts` |
+| `VITE_API_TARGET` | `apps/web/vite.config.ts` (local dev proxy only) |
+
+`KERNEL_API_KEY` and `CHANNEL3_API_KEY` are read by `createLiveClientsFromEnv` in
+`packages/signals`, which the API does not call yet.
+
+## After the first deploy
+
+1. Copy the public URL of `trustora-web` (for example `https://trustora-web.onrender.com`) into
+   `CORS_ORIGIN` on the API service. No trailing slash.
+2. Copy the public URL of `trustora-api` into `VITE_API_URL` on the web service. No trailing
+   slash.
+3. Redeploy the web service: `VITE_*` values are baked in at build time, so a change needs a new
+   build. The API restarts by itself when its variables change.
+
+## Smoke test
+
+```bash
+BASE_URL=https://your-api.onrender.com REQUIRE_DB=true npm run smoke:deploy
+BASE_URL=https://your-api.onrender.com npm run smoke:deploy -- --flow
+```
+
+- It calls `GET /health` and prints the result. With `REQUIRE_DB=true` it fails unless
+  `database.status` is `healthy`. Without it, it only warns that the API may be running in memory.
+- With `--flow` it also posts one fictional store to `POST /api/scan` and checks for a verdict.
+- A sleeping free service can take about a minute to answer the first request; the script waits
+  up to 70 seconds (`TIMEOUT_MS` changes that).
+
+## Logs, rollback
+
+- Logs: open the service in the dashboard and choose **Logs**. The start command prints the
+  migration result before the server line.
+- Roll back: open the service, choose **Events** (or **Deploys**), and redeploy an earlier
+  successful deploy. A rollback does not undo database migrations.
+
+## Free-tier limits
+
+Checked against Render's free plan page on 2026-11-03; confirm before relying on them.
+
+- Free web services spin down after 15 minutes without traffic and take about a minute to wake.
+  Each workspace has 750 free instance hours per month.
+- A free Postgres database expires 30 days after creation, has 14 days of grace to upgrade, then
+  is deleted. It holds 1 GB, and a workspace can have one active free database. If the demo must
+  run past 30 days, upgrade the plan or create a new database.
+- Static sites are free but count against included bandwidth and pipeline minutes.
+
+Wake the API a minute before a live demo, and run the smoke test to confirm it is up.
+
+## Demo mode: run everything locally with no accounts
+
+You need Node 22 and nothing else.
+
+```bash
+npm ci
+# Terminal 1: the API with no database and no PayPal credentials (investigations stay in memory)
+npm run build
+npm start
+
+# Terminal 2: the web app in mock mode
+echo VITE_USE_MOCK=true > apps/web/.env
+npm run dev:web        # http://localhost:5173
+```
+
+- With `VITE_USE_MOCK=true` the web app uses its built-in simulated backend and does not need
+  the API at all.
+- To exercise the API instead, set `VITE_USE_MOCK=false` and `VITE_API_TARGET=http://localhost:3000`.
+  Without PayPal credentials the API generates order ids locally; without `DATABASE_URL` it runs
+  in memory and `/health` reports `not_configured`.
+
+**Warning:** `POST /api/demo/reset` has no authentication. Anyone who can reach a public demo can
+wipe its data, and `POST /api/orders/:id/cancel` can void any order. Do not leave a public
+instance open for longer than the demo needs.
+
+## Known issues
+
+See [docs/e2e-report.md](e2e-report.md) for the full list with file and line numbers. The ones
+that matter for a deployed demo:
+
+- Capture and void are sent with the order id, not the authorization id, so they do not follow
+  PayPal's authorize-then-capture flow.
+- The agent routes used by the MCP server read different field names than the MCP client sends.
+- Evidence cards on the demo stores are canned, and investigations are not stored in the database.
+- No authentication on the demo reset and cancel routes.
