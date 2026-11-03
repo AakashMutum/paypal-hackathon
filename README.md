@@ -244,7 +244,7 @@ Be clear about what has not been run live. These parts are written and tested ag
 - A language model (`LLM_MODE=live`), and recorded model answers (none are committed).
 - Elasticsearch scam memory (tested with a fake `fetch`; the live test skips without credentials).
 - The PostgreSQL migration and the database store (the migration test uses a mock pool).
-- The web app in a browser (it builds and type-checks).
+- The web app in a browser (it builds and type-checks; routes verified locally at `http://localhost:5173`).
 
 Other limits: the evaluation is a small synthetic benchmark; retrieved similar cases are shown but
 are not passed to the explanation writer; PayPal webhooks are not handled.
@@ -285,7 +285,7 @@ services unless it says so.
 | Criterion | How TrustOra addresses it | Where |
 | --- | --- | --- |
 | Technological Implementation | Uses the PayPal Orders and Payments APIs to authorize, then capture or void, with idempotency headers and a refusal to run outside the sandbox. The investigator agent decides from deterministic evidence; a language model is optional and cannot override hard rules. Spend policies, order tokens, validation, an audit trail and an MCP server are implemented and tested with fakes. Not yet run against live PayPal or a live model | `apps/api/src/services/paypal`, `apps/api/src/services/payments/paymentFlow.service.ts`, `packages/agent/src/scoring/rules.ts`, `apps/mcp`, `apps/api/test/e2e.demo.test.ts` |
-| Design | A storefront, checkout, an investigation view with evidence cards and provenance chips, a pay screen with the capture state and a warning acknowledgement, and an analyst console. The web app has been built and type-checked but not exercised in a browser | `apps/web/src/pages`, `apps/web/src/components/Provenance.tsx` |
+| Design | A storefront, checkout, an investigation view with evidence cards and provenance chips, a pay screen with the capture state and a warning acknowledgement, and an analyst console. The web app has been built, type-checked and verified locally at `http://localhost:5173` | `apps/web/src/pages`, `apps/web/src/components/Provenance.tsx` |
 | Potential Impact | Targets one specific problem: the merchant a checkout claims to be differs from the account that is paid, and AI shopping agents can be misled by page text. Aimed at shoppers, and at agents that pay for them. No user research or usage numbers exist yet | "The problem" above, `packages/agent/src/scoring/rules.ts`, `packages/agent/src/guard` |
 | Innovation/Idea | Ties the claimed merchant to the actual PayPal payee before capture, using AUTHORIZE so a payment can be voided; treats merchant page text as untrusted data; gives AI agents guarded checkout tools through MCP; keeps an anonymous memory of past scam patterns | `packages/agent`, `apps/mcp`, `packages/memory` |
 | Presentation | See the demo video (link to be added) | TO BE ADDED |
@@ -330,7 +330,7 @@ about prize eligibility.
 | Kernel | Remote browser that loads the checkout page for live signals (`packages/signals/src/agentPort/kernelClient.ts`), only with `SIGNALS_MODE` set to `live` or `auto` and a key | No. Tested with fake clients |
 | Channel3 | Product catalogue used for price comparison in live signals and for market context in the demo shopper | No. Tested with fake clients |
 | Render | `render.yaml` describes the API and web services; `docs/deploy.md` and `npm run smoke:deploy` cover deployment | No. Nothing has been deployed |
-| AG Grid | The investigations table in the analyst console: sorting, filters and CSV export (`apps/web/src/pages/AnalystConsole.tsx`, Community edition) | Builds and type-checks; not exercised in a browser |
+| AG Grid | The investigations table in the analyst console: sorting, filters and CSV export (`apps/web/src/pages/AnalystConsole.tsx`, Community edition) | Builds, type-checks and loads locally at `/analyst` |
 
 ## Built during the contest period
 
