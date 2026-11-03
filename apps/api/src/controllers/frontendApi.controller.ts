@@ -24,6 +24,7 @@ import {
   scanBody,
 } from '../validation/schemas.js';
 import { registryAddMerchant } from '../services/registry/registry.service.js';
+import { normalizeMerchantUrl } from '../validation/url.js';
 
 const param = (req: Request, name: string): string => {
   const raw = req.params[name];
@@ -46,7 +47,18 @@ export async function scanUrl(req: Request, res: Response, next: NextFunction): 
     const body = parseBody(scanBody, req, res);
     if (!body) return;
 
-    const investigation = await executeMerchantInvestigation({ url: body.url });
+    const url = normalizeMerchantUrl(body.url);
+    if (!url) {
+      sendError(
+        res,
+        400,
+        'INVALID_URL',
+        'Enter a valid website address, for example https://store-name.example/product/123 or store-name.example.',
+      );
+      return;
+    }
+
+    const investigation = await executeMerchantInvestigation({ url });
     investigation.simulated = isSimulated();
     investigation.mode = paymentMode();
     await investigationStore.add(investigation);

@@ -10,6 +10,7 @@ import { setDatabaseUrl } from '../src/config/env.js';
 let app: Application;
 
 before(() => {
+  process.env.LLM_MODE = 'none';
   setDatabaseUrl('');
   setCustomAuthFetch(async () => {
     return new Response(

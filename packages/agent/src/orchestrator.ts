@@ -8,7 +8,7 @@ import type {
   InvestigationRequest,
   Verdict,
 } from './types.js';
-import { matchIdentity, type IdentityInput } from './identity/matcher.js';
+import { IDENTITY_TIMEOUT_MS, matchIdentity, type IdentityInput } from './identity/matcher.js';
 import { AgentResultSchema, InvestigationRequestSchema } from './types.js';
 import { loadConfig, type DeepPartial, type InvestigatorAgentConfig } from './config.js';
 import { makeClock } from './clock.js';
@@ -193,6 +193,7 @@ export async function runInvestigatorAgentDetailed(
         sentence: pattern.sentence,
         usedLlm: pattern.usedLlm,
         evidence: buildMemoryEvidence(hits, ids, config.memoryMatchMin),
+        hits,
       };
     })();
 
@@ -201,7 +202,7 @@ export async function runInvestigatorAgentDetailed(
         ? matchIdentity(buildIdentityInput(state, parsed.data), ids, {
             llm: deps.llm,
             useLlm: config.features.identityLlm,
-            timeoutMs: 2500,
+            timeoutMs: IDENTITY_TIMEOUT_MS,
             signal: clock.signal,
           })
         : Promise.resolve(undefined);
@@ -244,6 +245,17 @@ export async function runInvestigatorAgentDetailed(
           confidence: score.confidence,
           evidence: ordered.slice(0, MAX_WRITER_EVIDENCE),
           hardRules: score.hardRulesTriggered,
+          ...(patternResult && patternResult.hits.length > 0
+            ? {
+                retrievedCases: patternResult.hits.slice(0, 3).map((hit) => ({
+                  caseId: hit.id,
+                  patternText: hit.patternText,
+                  decision: hit.decision,
+                  score: hit.score ?? 0,
+                  ...(hit.retrieval ? { retrieval: hit.retrieval } : {}),
+                })),
+              }
+            : {}),
         },
         { llm: deps.llm, timeoutMs: writerBudget, signal: clock.signal }
       );
@@ -253,6 +265,7 @@ export async function runInvestigatorAgentDetailed(
         evidence,
         decision: score.decision,
         hardRules: score.hardRulesTriggered,
+        allowedCaseIds: patternResult?.hits.map((hit) => hit.id) ?? [],
       });
 
       if (writer.attempted) state.llmCalls += 1;

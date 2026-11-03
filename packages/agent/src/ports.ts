@@ -14,6 +14,33 @@ export interface CallOpts {
 
 export type SectionHint = 'about' | 'contact' | 'returns' | 'terms' | 'privacy' | 'shipping';
 
+export type PageAccessState = 'ok' | 'blocked' | 'empty' | 'unreachable' | 'unsupported';
+
+/** Whether the page could actually be read, and why it could not. */
+export interface PageAccess {
+  state: PageAccessState;
+  httpStatus?: number;
+  reason?: string;
+}
+
+/** Product facts read from structured page metadata. Absent fields are genuinely absent. */
+export interface PageProduct {
+  name?: string;
+  price?: number;
+  currency?: string;
+  brand?: string;
+  availability?: string;
+  seller?: string;
+  source: 'json-ld' | 'opengraph' | 'microdata' | 'metadata' | 'title';
+}
+
+export interface PageMarketplace {
+  id: string;
+  displayName: string;
+  officialDomain: string;
+  region?: string;
+}
+
 export interface PageClaims {
   finalUrl: string;
   domain: string;
@@ -30,6 +57,9 @@ export interface PageClaims {
   hasContactPage: boolean;
   hasLegalPage: boolean;
   screenshotUrl?: string;
+  pageAccess?: PageAccess;
+  product?: PageProduct;
+  marketplace?: PageMarketplace;
 }
 
 export interface RegistryRecord {
@@ -109,6 +139,9 @@ export interface MemoryHit {
   riskScore: number;
   seed: boolean;
   score?: number;
+  /** exact, embedding or lexical retrieval used for this hit. */
+  retrieval?: string;
+  embeddingProvider?: string;
 }
 
 export interface MemoryDocument {

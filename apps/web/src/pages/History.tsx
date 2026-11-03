@@ -8,7 +8,7 @@ const F = ['ALL', 'ALLOW', 'WARN', 'PAUSE'] as const;
 export default function HistoryPage() {
   const { list, loading } = useInvestigations(3000); const nav = useNavigate();
   const [f, setF] = useState<typeof F[number]>('ALL'); const [q, setQ] = useState('');
-  const rows = useMemo(() => list.filter(i => (f === 'ALL' || i.verdict === f) && (i.domain + i.claimedBrand + i.payeeName).toLowerCase().includes(q.toLowerCase())), [list, f, q]);
+  const rows = useMemo(() => list.filter(i => (f === 'ALL' || i.verdict === f) && (i.domain + i.claimedBrand + (i.payeeName ?? '')).toLowerCase().includes(q.toLowerCase())), [list, f, q]);
   return <>
     <div className="flex justify-between items-center"><h1 className="text-2xl font-bold">History</h1>
       <button className="btn-secondary !h-9" onClick={() => download('guardian-history.json', rows)}><Download size={14} />Export</button></div>
@@ -18,6 +18,6 @@ export default function HistoryPage() {
       {loading && <p className="p-5 text-sm text-muted">Loading…</p>}
       {!loading && !rows.length && <p className="p-5 text-sm text-muted">No assessments match. Try another filter or scan a site.</p>}
       {rows.map(i => <button key={i.id} onClick={() => nav(`/engine/${i.id}`)} className="w-full text-left p-4 flex justify-between items-center gap-3 hover:bg-[#F8FAFD]">
-        <div className="min-w-0"><div className="font-mono text-sm font-semibold truncate">{i.domain}</div><div className="text-xs text-muted truncate">{i.claimedBrand} → {i.payeeName} · <span className="font-mono">{clock(i.createdAt)}</span></div></div><RiskBadge verdict={i.verdict} /></button>)}</div>
+        <div className="min-w-0"><div className="font-mono text-sm font-semibold truncate">{i.domain}</div><div className="text-xs text-muted truncate">{i.claimedBrand} → {i.payeeName ?? 'Not supplied'} · <span className="font-mono">{clock(i.createdAt)}</span></div></div><RiskBadge verdict={i.verdict} /></button>)}</div>
   </>;
 }

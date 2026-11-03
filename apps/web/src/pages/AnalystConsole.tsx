@@ -24,7 +24,7 @@ export default function AnalystConsole() {
   const { list, reload } = useInvestigations(2000); const { toast } = useApp();
   const [f, setF] = useState<typeof F[number]>('ALL'); const [q, setQ] = useState(''); const [min, setMin] = useState(0); const [sel, setSel] = useState<string | null>(null);
   const grid = useRef<AgGridReact<Investigation>>(null);
-  const rows = useMemo(() => list.filter(i => (f === 'ALL' || i.verdict === f) && i.riskScore >= min && (i.domain + i.payeeName + i.claimedBrand).toLowerCase().includes(q.toLowerCase())), [list, f, q, min]);
+  const rows = useMemo(() => list.filter(i => (f === 'ALL' || i.verdict === f) && i.riskScore >= min && (i.domain + (i.payeeName ?? '') + i.claimedBrand).toLowerCase().includes(q.toLowerCase())), [list, f, q, min]);
   const cur = list.find(i => i.id === (sel ?? rows[0]?.id));
 
   const columns = useMemo<ColDef<Investigation>[]>(() => [
@@ -79,8 +79,9 @@ export default function AnalystConsole() {
       <aside className="lg:col-span-5 space-y-3">
         {cur ? <><div className={cn('card', cur.verdict === 'PAUSE' && 'border-l-[3px] !border-l-bad', cur.verdict === 'WARN' && 'border-l-[3px] !border-l-warn')}>
           <div className="flex justify-between"><h2 className="font-semibold text-lg">{cur.domain}</h2><RiskBadge verdict={cur.verdict} /></div>
-          <p className="text-sm text-muted mt-1">{cur.productName} · {money(cur.price)} vs {money(cur.benchmark)} · {cur.payeeTier}</p>
+          <p className="text-sm text-muted mt-1">{cur.productName} · {money(cur.price)} vs {money(cur.benchmark)} · {cur.payeeTier ?? 'Payee not supplied'}</p>
           <p className="text-sm mt-2">{cur.reasons[0]}</p>
+          {cur.confidenceReason && <p className="text-xs text-muted mt-1">{cur.confidenceReason}</p>}
           {cur.captureReason && <p className="text-xs font-mono text-muted mt-2">{CAPTURE_LABEL[cur.captureState]}: {cur.captureReason}</p>}
           <div className="mt-3"><ProvenanceChips inv={cur} /></div>
           <div className="flex gap-2 mt-3"><Link to={`/engine/${cur.id}`} className="btn-primary !h-9 text-xs">Open engine</Link>{cur.orderId && <Link to={`/pay/${cur.id}`} className="btn-secondary !h-9 text-xs">Payment view</Link>}</div></div>

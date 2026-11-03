@@ -2,6 +2,7 @@ import { test, describe, beforeEach, afterEach, after } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   signalsMode,
+  llmInfo,
   llmMode,
   getLlmClient,
   getSignalsPort,
@@ -42,7 +43,27 @@ describe('Live Integration Suite (LLM, Signals, Elastic)', () => {
       assert.equal(llmMode({ LLM_MODE: 'replay' }), 'replay');
       assert.equal(llmMode({ LLM_MODE: 'none' }), 'none');
       assert.equal(llmMode({ LLM_MODE: 'live', LLM_API_KEY: 'test-key' }), 'live');
+      assert.equal(llmMode({ LLM_MODE: 'live', GEMINI_API_KEY: 'test-key' }), 'live');
       assert.equal(llmMode({ LLM_MODE: 'live', LLM_API_KEY: '' }), 'none');
+    });
+
+    test('llmInfo reports the Gemini provider, key source, model fallback and clear errors', () => {
+      const info = llmInfo({
+        LLM_MODE: 'live',
+        LLM_PROVIDER: 'gemini',
+        LLM_BASE_URL: 'https://generativelanguage.googleapis.com/v1beta/openai/',
+        LLM_MODEL_FAST: 'gemini-3.5-flash',
+        GEMINI_API_KEY: 'test-key',
+      });
+      assert.equal(info.mode, 'live');
+      assert.equal(info.provider, 'gemini');
+      assert.equal(info.keySource, 'GEMINI_API_KEY');
+      assert.equal(info.models.fast[0], 'gemini-3.5-flash');
+      assert.ok(info.models.fast.includes('gemini-3.5-flash-lite'));
+
+      const missing = llmInfo({ LLM_MODE: 'live', LLM_API_KEY: '', GEMINI_API_KEY: '' });
+      assert.equal(missing.mode, 'none');
+      assert.match(missing.error ?? '', /requires LLM_API_KEY or GEMINI_API_KEY/);
     });
 
     test('successful live LLM response with controlled HTTP double', async () => {
@@ -241,7 +262,8 @@ describe('Live Integration Suite (LLM, Signals, Elastic)', () => {
       assert.equal(signalsMode({ SIGNALS_MODE: 'auto' }), 'auto');
       assert.equal(signalsMode({ SIGNALS_MODE: 'replay' }), 'replay');
       assert.equal(signalsMode({ SIGNALS_MODE: 'mock' }), 'replay');
-      assert.equal(signalsMode({}), 'replay');
+      assert.equal(signalsMode({ SIGNALS_MODE: 'fixture' }), 'replay');
+      assert.equal(signalsMode({}), 'auto');
     });
 
     test('live Channel3 client queries search endpoint and parses offers', async () => {

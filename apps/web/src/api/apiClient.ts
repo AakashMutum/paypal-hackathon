@@ -2,8 +2,14 @@ import type { CreateOrderRequest, CreateOrderResponse, Health, Investigation, Me
 import { mock } from './mock';
 // All payment logic lives in the backend. The frontend only requests actions and renders what the API reports.
 const BASE: string = (import.meta.env.VITE_API_URL ?? '').replace(/\/+$/, '');
-/** The API is used when VITE_API_URL is set and VITE_USE_MOCK is not "true". Otherwise the simulated backend runs. */
-export const USE_MOCK = !(BASE && import.meta.env.VITE_USE_MOCK !== 'true');
+const FORCE_MOCK = import.meta.env.VITE_USE_MOCK === 'true';
+const FORCE_LIVE = import.meta.env.VITE_USE_MOCK === 'false';
+/**
+ * VITE_USE_MOCK=false always uses the API. With an empty VITE_API_URL the requests stay on the
+ * same origin, so the Vite dev proxy forwards /api to the backend. The simulated backend only
+ * runs when it is forced or when no API target is configured at all.
+ */
+export const USE_MOCK = FORCE_MOCK || (!FORCE_LIVE && !BASE);
 
 // The API returns an order token when an order is created. It is needed to approve, cancel, review
 // or acknowledge that order, so it is kept for the browser session (memory first, session storage

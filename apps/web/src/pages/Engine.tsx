@@ -7,7 +7,23 @@ import { api } from '../api/apiClient';
 import { Empty, Modal, Pill } from '../components/ui';
 import { Timeline } from '../components/Timeline';
 import { ProvenanceChips, SimilarCases } from '../components/Provenance';
-import { ageLabel, CAPTURE_LABEL, cn, download, money, VERDICT } from '../lib/format';
+import { ageLabel, CAPTURE_LABEL, cn, download, money, VERDICT, type Tone } from '../lib/format';
+
+const SIGNAL_LABEL: Record<string, string> = {
+  page: 'Merchant page',
+  domainAge: 'Domain age',
+  registry: 'Merchant registry',
+  price: 'Price comparison',
+  tls: 'TLS certificate',
+  payee: 'PayPal payee',
+};
+
+const signalTone = (value: string): Tone =>
+  value === 'blocked' || value === 'invalid'
+    ? 'bad'
+    : value === 'unavailable' || value === 'not_checked' || value === 'empty' || value === 'not_provided'
+      ? 'warn'
+      : 'ok';
 
 export default function Engine() {
   const { id } = useParams(); const nav = useNavigate();
@@ -56,11 +72,19 @@ export default function Engine() {
     {done && <ProvenanceChips inv={inv} />}
     {done && <SimilarCases cases={inv.similarCases} />}
 
+    {done && inv.signalAvailability && <section className="card space-y-3" aria-label="Signal availability">
+      <div className="flex justify-between items-center"><h2 className="font-semibold">Signal availability</h2><span className="mono-label bg-tint px-2 py-1 rounded">what was checked</span></div>
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">{Object.entries(inv.signalAvailability).map(([key, value]) => <div key={key} className="rounded-lg bg-tint p-2">
+        <div className="mono-label">{SIGNAL_LABEL[key] ?? key}</div>
+        <div className="mt-1"><Pill tone={signalTone(value)}>{value.replace(/_/g, ' ')}</Pill></div></div>)}</div>
+      {inv.confidenceReason && <p className="text-xs text-muted">{inv.confidenceReason}</p>}
+    </section>}
+
     {done && <section className="card space-y-3">
       <div className="flex justify-between items-center"><h2 className="font-semibold">Ledger Discrepancy Matrix</h2>{inv.verdict !== 'ALLOW' && <Pill tone="bad">NOT CLEARED</Pill>}</div>
-      {[['Entity discrepancy', 'Storefront promised', inv.claimedBrand, 'PayPal destination', inv.payeeName],
-        ['Price verification', 'Comparable price', money(inv.benchmark), 'Submitted checkout', money(inv.price)],
-        ['Merchant status', 'Registry records', `${inv.registryRecords} found`, 'Domain age', ageLabel(inv.domainAgeDays)]].map(([h, a, av, b, bv]) => <div key={h} className="rounded-lg bg-tint p-3">
+      {[['Entity discrepancy', 'Storefront promised', inv.claimedBrand, 'PayPal destination', inv.payeeName ?? 'Not supplied'],
+        ['Price verification', 'Comparable price', inv.benchmark === null ? 'Not available' : money(inv.benchmark), 'Submitted checkout', inv.price === null ? 'Not provided' : money(inv.price)],
+        ['Merchant status', 'Registry records', inv.registryRecords === null ? 'Not checked' : `${inv.registryRecords} found`, 'Domain age', ageLabel(inv.domainAgeDays)]].map(([h, a, av, b, bv]) => <div key={h} className="rounded-lg bg-tint p-3">
         <div className="mono-label mb-2">{h}</div><div className="grid grid-cols-2 gap-2"><div className="bg-white rounded p-2"><div className="mono-label">{a}</div><div className="text-sm font-semibold break-words">{av}</div></div>
           <div className={cn('rounded p-2', inv.verdict === 'ALLOW' ? 'bg-ok-bg' : 'bg-bad-bg')}><div className={cn('mono-label', inv.verdict !== 'ALLOW' && '!text-bad-deep')}>{b}</div><div className="text-sm font-semibold break-words">{bv}</div></div></div></div>)}</section>}
 

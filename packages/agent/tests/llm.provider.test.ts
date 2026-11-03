@@ -170,6 +170,41 @@ test('an unrelated 400 is not retried', async () => {
   }
 });
 
+test('a model that is unavailable falls back to the next configured model', async () => {
+  const models: string[] = [];
+  const server = await startServer(async (req, res) => {
+    const body = JSON.parse(await readBody(req)) as { model: string };
+    models.push(body.model);
+    if (body.model === 'missing-model') {
+      res.statusCode = 404;
+      res.end('model not found');
+      return;
+    }
+    res.setHeader('content-type', 'application/json');
+    res.end(okBody);
+  });
+
+  try {
+    const provider = createHttpProvider({
+      apiKey: 'k',
+      baseUrl: server.url,
+      models: { fast: ['missing-model', 'working-model'], strong: ['working-model'] },
+    });
+    const response = await provider.complete({
+      tier: 'fast',
+      system: 's',
+      user: 'u',
+      maxOutputTokens: 10,
+      timeoutMs: 1000,
+    });
+    assert.equal(response.text, '{"answer":1}');
+    assert.equal(response.model, 'working-model');
+    assert.deepEqual(models, ['missing-model', 'working-model']);
+  } finally {
+    await server.close();
+  }
+});
+
 test('a 500 becomes a provider error', async () => {
   const server = await startServer((_req, res) => {
     res.statusCode = 500;

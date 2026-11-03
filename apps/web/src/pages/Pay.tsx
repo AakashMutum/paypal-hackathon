@@ -31,6 +31,16 @@ export default function Pay() {
     : cs === 'AUTHORIZED' ? { cls: 'bg-navy text-white', chip: 'AUTHORIZED', title: 'Payment Authorized', text: 'The payment is authorized and waiting for the guardian decision. Nothing is captured yet.' }
     : inv.verdict === 'PAUSE' ? { cls: 'bg-bad-deep text-white', chip: 'CAPTURE PAUSED', title: 'Payment Capture Paused', text: 'Capture is blocked. The evidence does not support what the storefront claims about who is paid.' }
     : { cls: 'bg-warn text-ink', chip: 'REVIEW HOLD', title: 'Payment On Hold', text: 'Some claims could not be verified. Capture waits until you acknowledge the warning or cancel the order.' };
+  const discounted = inv.price !== null && inv.benchmark !== null && inv.benchmark > inv.price;
+  const deviation =
+    inv.price !== null && inv.benchmark !== null && inv.benchmark > 0
+      ? Math.round((inv.price / inv.benchmark - 1) * 100)
+      : null;
+  const signalLines = [
+    `Merchant registry: ${inv.registryRecords === null ? 'not checked' : `${inv.registryRecords} legal record${inv.registryRecords === 1 ? '' : 's'}`}`,
+    `Domain age: ${ageLabel(inv.domainAgeDays)}`,
+    `Pricing deviation: ${deviation === null ? 'not available' : `${deviation}%`}`,
+  ];
   const submitReport = async (e: FormEvent) => { e.preventDefault(); await run('rep', () => api.reportMerchant({ domain: inv.domain, reason, investigationId: inv.id }), 'Report submitted. Thank you.'); setRep(false); setReason(''); };
   return <>
     <section className="rounded-xl bg-navy text-white p-4 flex items-center justify-between gap-3">
@@ -51,7 +61,7 @@ export default function Pay() {
     <section className="card space-y-4">
       <div className="flex justify-between"><h2 className="font-semibold">Order Item Summary</h2><span className="font-mono text-xs text-muted">{inv.orderId ?? inv.id}</span></div>
       <div className="rounded-lg bg-tint p-3"><div className="font-semibold">{inv.productName}</div>
-        <div className="flex items-baseline gap-2 mt-1"><span className="text-xl font-bold font-mono">{money(inv.price)}</span>{inv.benchmark > inv.price && <><span className="font-mono text-sm line-through text-muted">{money(inv.benchmark)}</span><Pill tone="bad">{Math.round((inv.price / inv.benchmark - 1) * 100)}% Flag</Pill></>}</div></div>
+        <div className="flex items-baseline gap-2 mt-1"><span className="text-xl font-bold font-mono">{money(inv.price)}</span>{discounted && <><span className="font-mono text-sm line-through text-muted">{money(inv.benchmark)}</span><Pill tone="bad">{deviation}% Flag</Pill></>}</div></div>
       <div className="grid grid-cols-2 gap-2 text-sm"><div className="rounded-lg bg-tint p-3"><div className="mono-label">Buyer identity</div><div className="font-semibold mt-1">Alex Walker</div><div className="font-mono text-xs text-muted">{maskEmail(inv.buyerEmail ?? 'alex.walker@mail.example')}</div></div>
         <div className="rounded-lg bg-tint p-3"><div className="mono-label">Delivery zone</div><div className="font-semibold mt-1">San Francisco, CA</div><div className="font-mono text-xs text-muted">Direct Courier</div></div></div></section>
 
@@ -59,10 +69,10 @@ export default function Pay() {
       <div className="flex justify-between items-center"><h2 className="font-semibold">Claimed vs actual payee</h2><span className="mono-label bg-tint px-2 py-1 rounded">Confidence {inv.confidence}%</span></div>
       <div className="rounded-lg bg-tint p-3"><div className="mono-label">Storefront promoted entity</div><div className="text-lg font-bold mt-1">{inv.claimedBrand}</div><div className="font-mono text-xs text-muted">Domain: {inv.domain}</div></div>
       <div className={cn('rounded-lg p-3', inv.verdict === 'ALLOW' ? 'bg-ok-bg' : 'bg-bad-bg')}><div className={cn('mono-label', inv.verdict !== 'ALLOW' && '!text-bad-deep')}>Real destination account</div>
-        <div className="flex gap-2 items-center mt-1"><Building2 size={20} /><span className="text-lg font-bold break-all">{inv.payeeName}</span></div>
-        <div className="flex gap-2 flex-wrap mt-2"><span className="font-mono text-xs">ID: {inv.payeeId}</span><Pill tone={inv.verdict === 'ALLOW' ? 'ok' : 'bad'}>{inv.payeeTier}</Pill></div></div>
+        <div className="flex gap-2 items-center mt-1"><Building2 size={20} /><span className="text-lg font-bold break-all">{inv.payeeName ?? 'Not supplied'}</span></div>
+        <div className="flex gap-2 flex-wrap mt-2"><span className="font-mono text-xs">ID: {inv.payeeId ?? 'Not supplied'}</span><Pill tone={inv.verdict === 'ALLOW' ? 'ok' : 'bad'}>{inv.payeeTier ?? 'Not checked'}</Pill></div></div>
       <div className="mono-label pt-2">Signals</div>
-      {[`Merchant registry: ${inv.registryRecords} legal records`, `Domain age: ${ageLabel(inv.domainAgeDays)}`, `Pricing deviation: ${Math.round((inv.price / inv.benchmark - 1) * 100)}%`].map(t => <div key={t} className="bg-tint rounded p-2.5 text-xs font-mono">{t}</div>)}</section>}
+      {signalLines.map(t => <div key={t} className="bg-tint rounded p-2.5 text-xs font-mono">{t}</div>)}</section>}
 
     <section className="card !p-0"><button className="w-full p-4 flex justify-between items-center font-semibold" aria-expanded={why} onClick={() => setWhy(!why)}><span className="flex items-center gap-2"><Info size={16} className="text-electric" />Why did Guardian {inv.verdict === 'ALLOW' ? 'allow' : 'hold'} this?</span><ChevronDown className={cn('transition', why && 'rotate-180')} /></button>
       {why && <ul className="px-4 pb-4 space-y-2 text-sm list-disc list-inside text-ink/80">{inv.reasons.map(r => <li key={r}>{r}</li>)}</ul>}</section>

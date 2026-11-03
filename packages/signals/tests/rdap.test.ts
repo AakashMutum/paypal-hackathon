@@ -1,6 +1,12 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { RdapCollector, domainAgeDays, findRegistrationDate } from '../src/domain/rdap.js';
+import {
+  RDAP_BOOTSTRAP_URL,
+  RdapCollector,
+  domainAgeDays,
+  findRegistrationDate,
+  rdapUrlFor,
+} from '../src/domain/rdap.js';
 import { jsonResponse, options, request } from './helpers.js';
 
 test('domainAgeDays counts whole days', () => {
@@ -40,6 +46,22 @@ test('domain age severity: under 30 days MEDIUM, under 90 LOW, else INFO', async
     assert.equal(evidence.severity, severity, `${days} days`);
     assert.equal(evidence.hardFail, false);
   }
+});
+
+test('uses the IANA bootstrap to choose the authoritative registry endpoint', async () => {
+  const requests: string[] = [];
+  const fetchImpl = (async (input: string | URL) => {
+    const url = String(input);
+    requests.push(url);
+    if (url === RDAP_BOOTSTRAP_URL) {
+      return jsonResponse({ services: [[['shop'], ['https://rdap.example.test/api/']]] });
+    }
+    return jsonResponse({ events: [] });
+  }) as unknown as typeof fetch;
+
+  const url = await rdapUrlFor('example.shop', { fetchImpl, timeoutMs: 1000, now: () => Date.now() });
+  assert.equal(url, 'https://rdap.example.test/api/domain/example.shop');
+  assert.ok(requests.includes(RDAP_BOOTSTRAP_URL));
 });
 
 test('requests rdap.org for the registrable domain', async () => {

@@ -29,8 +29,8 @@ export interface LlmRequest<T> {
 }
 
 export type LlmResult<T> =
-  | { ok: true; data: T; latencyMs: number; usage?: LlmUsage }
-  | { ok: false; error: LlmErrorCode; detail?: string; latencyMs: number };
+  | { ok: true; data: T; latencyMs: number; usage?: LlmUsage; model?: string }
+  | { ok: false; error: LlmErrorCode; detail?: string; latencyMs: number; model?: string };
 
 export interface LlmClient {
   generateJson<T>(request: LlmRequest<T>): Promise<LlmResult<T>>;
@@ -48,6 +48,8 @@ export interface RawLlmRequest {
 export interface RawLlmResponse {
   text: string;
   usage?: LlmUsage;
+  /** The model that actually produced the answer, after any fallback. */
+  model?: string;
 }
 
 /** A provider returns text. Turning that text into validated data is the client's job. */
