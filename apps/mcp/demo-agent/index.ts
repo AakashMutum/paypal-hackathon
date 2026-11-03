@@ -26,8 +26,13 @@ import {
   type ToolCaller,
   type ToolResultLike,
 } from './shopper.js';
+import { runScriptedShopper, summarizeScripted } from './scripted.js';
 
 const DEMO_AGENT_NAME = 'checkout-guardian-demo-shopper';
+const DEFAULT_API_URL = 'http://localhost:3000';
+// The canonical demo stores sell a weekender bag and a jacket, so live and scripted runs shop for a bag.
+const CANONICAL_GOAL = 'Buy one canvas weekender bag for under $100.';
+const CANONICAL_BUDGET = 100;
 const repoRoot = fileURLToPath(new URL('../../../', import.meta.url));
 
 export interface CliOptions {
@@ -36,7 +41,8 @@ export interface CliOptions {
   budget?: number;
   guardian: 'on' | 'off';
   autoHuman: 'ask' | 'yes' | 'no';
-  llm: 'live' | 'record' | 'replay';
+  /** auto picks live when LLM_API_KEY is set and none (a scripted shopper) otherwise. */
+  llm: 'auto' | 'live' | 'record' | 'replay' | 'none';
   maxSteps?: number;
   out?: string;
   help: boolean;
@@ -56,7 +62,7 @@ export const USAGE = [
   '  --budget <number>         Override the budget (default: 150)',
   '  --guardian <on|off>       Use Checkout Guardian (default: on)',
   '  --auto-human <ask|yes|no> Human decision mode (default: ask)',
-  '  --llm <live|record|replay> Model mode (default: replay)',
+  '  --llm <auto|live|record|replay|none> Model mode (default: auto: live with LLM_API_KEY, else a scripted shopper)',
   '  --max-steps <number>      Maximum agent steps (default: 10)',
   '  --out <path>              Run log path (default: demo-runs/<timestamp>.json)',
   '  --help                    Show this help',
@@ -92,7 +98,7 @@ export function parseArgs(argv: string[]): CliOptions {
     scenario: 'D',
     guardian: 'on',
     autoHuman: 'ask',
-    llm: 'replay',
+    llm: 'auto',
     help: false,
   };
 
@@ -138,8 +144,8 @@ export function parseArgs(argv: string[]): CliOptions {
       }
       case '--llm': {
         const value = takeValue();
-        if (value !== 'live' && value !== 'record' && value !== 'replay') {
-          throw new Error('--llm must be live, record or replay');
+        if (value !== 'auto' && value !== 'live' && value !== 'record' && value !== 'replay' && value !== 'none') {
+          throw new Error('--llm must be auto, live, record, replay or none');
         }
         options.llm = value;
         break;
@@ -250,6 +256,8 @@ export async function main(
     };
   }
 
+  if (options.llm === 'auto') options.llm = env.LLM_API_KEY?.trim() ? 'live' : 'none';
+
   const fixture = loadScenarioFixture();
   if (options.scenario !== fixture.scenario) {
     throw new Error(
@@ -257,14 +265,17 @@ export async function main(
     );
   }
 
+  const offline = options.llm === 'replay';
   const scenario: ScenarioFixture = {
     ...fixture,
-    goal: options.goal ?? fixture.goal,
+    goal: options.goal ?? (offline ? fixture.goal : CANONICAL_GOAL),
   };
+
+  if (options.llm === 'none') return runScripted(options, env, fixture, scenario);
 
   const marketplace = await loadMarketplace({
     fixture,
-    apiUrl: options.llm === 'replay' ? undefined : env.GUARDIAN_API_URL,
+    apiUrl: offline ? undefined : (env.GUARDIAN_API_URL ?? DEFAULT_API_URL),
     timeoutMs: 2_000,
   });
 
@@ -272,7 +283,7 @@ export async function main(
     options.llm === 'replay'
       ? { context: fixture.marketContext, source: 'fixture' as const }
       : await loadMarketContext({
-          fixture: fixture.marketContext,
+          fixture: marketplace.marketContext,
           query: scenario.goal,
           apiKey: env.CHANNEL3_API_KEY,
           baseUrl: env.CHANNEL3_BASE_URL,
@@ -332,7 +343,7 @@ export async function main(
         apiUrl: options.llm === 'replay' ? undefined : env.GUARDIAN_API_URL,
       }),
       guardianMode: options.guardian,
-      budget: options.budget ?? fixture.budget,
+      budget: options.budget ?? (offline ? fixture.budget : CANONICAL_BUDGET),
       autoHuman: options.autoHuman,
       humanPrompt: human?.prompt,
       maxSteps: options.maxSteps,
@@ -371,6 +382,75 @@ export async function main(
   } finally {
     human?.close();
     await mcpClose?.();
+  }
+}
+
+async function runScripted(
+  options: CliOptions,
+  env: Record<string, string | undefined>,
+  fixture: ScenarioFixture,
+  scenario: ScenarioFixture
+): Promise<CliResult> {
+  const apiUrl = env.GUARDIAN_API_URL ?? DEFAULT_API_URL;
+  const marketplace = await loadMarketplace({ fixture, apiUrl, timeoutMs: 3_000 });
+  if (marketplace.source !== 'api') {
+    throw new Error(`The Guardian API at ${apiUrl} is not reachable. Start it with "npm start" (after "npm run build"), or set GUARDIAN_API_URL.`);
+  }
+
+  const budget = options.budget ?? CANONICAL_BUDGET;
+  const mcp = await connectMcp({ ...env, GUARDIAN_API_URL: apiUrl });
+  const human = options.autoHuman === 'ask' ? createHumanPrompt() : undefined;
+
+  try {
+    console.log('Checkout Guardian demo: scripted shopper (no language model)');
+    console.log(`Goal: ${scenario.goal} Budget: ${budget} ${scenario.currency}`);
+    console.log(`API: ${apiUrl}. Stores are fictional.`);
+
+    const policy = { perOrderCap: budget, dailyCap: budget * 3, firstPurchaseCap: budget, currency: scenario.currency };
+    const policyResult = await mcp.caller.callTool({ name: 'set_spend_policy', arguments: { agentId: 'demo-shopper', ...policy } });
+    console.log(policyResult.isError ? 'Spend policy could not be saved.' : `Spend policy saved: up to ${budget} per order, ${budget * 3} per day.`);
+
+    const results = await runScriptedShopper({
+      listings: marketplace.listings,
+      guardian: createMcpGuardianClient(mcp.caller),
+      budget,
+      autoHuman: options.autoHuman,
+      humanPrompt: human?.prompt,
+    });
+
+    console.log('');
+    console.log('Summary');
+    for (const line of summarizeScripted(results)) console.log(`  ${line}`);
+
+    const logPath = options.out ? resolve(options.out) : resolve(repoRoot, 'demo-runs', `${timestampSlug()}.json`);
+    mkdirSync(dirname(logPath), { recursive: true });
+    writeFileSync(
+      logPath,
+      `${JSON.stringify({ mode: { llm: 'none', guardian: 'on' }, apiUrl, goal: scenario.goal, budget, results, createdAt: new Date().toISOString(), brandNotice: 'All merchant and brand names in this demo are fictional.' }, null, 2)}
+`,
+      'utf8'
+    );
+    console.log(`Log: ${logPath}`);
+
+    const spent = results.filter((r) => r.action === 'PAID' || r.action === 'HUMAN_PROCEEDED').length;
+    return {
+      result: {
+        scenario: options.scenario,
+        goal: scenario.goal,
+        budget,
+        currency: scenario.currency,
+        guardian: 'on',
+        marketplaceSource: 'api',
+        contextSource: 'fixture',
+        events: [],
+        outcome: { status: spent > 0 ? 'CAPTURED' : 'STOPPED', spent: 0, reason: 'scripted' },
+        modelCalls: 0,
+      },
+      logPath,
+    };
+  } finally {
+    human?.close();
+    await mcp.close();
   }
 }
 

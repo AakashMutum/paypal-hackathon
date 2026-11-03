@@ -428,11 +428,16 @@ test('spend policies are stored per agent, validated, and enforced with POLICY_V
   assert.equal(other.status, 200, 'another agent has no policy');
 });
 
-test('the marketplace lists only the canonical stores', async () => {
+test('the marketplace lists only the canonical stores, with the payee each checkout would pay', async () => {
   const res = await request(app).get('/api/v1/demo/marketplace');
   assert.equal(res.status, 200);
-  assert.deepEqual(res.body.data.map((l: { id: string }) => l.id).sort(), Object.values(STORES).map((s) => s.id).sort());
-  assert.ok(res.body.data.every((l: { domain: string }) => l.domain.endsWith('.example')));
+  const { listings, marketContext } = res.body.data;
+  assert.deepEqual(listings.map((l: { id: string }) => l.id).sort(), Object.values(STORES).map((s) => s.id).sort());
+  assert.ok(listings.every((l: { url: string }) => new URL(l.url).hostname.endsWith('.example')));
+  const fake = listings.find((l: { id: string }) => l.id === STORES.impersonator.id);
+  assert.equal(fake.merchantId, 'MERCH-QUICKPAY-HOLDINGS');
+  assert.equal(fake.claimedBrand, 'Harborline Outfitters');
+  assert.ok(marketContext.medianPrice > 0);
 });
 
 // ---------------------------------------------------------------------------------------------
