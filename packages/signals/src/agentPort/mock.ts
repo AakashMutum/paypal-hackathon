@@ -69,7 +69,9 @@ function itemsOf(fixture: Fixture): Item[] {
 
 export function createMockPort(options: LocalSignalsPortOptions): AgentSignalsPort {
   const fixtures = loadFixtures(options.fixturesDir);
-  const find = (host: string): Fixture | undefined => fixtures.find((f) => f.storefrontHost === host.toLowerCase());
+  // The agent asks about the registrable domain (no www), the fixtures record the full host.
+  const bare = (host: string): string => host.toLowerCase().replace(/^www./, '');
+  const find = (host: string): Fixture | undefined => fixtures.find((f) => bare(f.storefrontHost) === bare(host));
   const hostOf = (value: string): string => {
     try {
       return value.includes('://') ? hostnameOf(value) : value.toLowerCase();

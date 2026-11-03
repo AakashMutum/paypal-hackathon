@@ -3,7 +3,7 @@ import { z } from 'zod';
 /**
  * Local mirror of the shared API contracts.
  *
- * `packages/contracts` is owned by Person 1 and is never edited from this package.
+ * `packages/contracts` is owned by the api area and is never edited from this package.
  * The vocabulary here intentionally matches it: ALLOW / WARN / PAUSE and the
  * ActionTaken values. `adapters/contractsAdapter.ts` maps these shapes onto the
  * contract response objects.

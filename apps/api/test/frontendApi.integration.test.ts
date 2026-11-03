@@ -10,7 +10,7 @@ import { setDatabaseUrl } from '../src/config/env.js';
 let app: Application;
 
 before(() => {
-  setDatabaseUrl('postgres://localhost:5432/mock_empty_db_no_connect');
+  setDatabaseUrl('');
   setCustomAuthFetch(async () => {
     return new Response(
       JSON.stringify({
@@ -56,106 +56,72 @@ after(() => {
 });
 
 test('POST /api/scan scans storefront and produces structured 4-node evidence', async () => {
-  const res = await request(app)
-    .post('/api/scan')
-    .send({ url: 'https://pulseaudio-store.com' })
-    .expect(200);
+  const res = await request(app).post('/api/scan').send({ url: 'https://www.harborline-outfitters.example' }).expect(200);
 
   assert.equal(res.body.verdict, 'ALLOW');
   assert.equal(res.body.riskScore <= 39, true);
   assert.equal(res.body.evidence.length, 4);
-  assert.equal(res.body.evidence[0].node, 'SURFACE');
-  assert.equal(res.body.evidence[1].node, 'MERCHANT');
-  assert.equal(res.body.evidence[2].node, 'PRICE');
-  assert.equal(res.body.evidence[3].node, 'PAYEE');
+  assert.deepEqual(res.body.evidence.map((e: { node: string }) => e.node), ['SURFACE', 'MERCHANT', 'PRICE', 'PAYEE']);
 });
 
-test('POST /api/scan detects lookalike impersonator and issues BLOCK', async () => {
-  const res = await request(app)
-    .post('/api/scan')
-    .send({ url: 'https://luxaura-outletdeals.com' })
-    .expect(200);
+test('POST /api/scan detects the lookalike impersonator and issues PAUSE', async () => {
+  const res = await request(app).post('/api/scan').send({ url: 'https://www.harborlyne-outfitters-sale.example' }).expect(200);
 
-  assert.equal(res.body.verdict, 'BLOCK');
+  assert.equal(res.body.verdict, 'PAUSE');
   assert.equal(res.body.riskScore >= 75, true);
   assert.equal(res.body.evidence[3].status, 'FAIL');
 });
 
-test('POST /api/orders creates order and investigation record', async () => {
-  const res = await request(app)
+const order = (storeId: string) =>
+  request(app)
     .post('/api/orders')
-    .send({
-      storeId: 'pulseaudio',
-      items: [{ sku: 'PAP-1', name: 'PulseAudio Pro', price: 299, qty: 1 }],
-      buyerEmail: 'alex.walker@gmail.com',
-    })
+    .send({ storeId, items: [{ sku: 'SKU-1', name: 'Test item', price: 84.5, qty: 1 }], buyerEmail: 'buyer@shop.example' })
     .expect(200);
 
+test('POST /api/orders creates an order, an investigation and an order token', async () => {
+  const res = await order('harborline-outfitters');
   assert.ok(res.body.orderId);
   assert.ok(res.body.paypalOrderId);
   assert.ok(res.body.investigationId);
+  assert.ok(res.body.orderToken);
 
-  // Poll investigation by ID
-  const getRes = await request(app)
-    .get(`/api/investigations/${res.body.investigationId}`)
-    .expect(200);
-
+  const getRes = await request(app).get('/api/investigations/' + res.body.investigationId).expect(200);
   assert.equal(getRes.body.id, res.body.investigationId);
-  assert.equal(getRes.body.claimedBrand, 'PulseAudio');
+  assert.equal(getRes.body.claimedBrand, 'Harborline Outfitters');
 });
 
 test('POST /api/orders/:orderId/approved captures ALLOW orders on approval', async () => {
-  const createRes = await request(app)
-    .post('/api/orders')
-    .send({
-      storeId: 'pulseaudio',
-      items: [{ sku: 'PAP-1', name: 'PulseAudio Pro', price: 299, qty: 1 }],
-      buyerEmail: 'alex.walker@gmail.com',
-    })
-    .expect(200);
-
+  const created = await order('harborline-outfitters');
   const approveRes = await request(app)
-    .post(`/api/orders/${createRes.body.orderId}/approved`)
+    .post('/api/orders/' + created.body.orderId + '/approved')
+    .set('x-order-token', created.body.orderToken)
     .expect(200);
 
   assert.equal(approveRes.body.decision, 'ALLOW');
   assert.equal(approveRes.body.captureState, 'CAPTURED');
 });
 
-test('POST /api/orders/:orderId/approved halts capture on impersonator orders (PAUSE/BLOCK)', async () => {
-  const createRes = await request(app)
-    .post('/api/orders')
-    .send({
-      storeId: 'luxaura-outlet',
-      items: [{ sku: 'LXH-1', name: 'Luxaura Handbag', price: 149, qty: 1 }],
-      buyerEmail: 'alex.walker@gmail.com',
-    })
-    .expect(200);
-
+test('POST /api/orders/:orderId/approved halts capture on impersonator orders (PAUSE)', async () => {
+  const created = await order('harborlyne-outfitters-sale');
   const approveRes = await request(app)
-    .post(`/api/orders/${createRes.body.orderId}/approved`)
+    .post('/api/orders/' + created.body.orderId + '/approved')
+    .set('x-order-token', created.body.orderToken)
     .expect(200);
 
-  assert.equal(approveRes.body.decision, 'BLOCK');
+  assert.equal(approveRes.body.decision, 'PAUSE');
   assert.equal(approveRes.body.captureState, 'HELD');
 
-  // Cancel & Void authorization
   const cancelRes = await request(app)
-    .post(`/api/orders/${createRes.body.investigationId}/cancel`)
+    .post('/api/orders/' + created.body.investigationId + '/cancel')
+    .set('x-order-token', created.body.orderToken)
     .expect(200);
-
   assert.equal(cancelRes.body.captureState, 'VOIDED');
 });
 
-test('POST /api/v1/investigations serves autonomous agent MCP endpoint', async () => {
+test('POST /api/v1/investigations serves the agent endpoint', async () => {
   const res = await request(app)
     .post('/api/v1/investigations')
-    .send({
-      domain: 'pulseaudio-store.com',
-      amount: 299,
-      currency: 'USD',
-      claimedBrand: 'PulseAudio',
-    })
+    .send({ merchantUrl: 'https://www.harborline-outfitters.example', transactionAmount: 84.5, currency: 'USD', claimedBrand: 'Harborline Outfitters' })
     .expect(200);
 
   assert.equal(res.body.success, true);

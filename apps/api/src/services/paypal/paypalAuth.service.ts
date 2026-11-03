@@ -139,7 +139,7 @@ export async function getAccessToken(options: { forceRefresh?: boolean } = {}): 
           const errorJson = (await response.json()) as { error?: string; error_description?: string };
           errorDetails = errorJson.error_description || errorJson.error || '';
         } catch {
-          // ignore parsing error
+          console.warn('[paypal] the error response body was not JSON');
         }
         throw new PayPalAuthError(
           `PayPal OAuth API error (status ${response.status})${errorDetails ? `: ${errorDetails}` : ''}`,

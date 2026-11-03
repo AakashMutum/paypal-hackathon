@@ -14,3 +14,6 @@ eval-report.json
 .env.*
 !.env.example
 .commandcode/
+
+# Demo agent run logs
+demo-runs/

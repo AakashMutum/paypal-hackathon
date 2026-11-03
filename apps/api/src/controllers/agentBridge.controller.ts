@@ -1,113 +1,126 @@
-import type { Request, Response, NextFunction } from 'express';
+import type { NextFunction, Request, Response } from 'express';
+import type { AgentResult, InvestigationRequest } from '@checkout-guardian/agent';
+import { runAgent } from '../services/agent/agentRunner.service.js';
+import { checkoutStore, type AgentCheckoutRecord } from '../services/investigation/checkoutStore.service.js';
+import { checkSpendPolicy, policyStore } from '../services/persistence/policyStore.service.js';
 import {
-  runInvestigatorAgentDetailed,
-  type InvestigationRequest,
-} from '@checkout-guardian/agent';
-import { createAgentDeps } from '../services/agent/agentRunner.service.js';
-import {
-  createPayPalOrder,
-  capturePayPalOrder,
-} from '../services/paypal/paypalOrders.service.js';
-import { env } from '../config/env.js';
+  authorizeApproved,
+  captureIfAllowed,
+  createAuthorizeOrder,
+  currentState,
+  recordTransition,
+  voidAuthorization,
+} from '../services/payments/paymentFlow.service.js';
+import { loadStoreCatalog } from '../config/storeCatalog.js';
+import { sendError } from '../middleware/errors.js';
+import { checkoutBody, finalizeBody, investigationBody, parseBody, policyBody } from '../validation/schemas.js';
 
-interface AgentCheckoutRecord {
-  checkoutId: string;
-  paypalOrderId: string;
-  domain: string;
-  claimedBrand: string;
-  amount: number;
-  currency: string;
-  status: 'AWAITING_APPROVAL' | 'CAPTURED' | 'PAUSED' | 'NEEDS_HUMAN_DECISION';
-  createdAt: string;
-}
+const toUrl = (value: string): string => (/^[a-z]+:\/\//i.test(value) ? value : `https://${value}`);
+const hostOf = (value: string): string => {
+  try {
+    return new URL(toUrl(value)).hostname.toLowerCase();
+  } catch {
+    return value.toLowerCase();
+  }
+};
 
-const checkouts = new Map<string, AgentCheckoutRecord>();
-const policies = new Map<string, Record<string, unknown>>();
+const param = (req: Request, name: string): string => {
+  const raw = req.params[name];
+  return (Array.isArray(raw) ? raw[0] : raw) ?? '';
+};
 
+const hardBlock = (result: AgentResult): boolean => result.hardRulesTriggered.some((r) => r.rule === 'HF1' || r.rule === 'HF2');
+
+/** POST /api/v1/investigations: the MCP client's request, with the older `domain` field still accepted. */
 export async function investigateMerchant(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const { domain, amount, currency, claimedBrand, items, payee } = req.body || {};
-    if (!domain) {
-      res.status(400).json({
-        success: false,
-        error: { code: 'VALIDATION_ERROR', message: 'Domain is required for investigation' },
-      });
-      return;
-    }
+    const body = parseBody(investigationBody, req, res);
+    if (!body) return;
 
-    const merchantUrl = domain.startsWith('http') ? domain : `https://${domain}`;
+    const merchantUrl = toUrl(body.merchantUrl ?? body.domain ?? '');
+    const amount = body.transactionAmount ?? body.amount;
     const request: InvestigationRequest = {
-      orderId: `INV-${Math.random().toString(16).slice(2, 8).toUpperCase()}`,
+      orderId: body.orderId ?? `INV-${Math.random().toString(16).slice(2, 8).toUpperCase()}`,
       merchantUrl,
-      transactionAmount: typeof amount === 'number' ? amount : undefined,
-      currency: currency || 'USD',
-      claimedBrand: claimedBrand || undefined,
-      items: Array.isArray(items)
-        ? items.map((i: Record<string, unknown>) => ({
-            name: String(i.name || 'Item'),
-            quantity: Number(i.quantity) || 1,
-            unitPrice: Number(i.unitPrice ?? i.price ?? 1),
-          }))
-        : undefined,
-      payee: payee ? { merchantId: payee.merchantId, email: payee.email } : undefined,
+      ...(body.claimedBrand ? { claimedBrand: body.claimedBrand } : {}),
+      ...(amount !== undefined ? { transactionAmount: amount } : {}),
+      currency: body.currency ?? 'USD',
+      ...(body.payee ? { payee: body.payee } : {}),
+      ...(body.agentId ? { agentId: body.agentId } : {}),
+      ...(body.items ? { items: body.items } : {}),
     };
 
-    const deps = createAgentDeps();
-    const result = await runInvestigatorAgentDetailed(request, deps);
-
+    const run = await runAgent(request);
     res.status(200).json({
       success: true,
-      data: result.verdict,
+      data: run.result.verdict,
+      meta: { provenance: run.provenance, similarCases: run.similarCases, hardRules: run.result.hardRulesTriggered.map((r) => r.rule) },
     });
   } catch (err) {
     next(err);
   }
 }
 
+/** POST /api/v1/checkout/orders: holds an order. Nothing is captured here. */
 export async function createAgentCheckout(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const { merchant, amount, currency } = req.body || {};
-    const domain = merchant?.domain || 'unknown.example';
-    const total = typeof amount === 'number' && amount > 0 ? amount : 100;
-    const curr = currency || 'USD';
+    const body = parseBody(checkoutBody, req, res);
+    if (!body) return;
 
-    const checkoutId = `CHK-${Math.random().toString(16).slice(2, 8).toUpperCase()}`;
-    let paypalOrderId = `PP-ORD-${Math.random().toString(16).slice(2, 8).toUpperCase()}`;
-
-    if (env.paypalClientId && env.paypalClientSecret) {
-      try {
-        const order = await createPayPalOrder({
-          amount: total,
-          currency: curr,
-          intent: 'AUTHORIZE',
-          description: `Agent Checkout - ${domain}`,
-          referenceId: checkoutId,
-        });
-        paypalOrderId = order.id;
-      } catch {
-        // Fall back to generated order id in sandbox testing
-      }
+    const merchantUrl = toUrl(body.merchantUrl ?? body.domain ?? body.merchant?.domain ?? '');
+    const domain = hostOf(merchantUrl);
+    const policy = await checkSpendPolicy(body.agentId, body.amount, body.currency);
+    if (!policy.allowed) {
+      sendError(res, 403, 'POLICY_VIOLATION', policy.message ?? 'This purchase is outside the agent spending policy.', { cap: policy.cap });
+      return;
     }
 
+    const checkoutId = `CHK-${Math.random().toString(16).slice(2, 8).toUpperCase()}`;
+    let created;
+    try {
+      created = await createAuthorizeOrder({
+        amount: body.amount,
+        currency: body.currency,
+        description: `Agent checkout - ${domain}`,
+        referenceId: checkoutId,
+      });
+    } catch (error) {
+      console.error(`[payment] creating the PayPal order failed for ${checkoutId}: ${error instanceof Error ? error.message : 'unknown error'}`);
+      sendError(res, 502, 'PAYPAL_ERROR', 'PayPal could not create the order.');
+      return;
+    }
+
+    const payee = body.payee ?? (body.merchantId ? { merchantId: body.merchantId, ...(body.payeeEmail ? { email: body.payeeEmail } : {}) } : undefined);
     const record: AgentCheckoutRecord = {
+      id: checkoutId,
       checkoutId,
-      paypalOrderId,
+      ...(body.agentId ? { agentId: body.agentId } : {}),
+      paypalOrderId: created.paypalOrderId,
+      merchantUrl,
       domain,
-      claimedBrand: merchant?.brand || domain,
-      amount: total,
-      currency: curr,
+      claimedBrand: body.claimedBrand ?? body.merchant?.brand,
+      ...(payee ? { payee } : { payee: { merchantId: 'UNKNOWN' } }),
+      ...(body.items ? { items: body.items } : {}),
+      amount: body.amount,
+      currency: body.currency,
       status: 'AWAITING_APPROVAL',
+      captureState: 'PENDING',
+      simulated: created.simulated,
+      mode: created.mode,
       createdAt: new Date().toISOString(),
     };
-
-    checkouts.set(checkoutId, record);
+    await checkoutStore.save(record);
+    await recordTransition(record, 'PENDING', 'Checkout created. Waiting for approval.', { paypalOrderId: created.paypalOrderId });
+    await checkoutStore.save(record);
 
     res.status(200).json({
       success: true,
       data: {
         checkoutId,
-        approvalUrl: `https://www.sandbox.paypal.com/checkoutnow?token=${paypalOrderId}`,
+        approvalUrl: created.approvalUrl,
         status: 'AWAITING_APPROVAL',
+        simulated: created.simulated,
+        mode: created.mode,
       },
     });
   } catch (err) {
@@ -115,139 +128,137 @@ export async function createAgentCheckout(req: Request, res: Response, next: Nex
   }
 }
 
+const summary = (record: AgentCheckoutRecord, extra: Record<string, unknown> = {}) => ({
+  checkoutId: record.checkoutId,
+  status: record.status,
+  decision: record.verdict,
+  captureState: record.captureState,
+  captureReason: record.captureReason,
+  captureId: record.captureId,
+  simulated: record.simulated,
+  mode: record.mode,
+  ...extra,
+});
+
+/** POST /api/v1/checkout/orders/:checkoutId/finalize: authorize, investigate, then capture, hold or void. */
 export async function finalizeAgentCheckout(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const rawId = req.params.checkoutId;
-    const checkoutId = Array.isArray(rawId) ? rawId[0] : rawId;
-    const { humanDecision } = req.body || {};
+    const checkoutId = param(req, 'checkoutId');
+    const body = parseBody(finalizeBody, req, res);
+    if (!body) return;
 
-    if (!checkoutId) {
-      res.status(400).json({
-        success: false,
-        error: { code: 'VALIDATION_ERROR', message: 'checkoutId is required' },
-      });
+    const record = await checkoutStore.get(checkoutId);
+    if (!record) {
+      sendError(res, 404, 'ORDER_NOT_FOUND', `Checkout session "${checkoutId}" not found`);
+      return;
+    }
+    // A finished checkout is never acted on twice.
+    if (['CAPTURED', 'PAUSED', 'ABORTED', 'FAILED'].includes(record.status)) {
+      res.status(200).json({ success: true, data: summary(record) });
       return;
     }
 
-    const checkout = checkouts.get(checkoutId);
-    if (!checkout) {
-      res.status(404).json({
-        success: false,
-        error: { code: 'ORDER_NOT_FOUND', message: `Checkout session "${checkoutId}" not found` },
-      });
+    if (body.humanDecision === 'abort') {
+      await voidAuthorization(record, 'Aborted by a person.');
+      record.status = currentState(record) === 'FAILED' ? 'FAILED' : 'ABORTED';
+      await checkoutStore.save(record);
+      res.status(200).json({ success: true, data: summary(record) });
       return;
     }
 
-    const deps = createAgentDeps();
-    const merchantUrl = checkout.domain.startsWith('http') ? checkout.domain : `https://${checkout.domain}`;
-    const result = await runInvestigatorAgentDetailed(
-      {
-        orderId: checkoutId,
-        merchantUrl,
-        transactionAmount: checkout.amount,
-        currency: checkout.currency,
-        claimedBrand: checkout.claimedBrand,
-      },
-      deps
-    );
-
-    const decision = result.verdict.decision;
-
-    if (decision === 'PAUSE') {
-      checkout.status = 'PAUSED';
-      res.status(200).json({
-        success: true,
-        data: {
-          checkoutId,
-          status: 'PAUSED',
-          decision: 'PAUSE',
-          verdict: result.verdict,
-        },
-      });
-      return;
-    }
-
-    if (decision === 'WARN') {
-      if (humanDecision !== 'proceed') {
-        checkout.status = 'NEEDS_HUMAN_DECISION';
-        res.status(200).json({
-          success: true,
-          data: {
-            checkoutId,
-            status: 'NEEDS_HUMAN_DECISION',
-            decision: 'WARN',
-            verdict: result.verdict,
-          },
-        });
+    if (record.captureState === 'PENDING') {
+      await authorizeApproved(record);
+      if (currentState(record) === 'FAILED') {
+        record.status = 'FAILED';
+        await checkoutStore.save(record);
+        sendError(res, 502, 'UPSTREAM_ERROR', record.captureReason ?? 'PayPal could not authorize the payment.');
         return;
       }
     }
 
-    // Capture payment if ALLOW or user approved WARN
-    if (env.paypalClientId && env.paypalClientSecret) {
-      try {
-        await capturePayPalOrder(checkout.paypalOrderId);
-      } catch {
-        // Captured
-      }
+    const request: InvestigationRequest = {
+      orderId: record.checkoutId,
+      merchantUrl: record.merchantUrl,
+      transactionAmount: record.amount,
+      currency: record.currency,
+      ...(record.claimedBrand ? { claimedBrand: record.claimedBrand } : {}),
+      payee: record.payee,
+      ...(record.agentId ? { agentId: record.agentId } : {}),
+      ...(record.items ? { items: record.items } : {}),
+    };
+    const run = await runAgent(request);
+    const result = run.result;
+    const decision = result.verdict.decision;
+
+    record.verdict = decision;
+    record.payeeMismatch = hardBlock(result);
+    record.acknowledged = decision === 'WARN' && body.humanDecision === 'proceed';
+
+    if (decision === 'PAUSE' || record.payeeMismatch) {
+      record.verdict = 'PAUSE';
+      await voidAuthorization(record, 'The guardian paused this payment.');
+      record.status = 'PAUSED';
+      await checkoutStore.save(record);
+      res.status(200).json({ success: true, data: summary(record, { verdict: result.verdict }) });
+      return;
     }
 
-    checkout.status = 'CAPTURED';
-    res.status(200).json({
-      success: true,
-      data: {
-        checkoutId,
-        status: 'CAPTURED',
-        decision,
-        verdict: result.verdict,
-      },
-    });
+    await captureIfAllowed(record);
+    if (currentState(record) === 'CAPTURED') {
+      record.status = 'CAPTURED';
+    } else if (currentState(record) === 'FAILED') {
+      record.status = 'FAILED';
+    } else {
+      record.status = 'NEEDS_HUMAN_DECISION';
+    }
+    await checkoutStore.save(record);
+
+    if (record.status === 'FAILED') {
+      sendError(res, 502, 'UPSTREAM_ERROR', record.captureReason ?? 'PayPal could not capture the payment.');
+      return;
+    }
+    res.status(200).json({ success: true, data: summary(record, { verdict: result.verdict }) });
   } catch (err) {
     next(err);
   }
 }
 
-export async function setSpendPolicy(req: Request, res: Response): Promise<void> {
-  const rawId = req.params.agentId;
-  const agentId = Array.isArray(rawId) ? rawId[0] : rawId;
-  const policy = req.body || {};
+/** PUT /api/v1/policies/:agentId */
+export async function setSpendPolicy(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const agentId = param(req, 'agentId');
+    const body = parseBody(policyBody, req, res);
+    if (!body) return;
+    await policyStore.set({ agentId, ...body });
+    res.status(200).json({ success: true, data: { agentId, policy: body } });
+  } catch (err) {
+    next(err);
+  }
+}
 
-  policies.set(agentId || 'default', policy);
-
+/**
+ * The demo marketplace: the canonical stores as a shopping agent sees them. The merchant id and
+ * payee email are the account the store's checkout would pay.
+ */
+export async function getMarketplaceListings(_req: Request, res: Response): Promise<void> {
+  const catalog = loadStoreCatalog();
+  const genuine = catalog.find((s) => s.kind === 'genuine');
   res.status(200).json({
     success: true,
     data: {
-      agentId,
-      policy,
+      listings: catalog.map((s) => ({
+        id: s.storeId,
+        title: `${s.product} - ${s.brand}`,
+        merchant: s.payeeName,
+        merchantId: s.payeeMerchantId,
+        payeeEmail: s.payeeEmail,
+        claimedBrand: s.brand,
+        url: `https://${s.domain}/products/${s.product.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
+        price: s.price,
+        currency: s.currency,
+        condition: 'new',
+      })),
+      marketContext: { medianPrice: genuine?.price ?? 0, offerCount: 9, currency: genuine?.currency ?? 'USD' },
     },
-  });
-}
-
-export async function getMarketplaceListings(_req: Request, res: Response): Promise<void> {
-  res.status(200).json({
-    success: true,
-    data: [
-      {
-        id: 'L-A',
-        title: 'Authentic Headphones',
-        domain: 'pulseaudio-store.com',
-        price: 299,
-        currency: 'USD',
-      },
-      {
-        id: 'L-B',
-        title: 'Discount Luxury Watch',
-        domain: 'mega-dealsoutlet.net',
-        price: 19.99,
-        currency: 'USD',
-      },
-      {
-        id: 'L-C',
-        title: 'Cheap Luxury Handbag',
-        domain: 'luxaura-outletdeals.com',
-        price: 149,
-        currency: 'USD',
-      },
-    ],
   });
 }

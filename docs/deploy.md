@@ -33,11 +33,20 @@ Names only. Values come from the places listed here.
 | `PAYPAL_CLIENT_ID` | API | PayPal developer dashboard, Apps and Credentials, the sandbox app |
 | `PAYPAL_CLIENT_SECRET` | API | Same sandbox app. Keep it private |
 | `CORS_ORIGIN` | API | The public URL of `trustora-web` (after the first deploy) |
+| `DEMO_ADMIN_TOKEN` | API | A long random string you make up. Guards `POST /api/demo/reset` (refused in production when unset) |
+| `GUARDIAN_API_KEY` | API | A long random string you make up. When set, agent routes need it as a bearer token |
+| `STORE_GENUINE_PAYEE_EMAIL`, `STORE_GENUINE_PAYEE_MERCHANT_ID` | API | A PayPal sandbox business account (see `docs/paypal-sandbox.md`) |
+| `STORE_DISCOUNT_PAYEE_EMAIL`, `STORE_DISCOUNT_PAYEE_MERCHANT_ID` | API | A second sandbox business account |
+| `STORE_IMPERSONATOR_PAYEE_EMAIL`, `STORE_IMPERSONATOR_PAYEE_MERCHANT_ID` | API | A third sandbox business account |
+| `LLM_API_KEY`, `LLM_BASE_URL`, `LLM_MODEL_FAST`, `LLM_MODEL_STRONG` | API | Your language-model provider. Only needed for `LLM_MODE=live` |
+| `KERNEL_API_KEY`, `CHANNEL3_API_KEY` | API | Kernel and Channel3 dashboards. Only needed for live signals |
+| `ELASTIC_URL`, `ELASTIC_API_KEY` | API | Your Elasticsearch deployment. Without them the memory runs in the API |
 | `VITE_API_URL` | Web | The public URL of `trustora-api` (after the first deploy) |
-| `VITE_PAYPAL_CLIENT_ID` | Web | The sandbox client id again (public). Leave empty for the simulated button |
+| `VITE_PAYPAL_CLIENT_ID` | Web | The sandbox client id again (public). Leave empty to use the simulated button |
 
-Set automatically by the blueprint: `DATABASE_URL` (from the database), `PAYPAL_MODE=sandbox`,
-`VITE_USE_MOCK=false`, `NODE_VERSION=22`. Render provides `PORT`; the API reads it.
+Set automatically by the blueprint: `DATABASE_URL` (from the database), `NODE_ENV=production`,
+`PAYPAL_MODE=sandbox`, `SIGNALS_MODE=auto` (recorded signals for the demo stores, live for any other
+domain), `LLM_MODE=replay`, `VITE_USE_MOCK=false`, `NODE_VERSION=22`. Render provides `PORT`; the API reads it.
 
 Everything the API and web app read, and where:
 
@@ -48,6 +57,10 @@ Everything the API and web app read, and where:
 | `PAYPAL_MODE`, `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`, `PAYPAL_TIMEOUT_MS` | `apps/api/src/config/env.ts` |
 | `AGENT_*`, `FEATURE_*`, `LLM_*`, `SIGNALS_*`, `ELASTIC_*`, `MEMORY_MATCH_MIN` | `packages/agent/src/config.ts`, read when the agent runs; all optional |
 | `KERNEL_API_KEY`, `CHANNEL3_API_KEY` | `packages/signals/src/agentPort/liveClients.ts`, wired into API runtime via `apps/api/src/services/agent/agentRunner.service.ts` |
+| `DEMO_ADMIN_TOKEN`, `GUARDIAN_API_KEY` | `apps/api/src/config/env.ts` |
+| `SIGNALS_MODE`, `LLM_MODE`, `LLM_API_KEY`, `LLM_BASE_URL`, `LLM_MODEL_FAST`, `LLM_MODEL_STRONG`, `LLM_FIXTURE_DIR`, `KERNEL_API_KEY`, `CHANNEL3_API_KEY`, `ELASTIC_URL`, `ELASTIC_API_KEY`, `ELASTIC_INDEX` | `apps/api/src/services/agent/agentPorts.ts` |
+| `STORE_GENUINE_PAYEE_EMAIL`, `STORE_GENUINE_PAYEE_MERCHANT_ID`, and the same for `DISCOUNT` and `IMPERSONATOR` | `apps/api/src/config/storeCatalog.ts` |
+| `AGENT_*`, `FEATURE_*`, `MEMORY_MATCH_MIN` | `packages/agent/src/config.ts`, read when the agent runs; all optional |
 | `VITE_API_URL`, `VITE_USE_MOCK` | `apps/web/src/api/apiClient.ts` |
 | `VITE_PAYPAL_CLIENT_ID` | `apps/web/src/hooks/usePaypalAuth.ts` |
 | `VITE_API_TARGET` | `apps/web/vite.config.ts` (local dev proxy only) |
@@ -55,6 +68,7 @@ Everything the API and web app read, and where:
 `KERNEL_API_KEY` and `CHANNEL3_API_KEY` are read by `createLiveClientsFromEnv` in
 `packages/signals` and wired into the agent runner. When present, live signals are collected;
 when absent, the runtime falls back cleanly to local mock and scenario behavior.
+`packages/signals`, which the API uses when `SIGNALS_MODE` is `live` or `auto`.
 
 ## After the first deploy
 
@@ -72,9 +86,10 @@ BASE_URL=https://your-api.onrender.com REQUIRE_DB=true npm run smoke:deploy
 BASE_URL=https://your-api.onrender.com npm run smoke:deploy -- --flow
 ```
 
-- It calls `GET /health` and prints the result. With `REQUIRE_DB=true` it fails unless
+- It calls `GET /health` and prints the result and the modes (PayPal, store, signals, LLM, memory). With `REQUIRE_DB=true` it fails unless
   `database.status` is `healthy`. Without it, it only warns that the API may be running in memory.
-- With `--flow` it also posts one fictional store to `POST /api/scan` and checks for a verdict.
+- With `--flow` it also posts one fictional store to `POST /api/scan` and checks for a verdict of
+  ALLOW, WARN or PAUSE.
 - A sleeping free service can take about a minute to answer the first request; the script waits
   up to 70 seconds (`TIMEOUT_MS` changes that).
 
@@ -104,32 +119,35 @@ You need Node 22 and nothing else.
 
 ```bash
 npm ci
-# Terminal 1: the API with no database and no PayPal credentials (investigations stay in memory)
+# Terminal 1: the API with no database and no PayPal credentials
 npm run build
 npm start
 
-# Terminal 2: the web app in mock mode
-echo VITE_USE_MOCK=true > apps/web/.env
+# Terminal 2: the web app. Without VITE_API_URL it uses its built-in simulated backend.
 npm run dev:web        # http://localhost:5173
 ```
 
-- With `VITE_USE_MOCK=true` the web app uses its built-in simulated backend and does not need
-  the API at all.
-- To exercise the API instead, set `VITE_USE_MOCK=false` and `VITE_API_TARGET=http://localhost:3000`.
-  Without PayPal credentials the API generates order ids locally; without `DATABASE_URL` it runs
-  in memory and `/health` reports `not_configured`.
+- The web app calls the API only when `VITE_API_URL` is set and `VITE_USE_MOCK` is not `true`.
+  Otherwise it uses its simulated backend and does not need the API at all; a badge in the header
+  says "Simulated backend" or "Live API".
+- To exercise the API, set `VITE_API_URL=http://localhost:3000` in `apps/web/.env`. Without
+  PayPal credentials the API simulates payments (every response says `simulated: true`); without
+  `DATABASE_URL` it keeps data in memory and `/health` reports `store: memory`.
+- `npm run demo:agent -- --auto-human yes` runs a shopping agent against the API with no keys. See
+  [docs/agentic-demo.md](agentic-demo.md).
 
-**Warning:** `POST /api/demo/reset` has no authentication. Anyone who can reach a public demo can
-wipe its data, and `POST /api/orders/:id/cancel` can void any order. Do not leave a public
-instance open for longer than the demo needs.
+**Access control:** `POST /api/demo/reset` needs the `x-demo-token` header to match
+`DEMO_ADMIN_TOKEN` (in production it is refused when the variable is unset). Approving, cancelling,
+reviewing and acknowledging an order need the order token returned when it was created. Agent
+routes need `Authorization: Bearer <GUARDIAN_API_KEY>` when that variable is set.
 
 ## Known issues
 
-See [docs/e2e-report.md](e2e-report.md) for the full list with file and line numbers. The ones
-that matter for a deployed demo:
+See [docs/e2e-report.md](e2e-report.md) for the defects that remain. For a deployed demo:
 
-- Capture and void are sent with the order id, not the authorization id, so they do not follow
-  PayPal's authorize-then-capture flow.
-- The agent routes used by the MCP server read different field names than the MCP client sends.
-- Evidence cards on the demo stores are canned, and investigations are not stored in the database.
-- No authentication on the demo reset and cancel routes.
+- Nothing has been run against the real PayPal sandbox (authorize, capture and void), Kernel,
+  Channel3, a language model or Elasticsearch from this repository. See the "Known limitations"
+  section of the README.
+- `LLM_MODE=replay` has no committed recordings yet, so the agent uses its deterministic
+  fallbacks until you record some (`packages/agent/fixtures/llm/README.md`).
+- `/api/demo/reset` needs `DEMO_ADMIN_TOKEN` in production.

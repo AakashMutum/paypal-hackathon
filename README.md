@@ -2,6 +2,43 @@
 
 TrustOra checks who is really getting paid before a PayPal payment is captured.
 
+## For judges
+
+Hosted demo: TO BE ADDED after deployment
+
+**Sandbox buyer login:** TEAM TO ADD: PayPal sandbox buyer email and password for judges
+
+You do not need an account to try it. The default run uses a built-in simulation of PayPal
+(payment ids start with `SIM-`, every response says `simulated: true`). The sandbox buyer login
+is only used if the API runs with real PayPal sandbox credentials and the web app has
+`VITE_PAYPAL_CLIENT_ID` set, when the PayPal approval step appears (see `docs/paypal-sandbox.md`).
+
+**Run it locally with no accounts (Node 22):**
+
+```bash
+npm ci && npm run build
+npm start                 # API on http://localhost:3000
+npm run dev:web           # in a second terminal: http://localhost:5173
+```
+
+To make the web app call the API instead of its built-in simulated backend, copy
+`apps/web/.env.example` to `apps/web/.env` and set `VITE_API_URL=http://localhost:3000`
+(badge: "Live API"). Details are in "Quick start" below.
+
+**A 2-minute tour.** Open `/stores`, pick each of the three fictional stores, add the item and
+check out. The expected results are:
+
+| Store | What it is | Expected decision | Expected outcome |
+| --- | --- | --- | --- |
+| Harborline Outfitters | The genuine store | ALLOW | Captured |
+| Bargain Barn Outlet | A heavy-discount store | WARN | Held until you acknowledge the warning, then captured |
+| Harborlyne Outfitters Sale | An impersonator: it imitates the genuine brand but is paid to another account | PAUSE | Never captured; the authorization is voided on cancel |
+
+These results are checked by `npm run test:e2e` (`apps/api/test/e2e.demo.test.ts`). `/analyst`
+shows every investigation with its evidence. To watch an AI shopping agent do the same through the
+MCP server, run `npm run demo:agent -- --auto-human yes` with the API running
+(`docs/agentic-demo.md`).
+
 ## The problem
 
 A shopper sees a checkout page that claims to be one merchant, but the PayPal account that
@@ -29,7 +66,7 @@ payee** on the PayPal order.
    | 40 to 74 | WARN | Held until a person confirms |
    | 75 to 100 | PAUSE | Capture is blocked |
 
-   (`packages/agent/src/scoring/decide.ts`.) The web app shows PAUSE as "BLOCK".
+   (`packages/agent/src/scoring/decide.ts`.)
 4. **Capture or void.** In the web flow only an ALLOW reaches capture; WARN and PAUSE are held,
    and a held order can be cancelled, which voids the authorization. On the agent routes a person
    can approve a WARN, but the code never captures a PAUSE decision.
@@ -89,18 +126,42 @@ npm run build
 ### Demo mode (no accounts, no database)
 
 ```bash
-# API: runs without PayPal credentials or a database (investigations are kept in memory)
+# API: runs without PayPal credentials or a database (payments are simulated, data stays in memory)
 npm start
 
-# Web app, in a second terminal. With VITE_USE_MOCK=true it uses its built-in simulated backend.
+# Web app, in a second terminal
 cp apps/web/.env.example apps/web/.env
 npm run dev:web      # http://localhost:5173
 ```
 
+Without `VITE_API_URL` the web app uses its built-in simulated backend (badge: "Simulated
+backend"). To make it call the API, set `VITE_API_URL=http://localhost:3000` in `apps/web/.env`
+(badge: "Live API").
+
 Open `/stores` and buy from each of the three demo storefronts: the genuine one is captured, the
-heavy-discount one is held for review, and the impersonator is paused. `/analyst` is the live
-console. To make the web app call the API instead of its simulator, set `VITE_USE_MOCK=false` and
-`VITE_API_TARGET=http://localhost:3000` in `apps/web/.env`.
+heavy-discount one is held until you acknowledge the warning, and the impersonator is paused.
+`/analyst` is the analyst console. To watch an AI shopping agent do the same through the MCP server:
+
+```bash
+npm run demo:agent -- --auto-human yes     # needs the API running; no keys
+```
+
+See `docs/agentic-demo.md`.
+
+### Modes
+
+`GET /health` reports how the API runs:
+
+| Mode | Values | Meaning |
+| --- | --- | --- |
+| `paypal` | `sandbox`, `simulated` | `sandbox` when `PAYPAL_CLIENT_ID` and `PAYPAL_CLIENT_SECRET` are set, otherwise payments are simulated and marked `simulated: true` |
+| `store` | `database`, `memory` | PostgreSQL when `DATABASE_URL` is set and migrated, otherwise memory (a warning is logged) |
+| `signals` (`SIGNALS_MODE`) | `replay`, `live`, `auto` | Recorded signals for the demo stores; live signals; or replay for the demo stores and live for any other domain |
+| `llm` (`LLM_MODE`) | `live`, `replay`, `none` | A language model (needs `LLM_API_KEY`), recorded answers, or the agent's deterministic fallbacks |
+| `memory` | `elastic`, `memory` | Elasticsearch when `ELASTIC_URL` and `ELASTIC_API_KEY` are set |
+
+Every investigation also carries a `provenance` object with the signals, LLM and memory it used.
+The API refuses to start if `PAYPAL_MODE` is anything but `sandbox`.
 
 ### With a database
 
@@ -110,7 +171,8 @@ npm run migrate
 npm start
 ```
 
-Deployment on Render is described in `docs/deploy.md`.
+Deployment on Render is described in `docs/deploy.md`. Using the real PayPal sandbox is described in
+`docs/paypal-sandbox.md`.
 
 ## Environment variables
 
@@ -121,13 +183,16 @@ Names only; values never belong in the repository. See `.env.example` and `apps/
 | `NODE_ENV`, `HOST`, `PORT`, `CORS_ORIGIN`, `RATE_LIMIT_WINDOW_MS`, `RATE_LIMIT_MAX` | `apps/api/src/config/env.ts` |
 | `DATABASE_URL`, `DATABASE_SSL`, `DATABASE_TIMEOUT_MS`, `DATABASE_MAX_CONNECTIONS` | `apps/api/src/config/env.ts` |
 | `PAYPAL_MODE`, `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`, `PAYPAL_TIMEOUT_MS` | `apps/api/src/config/env.ts` |
+| `DEMO_ADMIN_TOKEN`, `GUARDIAN_API_KEY` | `apps/api/src/config/env.ts` |
+| `STORE_GENUINE_PAYEE_EMAIL`, `STORE_GENUINE_PAYEE_MERCHANT_ID`, and the same for `DISCOUNT` and `IMPERSONATOR` | `apps/api/src/config/storeCatalog.ts` |
+| `SIGNALS_MODE`, `LLM_MODE`, `LLM_API_KEY`, `LLM_BASE_URL`, `LLM_MODEL_FAST`, `LLM_MODEL_STRONG`, `LLM_FIXTURE_DIR`, `KERNEL_API_KEY`, `CHANNEL3_API_KEY`, `ELASTIC_URL`, `ELASTIC_API_KEY`, `ELASTIC_INDEX` | `apps/api/src/services/agent/agentPorts.ts` |
 | `AGENT_TIMEOUT_MS`, `AGENT_MAX_FOLLOWUPS`, `AGENT_CONF_THRESHOLD`, `FEATURE_*`, `MEMORY_MATCH_MIN` | `packages/agent/src/config.ts` |
-| `LLM_PROVIDER`, `LLM_API_KEY`, `LLM_BASE_URL`, `LLM_MODEL_FAST`, `LLM_MODEL_STRONG`, `LLM_MODE`, `LLM_FIXTURE_DIR` | `packages/agent/src/config.ts` |
-| `SIGNALS_MODE`, `SIGNALS_BASE_URL`, `SIGNALS_FIXTURE_DIR` | `packages/agent/src/config.ts` |
+| `LLM_PROVIDER` | `packages/agent/src/config.ts` |
+| `SIGNALS_BASE_URL`, `SIGNALS_FIXTURE_DIR` | `packages/agent/src/config.ts` |
 | `ELASTIC_URL`, `ELASTIC_API_KEY`, `ELASTIC_INDEX`, `ELASTIC_INFERENCE_ID` | `packages/agent/src/config.ts`; `ELASTIC_NODE` also in `packages/memory/src/store/factory.ts` |
 | `MCP_TRANSPORT`, `MCP_PORT`, `MCP_BEARER_TOKEN`, `GUARDIAN_API_URL`, `GUARDIAN_API_KEY`, `GUARDIAN_REQUEST_TIMEOUT_MS`, `GUARDIAN_FINALIZE_TIMEOUT_MS` | `apps/mcp/src/config.ts` |
 | `CHANNEL3_API_KEY`, `CHANNEL3_BASE_URL`, `LLM_*` | `apps/mcp/demo-agent` |
-| `VITE_API_URL`, `VITE_USE_MOCK` | `apps/web/src/api/apiClient.ts` |
+| `VITE_API_URL`, `VITE_USE_MOCK` | `apps/web/src/api/apiClient.ts` (the API is used when `VITE_API_URL` is set and `VITE_USE_MOCK` is not `true`) |
 | `VITE_PAYPAL_CLIENT_ID` | `apps/web/src/hooks/usePaypalAuth.ts` |
 | `VITE_API_TARGET` | `apps/web/vite.config.ts` (local dev proxy) |
 
@@ -136,6 +201,8 @@ Names only; values never belong in the repository. See `.env.example` and `apps/
 | Command | What it runs |
 | --- | --- |
 | `npm run test:integration` | API tests with mocked PayPal (no network, no credentials) |
+| `npm run test:e2e` | End-to-end API tests for the demo flow, the agent routes and the PayPal authorize, capture and void flow (fake `fetch`) |
+| `npm run test:packages` | Agent, MCP, signals, memory and eval package tests |
 | `npm run test:contracts` | Contracts type check and fixture validation |
 | `npm run test:agent` | Investigator agent |
 | `npm run test:mcp` | MCP server |
@@ -150,40 +217,57 @@ Names only; values never belong in the repository. See `.env.example` and `apps/
 labelled benchmark and writes `docs/eval-results.md`. It is a small synthetic benchmark written by
 the team, not a claim about real-world accuracy.
 
-## What is real and what is simulated in the demo
+## What is real and what is simulated
 
-Real: the API and its routes; the investigator agent's scoring, hard rules and explanation
-checks, which run on every scan and order; the in-process scam-pattern memory; the rule that, in the web flow, only
-an ALLOW reaches capture (the agent routes also let a person approve a WARN); and calls to the PayPal sandbox when sandbox credentials are set.
-
-Simulated (read from `apps/api/src/services/agent/agentRunner.service.ts`):
-
-- The three demo storefronts are decided from the agent's recorded scenarios, not from live
-  signals. The numbers on the evidence cards (domain age, registry records, price benchmark,
-  payee details) come from fixed profiles.
-- Unknown domains are classified partly by keywords in the name.
-- With no PayPal credentials, order ids and capture results are generated locally.
-- Merchant reports, merchant registration and spend policies answer without storing anything.
-- Investigations are kept in the API's memory, not in the database.
-- Capture and void are sent with the order id; PayPal's AUTHORIZE flow needs the authorization
-  id. The team is tracking this.
-
-Hosted demo: TO BE ADDED after deployment
-
-## AI tools and services used
-
-Runtime components that exist in the code:
-
-| Component | Where | Use |
+| Part | Real | Simulated or not yet live |
 | --- | --- | --- |
-| Language model through an OpenAI-compatible HTTP provider (`LLM_PROVIDER`, `LLM_BASE_URL`, `LLM_MODEL_FAST`, `LLM_MODEL_STRONG`) | `packages/agent/src/config.ts`, `packages/agent/src/llm` | Follow-up investigation steps, name comparison, the memory pattern sentence, the plain-language explanation. Optional: the API passes no model client today, so the agent uses its deterministic fallbacks |
-| Elasticsearch (`semantic_text`) | `packages/agent/src/adapters/memoryElastic.ts`, `packages/memory/src/patterns/elasticPatternStore.ts` | Scam-pattern memory when `ELASTIC_URL` and `ELASTIC_API_KEY` are set; otherwise an in-memory store |
-| Channel3 catalogue (`@channel3/sdk`) | `apps/mcp/demo-agent/marketplace.ts` | Market context for the demo shopping agent, with a fixture fallback |
-| Kernel remote browser | evidence source name in `packages/agent/src/types.ts` | A client is in an open pull request and is not on `main` yet |
-| MCP server | `apps/mcp` | Lets an AI shopping agent call `investigate_merchant`, `safe_checkout` and `set_spend_policy` |
+| API, validation, tokens, spend policies, audit trail | Yes | |
+| Investigator agent (scoring, hard rules, identity, explanations) | Yes: runs on every scan, order and agent route | |
+| Signals for the three demo stores | | Recorded (`SIGNALS_MODE=replay` or `auto`) |
+| Signals for any other domain | Live RDAP, TLS and payee-binding checks in `live` or `auto` mode (Kernel and Channel3 with keys) | Not cleared without evidence in `replay` mode |
+| Payments | PayPal sandbox calls when sandbox credentials are set | Simulated otherwise: `SIM-` ids and `simulated: true` |
+| Language model | Used when `LLM_MODE=live` and a key is set | Off by default; `replay` has no committed recordings yet |
+| Memory | In process; Elasticsearch when configured | The demo stores are not written to memory |
+| Persistence | PostgreSQL when `DATABASE_URL` is set | Memory otherwise |
+| Web app | Calls the API when `VITE_API_URL` is set | Built-in simulated backend otherwise |
 
-**TEAM TO COMPLETE BEFORE SUBMISSION: development tools used (the hackathon requires disclosure).**
-List each AI coding or design tool used while building the project and what it was used for.
+Only an ALLOW is captured. A WARN waits for a person to acknowledge it. A PAUSE, and any payee
+mismatch, is never captured. The defects that remain are listed in `docs/e2e-report.md`.
+
+## Known limitations
+
+Be clear about what has not been run live. These parts are written and tested against fakes, but
+**have not been run against the real service from this repository**:
+
+- PayPal sandbox authorize, capture and void (tested with a fake `fetch`).
+- Kernel remote browser and Channel3 catalogue (tested with fake clients).
+- A language model (`LLM_MODE=live`), and recorded model answers (none are committed).
+- Elasticsearch scam memory (tested with a fake `fetch`; the live test skips without credentials).
+- The PostgreSQL migration and the database store (the migration test uses a mock pool).
+- The web app in a browser (it builds and type-checks).
+
+Other limits: the evaluation is a small synthetic benchmark; retrieved similar cases are shown but
+are not passed to the explanation writer; PayPal webhooks are not handled.
+
+## PayPal capabilities used
+
+The PayPal calls are in `apps/api/src/services/paypal` and are called in order by
+`apps/api/src/services/payments/paymentFlow.service.ts`. Sandbox only: the API refuses to start if
+`PAYPAL_MODE` is not `sandbox` (`apps/api/src/config/env.ts`).
+
+| Capability | Endpoint | Where |
+| --- | --- | --- |
+| OAuth 2.0 client credentials | `POST /v1/oauth2/token` | `paypalAuth.service.ts` |
+| Orders v2: create (intent `AUTHORIZE`) | `POST /v2/checkout/orders` | `createPayPalOrder` |
+| Orders v2: authorize | `POST /v2/checkout/orders/{id}/authorize` | `authorizePayPalOrder` |
+| Payments v2: capture an authorization | `POST /v2/payments/authorizations/{id}/capture` | `capturePayPalAuthorization` |
+| Payments v2: void an authorization | `POST /v2/payments/authorizations/{id}/void` | `voidPayPalAuthorization` |
+
+Create, authorize, capture and void send a `PayPal-Request-Id` header. The service also has
+helpers to read an order and to capture an order directly; the checkout flow does not use them.
+The web app loads the PayPal JavaScript SDK with `intent=authorize` when `VITE_PAYPAL_CLIENT_ID`
+is set (`apps/web/src/hooks/usePaypalAuth.ts`). None of this has been run against the real
+sandbox from this repository (see "Known limitations").
 
 AI coding and development tools used while building TrustOra:
 
@@ -195,23 +279,64 @@ AI coding and development tools used while building TrustOra:
 
 ## Judging criteria
 
-TO BE CONFIRMED against the Devpost page (https://paypalaihackathon.devpost.com/). The page could
-not be read when this README was written, so the criteria are not listed here and none are
-guessed. Fill in the table from the page, then map each criterion to the features and files below.
+How TrustOra addresses the five official criteria. Nothing below has been run against live
+services unless it says so.
 
 | Criterion | How TrustOra addresses it | Where |
 | --- | --- | --- |
-| TO BE CONFIRMED | TO BE CONFIRMED | TO BE CONFIRMED |
+| Technological Implementation | Uses the PayPal Orders and Payments APIs to authorize, then capture or void, with idempotency headers and a refusal to run outside the sandbox. The investigator agent decides from deterministic evidence; a language model is optional and cannot override hard rules. Spend policies, order tokens, validation, an audit trail and an MCP server are implemented and tested with fakes. Not yet run against live PayPal or a live model | `apps/api/src/services/paypal`, `apps/api/src/services/payments/paymentFlow.service.ts`, `packages/agent/src/scoring/rules.ts`, `apps/mcp`, `apps/api/test/e2e.demo.test.ts` |
+| Design | A storefront, checkout, an investigation view with evidence cards and provenance chips, a pay screen with the capture state and a warning acknowledgement, and an analyst console. The web app has been built and type-checked but not exercised in a browser | `apps/web/src/pages`, `apps/web/src/components/Provenance.tsx` |
+| Potential Impact | Targets one specific problem: the merchant a checkout claims to be differs from the account that is paid, and AI shopping agents can be misled by page text. Aimed at shoppers, and at agents that pay for them. No user research or usage numbers exist yet | "The problem" above, `packages/agent/src/scoring/rules.ts`, `packages/agent/src/guard` |
+| Innovation/Idea | Ties the claimed merchant to the actual PayPal payee before capture, using AUTHORIZE so a payment can be voided; treats merchant page text as untrusted data; gives AI agents guarded checkout tools through MCP; keeps an anonymous memory of past scam patterns | `packages/agent`, `apps/mcp`, `packages/memory` |
+| Presentation | See the demo video (link to be added) | TO BE ADDED |
 
-Features and files likely to be cited: payee-binding hard rule (`packages/agent/src/scoring/rules.ts`),
-authorize then capture or void (`apps/api`), prompt-injection shield (`packages/agent/src/guard`),
-agent-facing MCP tools (`apps/mcp`), anonymous scam memory (`packages/memory`), evaluation
-(`docs/eval-results.md`).
+## Hackathon requirements
+
+| Requirement | Where it is met | Status |
+| --- | --- | --- |
+| Meaningfully integrate PayPal (free sandbox) | OAuth, Orders v2 create and authorize, authorization capture and void (see "PayPal capabilities used") | Tested with fakes; not yet run live |
+| Meaningfully incorporate AI | The investigator agent (`packages/agent`); an optional language model; MCP tools for AI shopping agents; optional Elasticsearch semantic memory | Deterministic agent: tested. Language model: tested with fakes, off by default, not yet run live |
+| Working prototype | The local run in "For judges"; `npm run test:e2e`; `docs/agentic-demo.md` | Runs in simulation. Hosted demo not deployed |
+| Documentation for judges | This README and `docs/` (sandbox, deploy, agentic demo, e2e report, eval results) | Done; placeholders marked |
+| Functional demo (hosted URL or clear run instructions) | "For judges" and "Quick start"; `render.yaml` and `docs/deploy.md` for hosting | Run instructions: done. Hosted URL: TO BE ADDED after deployment |
+| Tools used, and how | "AI tools and services used" below | Runtime tools: documented. Development tools: TEAM TO COMPLETE |
+| Public, open source repository with the license visible in the About section | `LICENSE` (MIT) is in the repository | TEAM TO CONFIRM on GitHub (visibility and the About section) |
+| Demo video under 3 minutes on YouTube, no third-party trademarks or copyrighted music | Demo content uses invented brands only (`npm run check:brands`) | Video not made yet; link to be added |
+| Built during the contest period (existing projects need meaningful progress) | See "Built during the contest period" below | TEAM TO CONFIRM |
+
+The deadline on the Devpost page is 13 Nov 2026, 1:30 am GMT+5:30.
+
+## AI tools and services used
+
+| Tool or service | How it is used | Where | Status |
+| --- | --- | --- | --- |
+| Language model, through an OpenAI-compatible HTTP provider (`LLM_PROVIDER`, `LLM_BASE_URL`, `LLM_MODEL_FAST`, `LLM_MODEL_STRONG`) | Follow-up investigation steps, name comparison, the memory pattern sentence, the plain-language explanation | `packages/agent/src/llm`, `packages/agent/src/config.ts`, `apps/api/src/services/agent/agentPorts.ts` | Optional, off by default (needs `LLM_MODE=live` and a key). Tested with fakes; not yet run live; no recordings committed |
+| Investigator agent (deterministic scoring, hard rules, identity matching, explanation checks) | Decides ALLOW, WARN or PAUSE on every scan, order and agent route | `packages/agent` | Runs in the default mode. It is rule-based; the language model only helps as described above |
+| Elasticsearch (`semantic_text`) | Scam-pattern memory | `packages/agent/src/adapters/memoryElastic.ts`, `packages/memory/src/patterns/elasticPatternStore.ts` | Optional (`ELASTIC_URL`, `ELASTIC_API_KEY`); in-memory store otherwise. Tested with fakes; not yet run live |
+| Kernel remote browser | Loads the checkout page for live signals | `packages/signals/src/agentPort/kernelClient.ts` | Optional (`KERNEL_API_KEY`). Tested with fakes; not yet run live |
+| Channel3 catalogue (`@channel3/sdk`) | Price comparison for live signals; market context for the demo shopper | `packages/signals/src/agentPort/channel3Client.ts`, `apps/mcp/demo-agent/marketplace.ts` | Optional (`CHANNEL3_API_KEY`), with a fixture fallback. Tested with fakes; not yet run live |
+| MCP server | Lets an AI shopping agent call `investigate_merchant`, `safe_checkout` and `set_spend_policy` | `apps/mcp` | Tested; the scripted demo shopper runs against the API with no keys. A live-model shopper has not been run |
+
+**TEAM TO COMPLETE: list any AI coding or design tools used to build the project and what each was used for (recommended disclosure).**
+
+## Sponsor technologies
+
+Using sponsor tools is optional. This section only says what the code does; it makes no claim
+about prize eligibility.
+
+| Technology | How it is used | Run live? |
+| --- | --- | --- |
+| Elastic | Optional semantic scam-pattern memory (`semantic_text`) in `packages/memory` and `packages/agent/src/adapters/memoryElastic.ts`. Without credentials an in-memory store is used | No. Tested with a fake `fetch`; the live test skips without credentials |
+| Kernel | Remote browser that loads the checkout page for live signals (`packages/signals/src/agentPort/kernelClient.ts`), only with `SIGNALS_MODE` set to `live` or `auto` and a key | No. Tested with fake clients |
+| Channel3 | Product catalogue used for price comparison in live signals and for market context in the demo shopper | No. Tested with fake clients |
+| Render | `render.yaml` describes the API and web services; `docs/deploy.md` and `npm run smoke:deploy` cover deployment | No. Nothing has been deployed |
+| AG Grid | The investigations table in the analyst console: sorting, filters and CSV export (`apps/web/src/pages/AnalystConsole.tsx`, Community edition) | Builds and type-checks; not exercised in a browser |
 
 ## Built during the contest period
 
-The first commit in this repository is dated 2026-10-31 (from `git log`). TEAM TO CONFIRM against
-the contest dates on the Devpost page, and note anything that existed before the contest.
+The first commit in this repository is dated 2026-10-31 (from `git log`). The contest start date
+is not recorded in this repository, so it is not stated here. TEAM TO CONFIRM against the contest
+dates on the Devpost page, and note anything that existed before the contest.
 
 ## Fictional brands
 

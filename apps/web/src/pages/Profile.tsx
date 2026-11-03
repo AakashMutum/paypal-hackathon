@@ -19,10 +19,10 @@ interface UserProfile {
 const DEFAULT_PROFILE: UserProfile = {
   firstName: 'Alex',
   lastName: 'Walker',
-  email: 'alex.walker@gmail.com',
+  email: 'alex.walker@mail.example',
   phone: '+1 (555) 012-3456',
   location: 'San Francisco, CA',
-  bio: 'Fraud analyst with 5+ years of experience in payment security.',
+  bio: 'Sample profile text.',
   currentPassword: '',
   newPassword: '',
   confirmPassword: '',
@@ -66,7 +66,7 @@ export default function Profile() {
     setSavingInfo(true);
     await new Promise((r) => setTimeout(r, 900));
     setProfile(draft);
-    toast('Profile updated successfully', 'ok');
+    toast('Demo only: nothing was saved', 'ok');
     setSavingInfo(false);
   };
 
@@ -82,7 +82,7 @@ export default function Profile() {
     }
     setSavingPwd(true);
     await new Promise((r) => setTimeout(r, 900));
-    toast('Password changed successfully', 'ok');
+    toast('Demo only: there is no account, so no password was changed', 'ok');
     setDraft((d) => ({ ...d, currentPassword: '', newPassword: '', confirmPassword: '' }));
     setSavingPwd(false);
   };
@@ -127,7 +127,7 @@ export default function Profile() {
         <p className="mono-label !text-electric">Account Settings</p>
         <h1 className="text-3xl font-bold mt-1">My Profile</h1>
         <p className="text-muted text-sm mt-1">
-          Manage your personal information and security settings on TrustOra.
+          A demo profile. This app has no user accounts, so nothing entered here is saved.
         </p>
       </section>
 
@@ -142,7 +142,7 @@ export default function Profile() {
           <div className="text-sm text-muted mt-0.5">{profile.location}</div>
           <div className="flex items-center gap-1.5 mt-2 justify-center sm:justify-start">
             <Shield size={13} className="text-electric" />
-            <span className="text-xs font-semibold text-electric">TrustOra Verified Account</span>
+            <span className="text-xs font-semibold text-electric">Demo profile</span>
           </div>
         </div>
         <div className="sm:ml-auto flex items-center gap-2">

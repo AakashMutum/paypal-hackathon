@@ -31,6 +31,8 @@ services:
         fromDatabase: # verify nesting
           name: trustora-db
           property: connectionString
+      - key: NODE_ENV
+        value: production
       - key: PAYPAL_MODE
         value: sandbox
       - key: PAYPAL_CLIENT_ID
@@ -39,6 +41,50 @@ services:
         sync: false
       # Set by hand after the first deploy to the public URL of the static site (no trailing slash).
       - key: CORS_ORIGIN
+        sync: false
+      # Access control. DEMO_ADMIN_TOKEN guards POST /api/demo/reset (refused in production when unset).
+      # GUARDIAN_API_KEY, when set, is required as a bearer token on the agent routes.
+      - key: DEMO_ADMIN_TOKEN
+        sync: false
+      - key: GUARDIAN_API_KEY
+        sync: false
+      # How the agent gets its signals and answers.
+      # SIGNALS_MODE: replay (recorded signals for the demo stores), live, or auto (replay for the
+      # demo stores, live for any other domain). LLM_MODE: replay, live or none.
+      - key: SIGNALS_MODE
+        value: auto
+      - key: LLM_MODE
+        value: replay
+      - key: LLM_API_KEY
+        sync: false
+      - key: LLM_BASE_URL
+        sync: false
+      - key: LLM_MODEL_FAST
+        sync: false
+      - key: LLM_MODEL_STRONG
+        sync: false
+      - key: KERNEL_API_KEY
+        sync: false
+      - key: CHANNEL3_API_KEY
+        sync: false
+      # Scam memory in Elasticsearch. Without these the memory runs in the API process.
+      - key: ELASTIC_URL
+        sync: false
+      - key: ELASTIC_API_KEY
+        sync: false
+      # Payee accounts for the three demo stores: PayPal sandbox business accounts.
+      # See docs/paypal-sandbox.md. Without them the fixture values are used.
+      - key: STORE_GENUINE_PAYEE_EMAIL
+        sync: false
+      - key: STORE_GENUINE_PAYEE_MERCHANT_ID
+        sync: false
+      - key: STORE_DISCOUNT_PAYEE_EMAIL
+        sync: false
+      - key: STORE_DISCOUNT_PAYEE_MERCHANT_ID
+        sync: false
+      - key: STORE_IMPERSONATOR_PAYEE_EMAIL
+        sync: false
+      - key: STORE_IMPERSONATOR_PAYEE_MERCHANT_ID
         sync: false
 
   # --- Web app (static) ------------------------------------------------------------------------

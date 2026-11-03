@@ -5,9 +5,10 @@
 //
 // Checks GET /health. With REQUIRE_DB=true it also requires database.status "healthy"; without it
 // a missing database only prints a warning, because the API runs in memory without one.
-// With --flow it posts one fictional store to POST /api/scan and checks the response has a verdict.
+// With --flow it posts one fictional store to POST /api/scan and checks the response has a verdict
+// (ALLOW, WARN or PAUSE). It also prints the modes /health reports.
 
-const VERDICTS = new Set(['ALLOW', 'WARN', 'BLOCK']);
+const VERDICTS = new Set(['ALLOW', 'WARN', 'PAUSE']);
 
 function arg(name) {
   return process.argv.includes(name);
@@ -51,6 +52,12 @@ try {
   if (health.status !== 200 || data?.status !== 'ok') {
     fail('health check did not return ok');
   } else {
+    const modes = data.modes;
+    if (modes) {
+      console.log(`Modes: paypal ${modes.paypal}, store ${modes.store}, signals ${modes.signals}, llm ${modes.llm}, memory ${modes.memory}`);
+    } else {
+      console.warn('WARN /health did not report modes');
+    }
     const db = data.database?.status;
     if (db === 'healthy') {
       console.log('OK database is healthy');
@@ -65,7 +72,7 @@ try {
     const scan = await call('POST', '/api/scan', { url: 'harborline-outfitters.example' });
     console.log(`POST /api/scan -> ${scan.status}`, scan.json ? `verdict ${scan.json.verdict}` : scan.text.slice(0, 200));
     if (scan.status !== 200 || !VERDICTS.has(scan.json?.verdict)) {
-      fail('scan did not return a verdict of ALLOW, WARN or BLOCK');
+      fail('scan did not return a verdict of ALLOW, WARN or PAUSE');
     } else {
       console.log('OK scan returned a verdict');
     }
