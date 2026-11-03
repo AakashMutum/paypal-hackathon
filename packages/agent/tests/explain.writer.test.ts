@@ -20,6 +20,41 @@ const evidence: Evidence[] = [
 ];
 
 const hardRules: HardRuleTrigger[] = [];
+test('the writer includes previous scam-memory context', () => {
+  const memoryEvidence: Evidence = {
+    id: 'EVD-MEMORY',
+    type: 'SCAM_MEMORY_MATCH',
+    severity: 'high',
+    confidence: 0.9,
+    summary: 'The seller matches a previously flagged pattern.',
+    source: 'elastic',
+    deterministic: true,
+    data: {
+      matchType: 'semantic',
+      matches: [
+        {
+          patternText: 'Seller requests payment outside the platform.',
+          decision: 'PAUSE',
+          score: 0.92,
+          seed: false,
+        },
+      ],
+    },
+  };
+
+  const user = buildWriterUser({
+    decision: 'WARN',
+    score: 70,
+    confidence: 0.9,
+    evidence: [memoryEvidence],
+    hardRules,
+  });
+
+  assert.match(user, /Previous-case context/);
+  assert.match(user, /Seller requests payment outside the platform/);
+  assert.match(user, /PAUSE/);
+  assert.match(user, /untrusted_data/);
+});
 
 test('the writer message carries the decision and the citable evidence', () => {
   const user = buildWriterUser({

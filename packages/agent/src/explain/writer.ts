@@ -1,8 +1,9 @@
+
 import { z } from 'zod';
 
 import type { Decision, Evidence, Explanation, HardRuleTrigger } from '../types.js';
 import type { LlmClient } from '../llm/client.js';
-import { EXPLANATION_SYSTEM } from '../llm/prompts.js';
+import { EXPLANATION_SYSTEM, wrapUntrusted } from '../llm/prompts.js';
 import { truncate } from '../tools/call.js';
 
 /**
@@ -85,7 +86,10 @@ export async function writeExplanation(
 export function buildWriterUser(input: ExplanationWriterInput): string {
   const evidenceLines = input.evidence
     .slice(0, MAX_WRITER_EVIDENCE)
-    .map((entry) => `- ${entry.id} | ${entry.type} | ${truncate(entry.summary, 160)}${describeFacts(entry)}`)
+    .map(
+      (entry) =>
+        `- ${entry.id} | ${entry.type} | ${truncate(entry.summary, 160)}${describeFacts(entry)}${describeMemoryMatches(entry)}`
+    )
     .join('\n');
 
   const hardRules =
@@ -125,4 +129,34 @@ function describeFacts(entry: Evidence): string {
   }
 
   return facts.length > 0 ? ` | ${facts.join(', ')}` : '';
+}
+
+function describeMemoryMatches(entry: Evidence): string {
+  if (entry.type !== 'SCAM_MEMORY_MATCH') return '';
+
+  const data = (entry.data ?? {}) as Record<string, unknown>;
+  if (!Array.isArray(data.matches)) return '';
+
+  const matches = data.matches
+    .slice(0, 3)
+    .flatMap((match) => {
+      if (!match || typeof match !== 'object') return [];
+
+      const item = match as Record<string, unknown>;
+
+      if (typeof item.patternText !== 'string' || typeof item.decision !== 'string') {
+        return [];
+      }
+
+      return [
+        {
+          previousPattern: truncate(item.patternText, 160),
+          previousDecision: item.decision,
+        },
+      ];
+    });
+
+  if (matches.length === 0) return '';
+
+  return `\nPrevious-case context (historical examples, not proof):\n${wrapUntrusted('previous_case_matches', matches)}`;
 }
