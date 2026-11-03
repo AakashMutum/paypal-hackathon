@@ -22,7 +22,7 @@ export default function Checkout() {
     <div className="card space-y-2"><label htmlFor="em" className="mono-label">Buyer email</label>
       <input id="em" className="input font-mono" value={email} onChange={e => setEmail(e.target.value)} type="email" /></div>
     <div className="card flex gap-3 items-start text-sm"><ShieldCheck className={protection ? 'text-ok' : 'text-muted'} />
-      <p>{protection ? 'Guardian will verify the receiving PayPal account before any funds are captured.' : 'Pre-payment intervention is off. Turn it on from the dashboard to screen this checkout.'}</p></div>
+      <p>{protection ? 'Guardian investigates the merchant and the receiving PayPal account before any funds are captured.' : 'The pre-payment switch is off in this app, but the API still investigates every order before capture.'}</p></div>
     <PaypalButton disabled={!email}
       createOrder={async () => { const r = await api.createOrder({ storeId: s.id, items, buyerEmail: email }); order.current = { orderId: r.orderId, invId: r.investigationId }; setLatestId(r.investigationId); return r.paypalOrderId; }}
       onApprove={async () => { const o = order.current; if (!o) return; try { await api.notifyApproval(o.orderId); } catch { /* backend decides the outcome */ } cart.clear(); toast('Approval sent. Guardian is verifying…', 'info'); nav(`/engine/${o.invId}`); }} />

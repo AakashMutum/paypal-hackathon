@@ -26,7 +26,7 @@ export default function Engine() {
   const phaseTone = !done ? 'text-electric' : inv.verdict === 'PAUSE' ? 'text-bad-deep' : inv.verdict === 'WARN' ? 'text-warn' : 'text-ok';
   const act = async () => {
     setBusy(true);
-    try { if (inv.orderId) { await api.cancelOrder(inv.id); toast('Purchase aborted. PayPal authorization voided.', 'ok'); } else { await api.reportMerchant({ domain: inv.domain, reason: 'Blocked from scanner', investigationId: inv.id }); toast(`${inv.domain} added to your blocklist`, 'ok'); } refresh(); }
+    try { if (inv.orderId) { await api.cancelOrder(inv.id); toast('Purchase aborted. PayPal authorization voided.', 'ok'); } else { await api.reportMerchant({ domain: inv.domain, reason: 'Blocked from scanner', investigationId: inv.id }); toast(`${inv.domain} reported`, 'ok'); } refresh(); }
     catch (e) { toast((e as Error).message, 'bad'); } finally { setBusy(false); }
   };
   const voided = inv.captureState === 'VOIDED';
@@ -35,9 +35,9 @@ export default function Engine() {
     <section className="card space-y-3">
       <div className="flex justify-between gap-2"><Pill tone="info"><Cpu size={12} />ENGINE CORE ACTIVE</Pill><Pill tone="neutral" className="font-mono">LATENCY: {latency}ms</Pill></div>
       <h1 className="text-[22px] font-semibold leading-7">Merchant Identity & Offer Consistency Engine</h1>
-      <p className="text-sm text-muted">Deterministic multi-tier verification between website representation and live PayPal ledger capture.</p>
+      <p className="text-sm text-muted">Compares what the website claims with the account that would be paid, using rule-based checks.</p>
       <div className="grid grid-cols-3 gap-2 rounded-lg bg-tint p-3">
-        <div><div className="mono-label">Pipeline phase</div><div className={cn('font-mono font-semibold text-sm mt-1', phaseTone)}>T-{inv.evidence.length} {done ? (inv.verdict === 'PAUSE' ? 'Blocked' : inv.verdict === 'WARN' ? 'Review' : 'Verified') : 'Running'}</div></div>
+        <div><div className="mono-label">Pipeline phase</div><div className={cn('font-mono font-semibold text-sm mt-1', phaseTone)}>T-{inv.evidence.length} {done ? (inv.verdict === 'PAUSE' ? 'Blocked' : inv.verdict === 'WARN' ? 'Review' : 'Cleared') : 'Running'}</div></div>
         <div><div className="mono-label">Confidence</div><div className="font-mono font-semibold text-sm mt-1">{done ? `${inv.confidence}%` : '—'}</div></div>
         <div><div className="mono-label">Capture state</div><div className={cn('font-mono font-semibold text-sm mt-1', phaseTone)}>{inv.orderId ? CAPTURE_LABEL[inv.captureState] : 'No order'}</div></div></div>
     </section>
@@ -57,15 +57,15 @@ export default function Engine() {
     {done && <SimilarCases cases={inv.similarCases} />}
 
     {done && <section className="card space-y-3">
-      <div className="flex justify-between items-center"><h2 className="font-semibold">Ledger Discrepancy Matrix</h2>{inv.verdict !== 'ALLOW' && <Pill tone="bad">CRITICAL MISMATCH</Pill>}</div>
+      <div className="flex justify-between items-center"><h2 className="font-semibold">Ledger Discrepancy Matrix</h2>{inv.verdict !== 'ALLOW' && <Pill tone="bad">NOT CLEARED</Pill>}</div>
       {[['Entity discrepancy', 'Storefront promised', inv.claimedBrand, 'PayPal destination', inv.payeeName],
-        ['Price verification', 'Retail value', money(inv.benchmark), 'Submitted checkout', money(inv.price)],
-        ['Merchant status', 'Registry records', `${inv.registryRecords} found`, 'Receiver registration', `${ageLabel(inv.domainAgeDays)} ago`]].map(([h, a, av, b, bv]) => <div key={h} className="rounded-lg bg-tint p-3">
+        ['Price verification', 'Comparable price', money(inv.benchmark), 'Submitted checkout', money(inv.price)],
+        ['Merchant status', 'Registry records', `${inv.registryRecords} found`, 'Domain age', ageLabel(inv.domainAgeDays)]].map(([h, a, av, b, bv]) => <div key={h} className="rounded-lg bg-tint p-3">
         <div className="mono-label mb-2">{h}</div><div className="grid grid-cols-2 gap-2"><div className="bg-white rounded p-2"><div className="mono-label">{a}</div><div className="text-sm font-semibold break-words">{av}</div></div>
           <div className={cn('rounded p-2', inv.verdict === 'ALLOW' ? 'bg-ok-bg' : 'bg-bad-bg')}><div className={cn('mono-label', inv.verdict !== 'ALLOW' && '!text-bad-deep')}>{b}</div><div className="text-sm font-semibold break-words">{bv}</div></div></div></div>)}</section>}
 
     <section className="card space-y-3"><h2 className="font-semibold">Forensic Mitigation Controls</h2>
-      {done && inv.verdict !== 'ALLOW' && <button className="btn-danger w-full" disabled={busy || voided} onClick={act}>{busy ? <Loader2 className="animate-spin" size={16} /> : <Ban size={16} />}{voided ? 'Purchase Aborted' : inv.orderId ? 'Abort Purchase & Block Seller' : 'Block Seller'}</button>}
+      {done && inv.verdict !== 'ALLOW' && <button className="btn-danger w-full" disabled={busy || voided} onClick={act}>{busy ? <Loader2 className="animate-spin" size={16} /> : <Ban size={16} />}{voided ? 'Purchase Aborted' : inv.orderId ? 'Abort Purchase & Report Seller' : 'Report Seller'}</button>}
       {inv.orderId && <button className="btn-primary w-full" onClick={() => nav(`/pay/${inv.id}`)}>View payment outcome<ArrowRight size={16} /></button>}
       <button className="btn-secondary w-full !bg-tint" onClick={() => setExp(true)} disabled={!done}><Download size={16} />Export Forensic Audit Log (JSON / PDF)</button></section>
 

@@ -26,7 +26,7 @@ function Account({ onClose }: { onClose: () => void }) {
     <Link to="/profile" onClick={onClose} className={row}><User size={18} />My Profile</Link>
     <Link to="/stores" onClick={onClose} className={row}><Store size={18} />Demo storefronts</Link>
     <Link to="/analyst" onClick={onClose} className={row}><Gauge size={18} />Analyst console</Link>
-    <Link to="/onboarding" onClick={onClose} className={row}><BadgeCheck size={18} />Merchant onboarding</Link>
+    <Link to="/onboarding" onClick={onClose} className={row}><BadgeCheck size={18} />Register a merchant</Link>
     <button className={cn(row, 'w-full text-left')} onClick={async () => { await api.resetDemo(); toast('Demo data reset', 'ok'); onClose(); }}><RotateCcw size={18} />Reset demo data</button>
   </Modal>;
 }
