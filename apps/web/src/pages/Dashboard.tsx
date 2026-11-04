@@ -19,6 +19,7 @@ export default function Dashboard() {
     { l: 'Prevented Threats', v: metrics.prevented, icon: ShieldAlert, sub: <span className="mono-label !text-bad">Capture paused</span> },
   ];
   const defended = metrics.defendedAmount;
+  const defended = 4620.45 + flagged.filter(i => i.captureState !== 'CAPTURED').reduce((s, i) => s + (i.price ?? 0), 0);
   const radar = flagged[0];
   const [whole, cents] = defended.toFixed(2).split('.');
   return <>
@@ -75,6 +76,11 @@ export default function Dashboard() {
           <div className="mt-3 rounded bg-tint p-2 flex justify-between items-center text-xs font-mono">
             <span className="flex items-center gap-2 min-w-0">{(i.payeeName ?? '').includes('@') ? <Mail size={14} /> : <Building2 size={14} />}<span className="truncate">{i.payeeName ?? 'Payee not supplied'}</span></span>
             <span className={cn('font-semibold', i.verdict === 'PAUSE' ? 'text-bad' : i.verdict === 'ALLOW' ? 'text-electric' : 'text-warn')}>{i.verdict === 'PAUSE' ? 'CAPTURE PAUSED' : i.verdict === 'ALLOW' ? 'ALLOWED' : i.verdict === 'WARN' ? `${i.riskScore}% Anomaly` : '…'}</span></div></button>)}</div>}
+      <div className="space-y-3">{list.slice(0, 3).map(i => <button key={i.id} onClick={() => nav(`/engine/${i.id}`)} className="card !p-4 w-full text-left hover:shadow-l2 hover:border-electric/20 transition">
+        <div className="flex justify-between items-start gap-2"><div><div className="font-mono font-semibold text-sm break-all">{i.domain}</div><div className="text-xs text-muted">Claimed: {i.claimedBrand}</div></div><RiskBadge verdict={i.verdict} /></div>
+        <div className="mt-3 rounded bg-tint p-2 flex justify-between items-center text-xs font-mono">
+          <span className="flex items-center gap-2 min-w-0">{(i.payeeName ?? '').includes('@') ? <Mail size={14} /> : <Building2 size={14} />}<span className="truncate">{i.payeeName ?? 'Payee not supplied'}</span></span>
+          <span className={cn('font-semibold', i.verdict === 'PAUSE' ? 'text-bad' : i.verdict === 'ALLOW' ? 'text-electric' : 'text-warn')}>{i.verdict === 'PAUSE' ? 'CAPTURE PAUSED' : i.verdict === 'ALLOW' ? 'ALLOWED' : i.verdict === 'WARN' ? `${i.riskScore}% Anomaly` : '…'}</span></div></button>)}</div>
     </section>
 
     <section className="card">

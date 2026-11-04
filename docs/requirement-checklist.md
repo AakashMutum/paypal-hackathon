@@ -2,6 +2,7 @@
 
 Status of the PRD requirements against the current implementation. Last verified: 2026-11-03
 (gap-closure pass).
+Status of the PRD requirements against the current implementation. Last verified: 2026-11-03.
 
 Status values: **COMPLETE** (implemented and tested), **PARTIAL** (implemented with an external
 dependency or an accounted limitation), **BLOCKED** (waiting on credentials or an external action).
@@ -20,6 +21,16 @@ dependency or an accounted limitation), **BLOCKED** (waiting on credentials or a
 | FR-008 | Payment intervention | COMPLETE | PayPal AUTHORIZE -> investigation -> capture/void gate. Capture/void are mock-tested; a real sandbox capture needs buyer approval. |
 | FR-009 | Customer dashboard | COMPLETE | Counters and the defended amount are derived only from persisted investigations (empty store shows zero). History, analyst console, engine and payment views are present. |
 | FR-010 | Transaction and risk logging | COMPLETE | PostgreSQL `investigations`, `payment_events` and `spend_policies`. Buyer email is masked, expected payee email is stored only as a fingerprint, and `AUDIT_ENCRYPTION_KEY` enables AES-256-GCM for both JSONB payloads. |
+| FR-001 | Website information collection | COMPLETE | `packages/signals/src/agentPort/html.ts` extracts title, site name, contacts, legal text, links and structured product metadata. |
+| FR-002 | Domain authenticity analysis | COMPLETE | `packages/signals/src/domain/rdap.ts` resolves the authoritative RDAP endpoint from the IANA bootstrap (with known registry fallbacks); TLS validity is reported separately. |
+| FR-003 | Merchant identity verification | PARTIAL | The agent compares claimed names with the merchant registry and identifies official marketplace hostnames. A production corporate-registry provider is not configured; the local `merchant_records` table is the configured source. Missing records are disclosed, never invented. |
+| FR-004 | Product and price analysis | PARTIAL | Structured JSON-LD/OpenGraph/microdata product data is extracted. Comparable-price analysis needs Channel3 (`CHANNEL3_API_KEY`), which is not configured; the response says `price: unavailable` rather than inventing a price. |
+| FR-005 | Payment recipient verification | COMPLETE | Payee binding and PayPal payee comparison produce deterministic evidence. A scan without a payee is labelled a merchant-level scan, not an identity check. |
+| FR-006 | AI risk assessment | COMPLETE | Deterministic scoring with hard-rule floors plus live Gemini structured analysis; the model cannot override the rules. |
+| FR-007 | Risk explanation generation | COMPLETE | Gemini explanations are validated against Zod schemas and the explanation checker; unsafe or uncited output falls back to neutral templates. |
+| FR-008 | Payment intervention | COMPLETE | PayPal AUTHORIZE → investigation → capture/void gate. Capture/void are mock-tested; real sandbox capture needs buyer approval. |
+| FR-009 | Customer dashboard | COMPLETE | React scanner, engine, payment view, history and analyst console. |
+| FR-010 | Transaction and risk logging | COMPLETE | PostgreSQL `investigations`, `payment_events` and `spend_policies`; migration 003 applied locally. |
 
 ## Non-functional requirements
 
@@ -28,6 +39,9 @@ dependency or an accounted limitation), **BLOCKED** (waiting on credentials or a
 | Latency under 2 seconds | PARTIAL | Deterministic fast-path decisions are short. A measured live ambiguous merchant scan took 7.08 seconds because the pattern, identity and explanation model calls run live. The model is not disabled or faked to meet the target. |
 | Security and privacy | COMPLETE | No secrets in source or responses; URL safety checks; page text sanitized; memory stores anonymous pattern records. Persisted buyer PII is redacted; audit JSON is encrypted when `AUDIT_ENCRYPTION_KEY` is set and `/health` reports the encryption status. |
 | Reliability and graceful degradation | COMPLETE | Bounded retries for transient failures only; blocked/CAPTCHA/unavailable/empty states are distinct; model, registry and memory failures fall back explicitly. |
+| Latency under 2 seconds | PARTIAL | The deterministic path is fast. Live Gemini explanation/pattern calls add seconds and are bounded by `AGENT_TIMEOUT_MS` and per-call timeouts. |
+| Security and privacy | COMPLETE | No secrets in source or responses; URL safety checks; page text sanitized; memory stores anonymous pattern records; no PII. |
+| Reliability and graceful degradation | COMPLETE | Bounded retries for transient failures only; blocked/CAPTCHA/unavailable/empty states are distinct; model and memory failures fall back explicitly. |
 | Explainability | COMPLETE | Every decision cites evidence; availability and missing-data reasons are shown separately. |
 
 ## AI, memory and payments
@@ -61,5 +75,11 @@ dependency or an accounted limitation), **BLOCKED** (waiting on credentials or a
 - Kernel remote-browser and Channel3 catalogue keys are not configured. RDAP, TLS, page metadata,
   product metadata and structured server-rendered pages are live.
 - A reference-backed favicon mismatch and registrar reputation history are not implemented.
+| CI-equivalent checks | PARTIAL | Package and integration suites pass. Final full build/lint/hygiene and the pushed CI run are the remaining verification steps. |
+
+## Known limitations
+
+- Hosted persistent memory needs a mounted disk or Elasticsearch; the local JSON file survives restarts on the local machine.
+- Kernel remote-browser and Channel3 catalogue keys are not configured. RDAP, TLS, page metadata and structured product data are live.
 - PayPal webhooks are not handled.
 - Web UI was built and type-checked; browser automation was not available in this environment.
