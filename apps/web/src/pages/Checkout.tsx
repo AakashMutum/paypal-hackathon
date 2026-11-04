@@ -13,7 +13,7 @@ import { friendlyPaymentError, paymentButtonMode } from '../lib/payment';
 import { money } from '../lib/format';
 export default function Checkout() {
   usePageTitle('Checkout');
-  const { id } = useParams(); const s = storeById(id); const cart = useCart(); const nav = useNavigate(); const { setLatestId, protection, toast } = useApp();
+  const { id } = useParams(); const s = storeById(id); const cart = useCart(); const nav = useNavigate(); const { setLatestId, toast } = useApp();
   const { health, error: healthError } = useHealth();
   const [email, setEmail] = useState('');
   const [problem, setProblem] = useState<ReturnType<typeof friendlyPaymentError> | null>(null);
@@ -30,13 +30,13 @@ export default function Checkout() {
       <div className="border-t border-ink/10 pt-3 flex justify-between font-semibold"><span>Total</span><span className="font-mono">{money(total)}</span></div></div>
     <div className="card space-y-2"><label htmlFor="em" className="mono-label">Buyer email</label>
       <input id="em" className="input font-mono" value={email} onChange={e => setEmail(e.target.value)} type="email" placeholder="buyer@example.com" autoComplete="email" /></div>
-    <div className="card flex gap-3 items-start text-sm"><ShieldCheck className={protection ? 'text-ok' : 'text-muted'} />
-      <p>{protection ? 'Guardian investigates the merchant and the receiving PayPal account before any funds are captured.' : 'The pre-payment switch is off in this app, but the API still investigates every order before capture.'}</p></div>
+    <div className="card flex gap-3 items-start text-sm"><ShieldCheck className="text-success shrink-0" aria-hidden="true" />
+      <p>TrustOra investigates the merchant and the receiving PayPal account before any funds are captured.</p></div>
     {problem && <div role="alert" className="card border-bad/40 space-y-1"><h2 className="font-semibold text-bad">{problem.title}</h2><p className="text-sm">{problem.message}</p><p className="text-sm font-semibold">No funds were captured.</p>
       {problem.details && <details className="text-xs text-muted"><summary className="cursor-pointer">Details</summary><pre className="whitespace-pre-wrap break-all font-mono mt-1">{problem.details}</pre></details>}</div>}
     <PaypalButton mode={mode} disabled={!email} onError={fail}
       createOrder={async () => { setProblem(null); const r = await api.createOrder({ storeId: s.id, items, buyerEmail: email }); order.current = { orderId: r.orderId, invId: r.investigationId }; setLatestId(r.investigationId); return r.paypalOrderId; }}
-      onApprove={async () => { const o = order.current; if (!o) return; try { await api.notifyApproval(o.orderId); } catch { /* backend decides the outcome */ } cart.clear(); toast('Approval sent. Guardian is verifying…', 'info'); nav(`/engine/${o.invId}`); }} />
+      onApprove={async () => { const o = order.current; if (!o) return; try { await api.notifyApproval(o.orderId); } catch { /* backend decides the outcome */ } cart.clear(); toast('Approval sent. TrustOra is checking…', 'info'); nav(`/engine/${o.invId}`); }} />
     <Link to={`/store/${s.id}`} className="block text-center text-sm text-muted hover:text-ink">Back to store</Link>
   </>;
 }

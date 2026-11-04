@@ -30,6 +30,10 @@
 /* Dark-on-light and light-on-dark overlays for the few old translucent white surfaces. */
 :root[data-theme='dark'] .bg-white\/5, :root[data-theme='dark'] .bg-white\/20 { background-color: color-mix(in srgb, var(--text) 10%, transparent); }
 
+/* Staged appearance of data that is already complete. Skipped under reduced motion (below). */
+.reveal { animation: reveal var(--motion-base) var(--ease) both; }
+@keyframes reveal { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
 }

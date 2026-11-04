@@ -8,30 +8,11 @@ import { api } from '../api/apiClient';
 import { Empty, Modal, Pill, Skeleton } from '../components/ui';
 import { StatusRows } from '../components/StatusRows';
 import { Timeline } from '../components/Timeline';
-import { ProvenanceChips, SimilarCases } from '../components/Provenance';
-import { ageLabel, download, money, type Tone } from '../lib/format';
+import { SimilarCases } from '../components/Provenance';
+import { ClaimedVsActual } from '../components/ClaimedVsActual';
+import { HowChecked, SignalChecklist } from '../components/HowChecked';
+import { download } from '../lib/format';
 import { displayBrand } from '../lib/labels';
-
-const SIGNAL_LABEL: Record<string, string> = {
-  page: 'Merchant page',
-  domainAge: 'Domain age',
-  registry: 'Merchant registry',
-  price: 'Price comparison',
-  tls: 'Security certificate',
-  payee: 'Receiving account',
-  registrarReputation: 'Registrar reputation',
-};
-const SIGNAL_VALUE: Record<string, string> = {
-  ok: 'read', blocked: 'blocked the checker', empty: 'no readable content', unavailable: 'could not be checked', not_checked: 'not checked',
-  known: 'known', found: 'found', valid: 'valid', invalid: 'problem found', provided: 'supplied', not_provided: 'not supplied', not_assessed: 'not assessed',
-};
-
-const signalTone = (value: string): Tone =>
-  value === 'blocked' || value === 'invalid'
-    ? 'bad'
-    : value === 'unavailable' || value === 'not_checked' || value === 'not_assessed' || value === 'empty' || value === 'not_provided'
-      ? 'warn'
-      : 'ok';
 
 export default function Engine() {
   usePageTitle('Investigation');
@@ -68,6 +49,8 @@ export default function Engine() {
         <div><dt className="mono-label">Site</dt><dd className="font-mono font-semibold text-sm mt-1 break-all">{displayBrand(inv.claimedBrand, inv.domain)}</dd></div></dl>
     </section>
 
+    <ClaimedVsActual inv={inv} />
+
     {done ? <StatusRows inv={inv} />
       : <section className="card flex items-center gap-3" aria-busy="true"><Loader2 className="animate-spin text-electric" /><div><div className="font-semibold">Investigation in progress</div><div className="text-sm text-muted">Collecting signals from {inv.domain}…</div></div></section>}
 
@@ -75,24 +58,10 @@ export default function Engine() {
       <div className="flex justify-between items-center mb-4"><h2 className="font-semibold">Checks run</h2><span className="mono-label bg-tint rounded px-2 py-1">{inv.evidence.length} of 4</span></div>
       <Timeline evidence={inv.evidence} /></section>
 
-    {done && <ProvenanceChips inv={inv} />}
     {done && <SimilarCases cases={inv.similarCases} />}
 
-    {done && inv.signalAvailability && <section className="card space-y-3" aria-label="What was checked">
-      <div className="flex justify-between items-center"><h2 className="font-semibold">What was checked</h2></div>
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">{Object.entries(inv.signalAvailability).map(([key, value]) => <div key={key} className="rounded-lg bg-tint p-2">
-        <div className="mono-label">{SIGNAL_LABEL[key] ?? key}</div>
-        <div className="mt-1"><Pill tone={signalTone(value)}>{SIGNAL_VALUE[value] ?? value.replace(/_/g, ' ')}</Pill></div></div>)}</div>
-      {inv.confidenceReason && <p className="text-xs text-muted">{inv.confidenceReason}</p>}
-    </section>}
-
-    {done && <section className="card space-y-3">
-      <div className="flex justify-between items-center"><h2 className="font-semibold">Claimed vs actual</h2>{inv.verdict !== 'ALLOW' && <Pill tone="bad">Not cleared</Pill>}</div>
-      {[['Who is paid', 'Storefront says', displayBrand(inv.claimedBrand, inv.domain), 'PayPal pays', inv.payeeName ?? 'Not supplied'],
-        ['Price', 'Comparable price', inv.benchmark === null ? 'Not available' : money(inv.benchmark), 'Checkout price', inv.price === null ? 'Not provided' : money(inv.price)],
-        ['Merchant', 'Registered business records', inv.registryRecords === null ? 'Not checked' : `${inv.registryRecords} found`, 'Domain age', ageLabel(inv.domainAgeDays)]].map(([h, a, av, b, bv]) => <div key={h} className="rounded-lg bg-tint p-3">
-        <div className="mono-label mb-2">{h}</div><div className="grid grid-cols-2 gap-2"><div className="bg-surface rounded p-2"><div className="mono-label">{a}</div><div className="text-sm font-semibold break-words">{av}</div></div>
-          <div className={inv.verdict === 'ALLOW' ? 'rounded p-2 bg-ok-bg' : 'rounded p-2 bg-bad-bg'}><div className={inv.verdict === 'ALLOW' ? 'mono-label' : 'mono-label !text-bad-deep'}>{b}</div><div className="text-sm font-semibold break-words">{bv}</div></div></div></div>)}</section>}
+    {done && <SignalChecklist availability={inv.signalAvailability} reason={inv.confidenceReason} />}
+    {done && <HowChecked inv={inv} />}
 
     <section className="card space-y-3"><h2 className="font-semibold">Actions</h2>
       {done && inv.verdict !== 'ALLOW' && <button className="btn-danger w-full" disabled={busy || voided} onClick={act}>{busy ? <Loader2 className="animate-spin" size={16} /> : <Ban size={16} />}{voided ? 'Purchase cancelled' : inv.orderId ? 'Cancel purchase and report seller' : 'Report seller'}</button>}

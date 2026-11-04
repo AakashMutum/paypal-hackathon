@@ -4,7 +4,7 @@ import Dashboard from './pages/Dashboard';
 import Scanner from './pages/Scanner';
 import Engine from './pages/Engine';
 import Pay from './pages/Pay';
-import HistoryPage from './pages/History';
+import Investigations from './pages/Investigations';
 import Onboarding from './pages/Onboarding';
 import Stores from './pages/Stores';
 import Storefront from './pages/Storefront';
@@ -18,7 +18,9 @@ export default function App() {
       <Route path="scanner" element={<Scanner />} />
       <Route path="engine" element={<Engine />} /><Route path="engine/:id" element={<Engine />} />
       <Route path="pay" element={<Pay />} /><Route path="pay/:id" element={<Pay />} />
-      <Route path="history" element={<HistoryPage />} />
+      <Route path="investigations" element={<Investigations />} />
+      <Route path="investigations/:id" element={<Investigations />} />
+      <Route path="history" element={<Navigate to="/investigations" replace />} />
       <Route path="onboarding" element={<Onboarding />} />
       <Route path="stores" element={<Stores />} />
       <Route path="checkout/:id" element={<Checkout />} />

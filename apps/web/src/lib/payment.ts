@@ -104,3 +104,35 @@ export const CAPTURE_WORDS: Record<CaptureState, string> = {
   VOIDED: 'Voided',
   FAILED: 'Failed',
 };
+
+export type StepState = 'done' | 'current' | 'todo' | 'failed' | 'held';
+export interface PaymentStep { label: string; detail: string; state: StepState }
+
+/**
+ * The four steps of a payment: Authorized, Reviewed, Decision, Outcome. Written from the
+ * investigation's own state; a step is only "done" when the data says it happened.
+ */
+export function paymentSteps(inv: { status: string; verdict?: string; captureState: CaptureState; acknowledged?: boolean }): PaymentStep[] {
+  const complete = inv.status === 'COMPLETE';
+  const cs = inv.captureState;
+  const authorized = cs === 'AUTHORIZED' || cs === 'HELD' || cs === 'CAPTURED' || cs === 'VOIDED' || (cs === 'FAILED' && complete);
+  const decision: PaymentStep = !complete || !inv.verdict
+    ? { label: 'Decision', detail: 'Waiting for the merchant check', state: 'todo' }
+    : inv.verdict === 'ALLOW'
+      ? { label: 'Decision', detail: 'ALLOW · Cleared', state: 'done' }
+      : inv.verdict === 'WARN'
+        ? { label: 'Decision', detail: inv.acknowledged ? 'WARN · Needs review, acknowledged' : 'WARN · Needs review', state: inv.acknowledged ? 'done' : 'held' }
+        : { label: 'Decision', detail: 'PAUSE · Held', state: 'held' };
+  const outcome: PaymentStep =
+    cs === 'CAPTURED' ? { label: 'Captured', detail: 'The money was released to the merchant', state: 'done' }
+    : cs === 'VOIDED' ? { label: 'Voided', detail: 'The authorization was cancelled; nothing was taken', state: 'done' }
+    : cs === 'FAILED' ? { label: 'Failed', detail: 'A payment step failed; nothing was captured', state: 'failed' }
+    : cs === 'HELD' ? { label: 'Held', detail: inv.verdict === 'PAUSE' ? 'Nothing was captured and it never will be' : 'Waiting for you to acknowledge or cancel', state: 'held' }
+    : { label: 'Outcome', detail: 'Not decided yet', state: 'todo' };
+  return [
+    { label: 'Authorized', detail: authorized ? 'The payment is reserved on PayPal; nothing is taken yet' : 'Not authorized yet', state: authorized ? 'done' : 'current' },
+    { label: 'Reviewed', detail: complete ? 'The merchant check finished' : 'The merchant check is running', state: complete ? 'done' : authorized ? 'current' : 'todo' },
+    decision,
+    outcome,
+  ];
+}

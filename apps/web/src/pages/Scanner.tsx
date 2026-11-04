@@ -1,12 +1,16 @@
 import { FormEvent, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Loader2, ScanLine, Store, ChevronRight, AlertTriangle } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Loader2, ScanLine, AlertTriangle } from 'lucide-react';
 import { api } from '../api/apiClient';
 import { useApp } from '../context/OrderStateContext';
+import { useOrderPolling } from '../hooks/useOrderPolling';
 import { usePageTitle } from '../hooks/usePageTitle';
 import { STORES } from '../data/stores';
 import { useHealth } from '../components/Provenance';
+import { InvestigationView } from '../components/InvestigationView';
+import { Icon, VerdictBadge } from '../components/ui';
 import { friendlyPaymentError } from '../lib/payment';
+import { VERDICT_WORDS } from '../lib/labels';
 
 /** The API's message for a bad address, or a plain version of a network failure. */
 function scanErrorText(e: unknown): string {
@@ -20,26 +24,38 @@ function scanErrorText(e: unknown): string {
 export default function Scanner() {
   usePageTitle('Scan');
   const [url, setUrl] = useState(''); const [busy, setBusy] = useState(false); const [error, setError] = useState<string | null>(null);
-  const nav = useNavigate(); const { setLatestId } = useApp(); const { health } = useHealth();
+  const [scanId, setScanId] = useState<string | undefined>();
+  const { setLatestId } = useApp(); const { health } = useHealth();
+  const { inv } = useOrderPolling(scanId);
   const replayOnly = health?.modes?.signals === 'replay';
   const run = async (u: string) => {
     if (!u.trim()) { setError('Enter a website address to scan.'); return; }
-    setBusy(true); setError(null);
-    try { const inv = await api.scanUrl(u); setLatestId(inv.id); nav(`/engine/${inv.id}`); }
+    setBusy(true); setError(null); setScanId(undefined);
+    try { const r = await api.scanUrl(u); setLatestId(r.id); setScanId(r.id); }
     catch (e) { setError(scanErrorText(e)); } finally { setBusy(false); }
   };
   const submit = (e: FormEvent) => { e.preventDefault(); void run(url); };
-  return <>
-    <section><h1 className="text-2xl font-bold">Scan a storefront</h1><p className="text-sm text-muted mt-1">Check whether a website's claims match the account that would receive your money.</p></section>
+  return <div className="max-w-3xl mx-auto space-y-4">
+    <section><h1 className="text-xl font-semibold">Scan a storefront</h1><p className="text-sm text-muted mt-1">Check whether a website's claims match the account that would receive your money.</p></section>
     <form onSubmit={submit} className="card space-y-3" noValidate>
-      <label htmlFor="u" className="mono-label">Website address</label>
-      <input id="u" className="input font-mono" placeholder="store-name.example" value={url} onChange={e => { setUrl(e.target.value); setError(null); }} autoComplete="off" aria-invalid={error ? true : undefined} aria-describedby={error ? 'scan-error' : undefined} />
-      {error && <p id="scan-error" role="alert" className="flex gap-2 text-sm text-bad"><AlertTriangle size={16} className="shrink-0 mt-0.5" aria-hidden="true" />{error}</p>}
-      <button className="btn-direct w-full" disabled={busy}>{busy ? <><Loader2 size={16} className="animate-spin" aria-hidden="true" />Scanning…</> : <><ScanLine size={16} aria-hidden="true" />Scan URL</>}</button>
+      <label htmlFor="scan-url" className="text-sm font-medium">Website address</label>
+      <input id="scan-url" className="input font-mono" placeholder="store-name.example" value={url} onChange={e => { setUrl(e.target.value); setError(null); }} autoComplete="off" aria-invalid={error ? true : undefined} aria-describedby={error ? 'scan-error' : undefined} />
+      {error && <p id="scan-error" role="alert" className="flex gap-2 text-sm text-danger"><Icon icon={AlertTriangle} size={16} className="shrink-0 mt-0.5" />{error}</p>}
+      <div className="flex flex-wrap items-center gap-2">
+        <button className="btn-primary" disabled={busy}>{busy ? <><Loader2 size={16} className="animate-spin" aria-hidden="true" />Scanning…</> : <><Icon icon={ScanLine} size={16} />Scan</>}</button>
+        <span className="text-xs text-muted">Try:</span>
+        {STORES.map(s => <button key={s.id} type="button" disabled={busy} className="btn-secondary !h-8 !px-2 font-mono text-xs" onClick={() => { setUrl(s.domain); void run(s.domain); }}>{s.domain.replace(/^www\./, '')}</button>)}
+      </div>
     </form>
-    {replayOnly && <p className="card text-sm" role="note">This API replays recorded signals, so only the demo stores below can be checked properly. Unknown domains need live signals and will not be cleared.</p>}
-    <section className="card"><h2 className="font-semibold mb-3">Try a demo target</h2>
-      <div className="flex flex-wrap gap-2">{STORES.map(s => <button key={s.id} disabled={busy} className="btn-secondary !h-9 font-mono text-xs" onClick={() => { setUrl(s.domain); void run(s.domain); }}>{s.domain}</button>)}</div></section>
-    <Link to="/stores" className="card flex items-center gap-3 hover:shadow-l2"><Store className="text-electric" aria-hidden="true" /><div className="flex-1"><div className="font-semibold">Open demo storefronts</div><div className="text-sm text-muted">Buy from the genuine, suspicious and impersonator stores.</div></div><ChevronRight size={18} aria-hidden="true" /></Link>
-  </>;
+    {replayOnly && <p className="card text-sm" role="note">This server replays recorded signals, so only the demo stores can be checked properly. Other sites are not cleared.</p>}
+
+    {inv && <section aria-label="Scan result" className="space-y-4">
+      <div className="card flex flex-wrap items-center justify-between gap-3">
+        <div className="min-w-0"><h2 className="font-semibold break-all">{inv.domain}</h2>
+          <p className="text-sm text-muted">{inv.status === 'COMPLETE' && inv.verdict ? VERDICT_WORDS[inv.verdict].meaning : 'Collecting evidence…'}</p></div>
+        {inv.status === 'COMPLETE' && <VerdictBadge verdict={inv.verdict} />}</div>
+      <InvestigationView inv={inv} reveal />
+    </section>}
+    {!inv && !busy && <p className="text-sm text-muted">Or <Link className="text-action underline" to="/stores">buy from a demo store</Link> to see the whole flow, including the payment.</p>}
+  </div>;
 }

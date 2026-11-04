@@ -7,6 +7,7 @@ import { Icon } from './ui';
 const ORDER: NodeId[] = ['SURFACE', 'MERCHANT', 'PRICE', 'PAYEE'];
 const WAITING: Record<NodeId, string> = { SURFACE: 'storefront', MERCHANT: 'merchant', PRICE: 'price', PAYEE: 'payee' };
 
+/** The evidence in four groups: storefront, merchant, price and payee. */
 export function Timeline({ evidence }: { evidence: Evidence[] }) {
   return <ol>{ORDER.map((node, i) => {
     const e = evidence[i];
