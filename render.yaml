@@ -80,6 +80,10 @@ services:
       - key: CHANNEL3_API_KEY
         sync: false
       # Total model time per scan (ms); after it the deterministic output is used. 0 means no limit.
+      # Seeds the invented demo merchants into an empty merchant_records table, so the hosted genuine
+      # store matches a registry record. Safe to leave on: a table with rows is never touched.
+      - key: DEMO_SEED
+        value: "true"
       - key: AGENT_MODEL_BUDGET_MS
         value: "1200"
       # Scam memory. A free Render instance has no persistent disk, so a memory file would be lost on
@@ -125,6 +129,7 @@ services:
       # Set by hand after the first deploy to the public URL of the API (no trailing slash).
       - key: VITE_API_URL
         sync: false
-      # PayPal sandbox client id for the checkout button. Leave empty to use the simulated button.
+      # PayPal sandbox client id for the checkout button. Required while the API runs with PAYPAL_MODE=sandbox:
+      # without it the checkout shows a disabled "not configured" state.
       - key: VITE_PAYPAL_CLIENT_ID
         sync: false
