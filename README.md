@@ -261,6 +261,30 @@ Names only; values never belong in the repository. See `.env.example` and `apps/
 | `npm run check:brands`, `npm run check:hygiene` | Fictional-brand guard and repository checks |
 | `npm run lint`, `npm run typecheck` | Lint and type check |
 
+## Screens
+
+The web app (`apps/web`) has a slim sidebar and top bar from 1024 px and a bottom navigation below
+that. It comes in a light and a dark theme: light by default, then the operating system's
+preference, with a System, Light and Dark toggle in the header (`docs/design.md`).
+
+| Screen | Address | What it shows |
+| --- | --- | --- |
+| Overview | `/` | Four totals, the latest flagged investigation, recent investigations and a three-step demo |
+| Scan | `/scanner` | One input with example chips; the four checks, the decision, then the claimed-vs-actual picture |
+| Investigations | `/investigations`, `/investigations/:id` | List and detail (`/history` redirects here); `/engine/:id` is the full check |
+| Payment | `/pay/:id` | A four-step stepper (Authorized, Reviewed, Decision, outcome), the merchant check and the payment status as separate rows |
+| Demo stores | `/stores`, `/store/:id`, `/checkout/:id` | Three fictional stores with their own illustrations |
+| Analyst console | `/analyst` | An AG Grid table (sort, filters, risk slider, CSV export) in both themes |
+
+The central picture is "Storefront says" next to "PayPal pays", joined by MATCH, MISMATCH or NOT
+CHECKED, built only from the investigation's own data. TrustOra is an independent hackathon
+project and is not affiliated with PayPal; the only PayPal mark on screen is the button PayPal's own
+SDK renders.
+
+`npm run qa:screens` (see `docs/deploy.md`) opens every screen in a real browser at 360, 768 and 1280
+px in both themes and checks overflow, contrast, labels, headings and focus. It has not been run
+against a live API or the hosted deployment.
+
 ## Evaluation
 
 `npm run eval -w @checkout-guardian/eval` compares two baselines with the full agent on a
