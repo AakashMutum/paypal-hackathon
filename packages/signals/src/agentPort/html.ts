@@ -579,8 +579,6 @@ export function extractPageClaims(html: string, finalUrl: string, httpStatus = 2
     ...(faviconSameOrigin !== undefined ? { faviconSameOrigin } : {}),
     hasContactPage,
     hasLegalPage,
-    hasContactPage: Boolean(sectionLinks.contact),
-    hasLegalPage: Boolean(sectionLinks.terms || sectionLinks.privacy),
     pageAccess: access,
     ...(access.state === 'ok' && product ? { product } : {}),
     ...(marketplace ? { marketplace } : {}),

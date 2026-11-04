@@ -19,7 +19,6 @@ export default function Dashboard() {
     { l: 'Prevented Threats', v: metrics.prevented, icon: ShieldAlert, sub: <span className="mono-label !text-bad">Capture paused</span> },
   ];
   const defended = metrics.defendedAmount;
-  const defended = 4620.45 + flagged.filter(i => i.captureState !== 'CAPTURED').reduce((s, i) => s + (i.price ?? 0), 0);
   const radar = flagged[0];
   const [whole, cents] = defended.toFixed(2).split('.');
   return <>

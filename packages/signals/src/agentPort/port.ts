@@ -1,6 +1,5 @@
 import { readCertificate } from '../certificate/tls.js';
 import { domainAgeDays, findRegistrarName, findRegistrationDate, rdapUrlFor } from '../domain/rdap.js';
-import { domainAgeDays, findRegistrationDate, rdapUrlFor } from '../domain/rdap.js';
 import { PayeeBindingCollector } from '../payee/binding.js';
 import { assertSafeUrl, UnsafeUrlError } from '../safety/url.js';
 import { readLimitedText, registrableDomain } from '../util.js';
