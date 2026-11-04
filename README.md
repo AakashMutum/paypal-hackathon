@@ -206,7 +206,7 @@ tested with an in-memory store and a mock pool; it has not been run against a re
 | Channel3 catalogue | `CHANNEL3_API_KEY` | Price comparison is reported as `PRICE_UNKNOWN`; no comparison is invented. |
 | Corporate registry | None wired. The API uses the local `merchant_records` table and `POST /api/merchants`. | Identity verification is limited to local records and official marketplace hostnames; missing records are disclosed. |
 | Elasticsearch memory | `ELASTIC_URL`, `ELASTIC_API_KEY`, `ELASTIC_INDEX` | A persistent JSON file is used, or in-memory in tests. |
-| Real PayPal JS approval | `VITE_PAYPAL_CLIENT_ID` in `apps/web/.env` plus sandbox API credentials | The checkout uses a clearly labelled simulated button. |
+| Real PayPal JS approval | `VITE_PAYPAL_CLIENT_ID` in `apps/web/.env` plus sandbox API credentials | With the API in simulated mode the checkout shows a button labelled "Simulated payment". With the API in sandbox mode and no client id it shows a disabled "not configured" state, not a simulated button. |
 
 To use the real sandbox approval flow:
 
@@ -242,6 +242,8 @@ Names only; values never belong in the repository. See `.env.example` and `apps/
 | `CHANNEL3_API_KEY`, `CHANNEL3_BASE_URL`, `LLM_*` | `apps/mcp/demo-agent` |
 | `VITE_API_URL`, `VITE_USE_MOCK` | `apps/web/src/api/apiClient.ts` (`VITE_USE_MOCK=false` forces the API; otherwise an API URL is needed to leave the simulator) |
 | `VITE_PAYPAL_CLIENT_ID` | `apps/web/src/hooks/usePaypalAuth.ts` |
+| `VITE_SHOW_RESET` | `apps/web/src/lib/env.ts` (shows Reset demo; the admin token is typed per request and never stored) |
+| `DEMO_SEED` | `apps/api/src/services/registry/registry.service.ts` (`seedDemoMerchants`; see `docs/deploy.md`) |
 | `VITE_API_TARGET` | `apps/web/vite.config.ts` (local dev proxy) |
 
 ## Tests
@@ -334,8 +336,9 @@ The PayPal calls are in `apps/api/src/services/paypal` and are called in order b
 
 Create, authorize, capture and void send a `PayPal-Request-Id` header. The service also has
 helpers to read an order and to capture an order directly; the checkout flow does not use them.
-The web app loads the PayPal JavaScript SDK with `intent=authorize` when `VITE_PAYPAL_CLIENT_ID`
-is set (`apps/web/src/hooks/usePaypalAuth.ts`). None of this has been run against the real
+The web app reads the API's `GET /health` modes. When the API is in sandbox mode and
+`VITE_PAYPAL_CLIENT_ID` is set it loads the PayPal JavaScript SDK with `intent=authorize` and shows
+PayPal's own button (`apps/web/src/hooks/usePaypalAuth.ts`, `apps/web/src/lib/payment.ts`). None of this has been run against the real
 sandbox from this repository (see "Known limitations").
 
 AI coding and development tools used while building TrustOra:

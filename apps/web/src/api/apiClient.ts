@@ -39,47 +39,38 @@ function tokenFor(path: string): string | undefined {
   }
 }
 
-// The demo admin token (for the analyst console) is typed in by a person and kept for the session.
-const ADMIN_KEY = 'trustora.demoToken';
-export function getAdminToken(): string | undefined {
-  try {
-    return sessionStorage.getItem(ADMIN_KEY) ?? undefined;
-  } catch (e) {
-    console.warn('Session storage is not available:', e instanceof Error ? e.message : e);
-    return undefined;
-  }
-}
-export function setAdminToken(token: string): void {
-  try {
-    sessionStorage.setItem(ADMIN_KEY, token);
-  } catch (e) {
-    console.warn('The admin token could not be kept:', e instanceof Error ? e.message : e);
+/** An API error with the HTTP status and, when the API sent one, its error code. */
+export class ApiError extends Error {
+  constructor(message: string, readonly status: number, readonly code?: string) {
+    super(message);
+    this.name = 'ApiError';
   }
 }
 
-async function http<T>(path: string, init?: RequestInit): Promise<T> {
+async function http<T>(path: string, init?: RequestInit, extraHeaders: Record<string, string> = {}): Promise<T> {
   const token = tokenFor(path);
-  const admin = getAdminToken();
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...(token ? { 'x-order-token': token } : {}),
-    ...(admin ? { 'x-demo-token': admin } : {}),
+    ...extraHeaders,
   };
   const r = await fetch(BASE + path, { headers, ...init });
   if (!r.ok) {
     const text = await r.text();
     let message = text;
+    let code: string | undefined;
     try {
-      const parsed = JSON.parse(text) as { error?: { message?: string } };
+      const parsed = JSON.parse(text) as { error?: { message?: string; code?: string } };
       if (parsed.error?.message) message = parsed.error.message;
+      code = parsed.error?.code;
     } catch (e) {
       console.warn('The API answered with a body that is not JSON:', e instanceof Error ? e.message : e);
     }
-    throw new Error(`${r.status} ${message}`);
+    throw new ApiError(message, r.status, code);
   }
   return r.status === 204 ? (undefined as T) : r.json();
 }
-const post = <T>(p: string, b?: unknown) => http<T>(p, { method: 'POST', body: b ? JSON.stringify(b) : undefined });
+const post = <T>(p: string, b?: unknown, headers?: Record<string, string>) => http<T>(p, { method: 'POST', body: b ? JSON.stringify(b) : undefined }, headers);
 
 export const api = {
   scanUrl: (url: string): Promise<Investigation> => USE_MOCK ? mock.scan(url) : post('/api/scan', { url }),
@@ -97,7 +88,8 @@ export const api = {
   requestReview: (id: string): Promise<Investigation> => USE_MOCK ? mock.review(id) : post(`/api/orders/${id}/review`),
   reportMerchant: (r: ReportRequest): Promise<void> => USE_MOCK ? mock.report(r) : post('/api/reports', r),
   registerMerchant: (r: MerchantRegistration): Promise<MerchantResult> => USE_MOCK ? mock.register(r) : post('/api/merchants', r),
-  resetDemo: (): Promise<void> => USE_MOCK ? mock.reset() : post('/api/demo/reset'),
+  /** The admin token is sent as x-demo-token for this one request only. It is never stored. */
+  resetDemo: (adminToken?: string): Promise<void> => USE_MOCK ? mock.reset() : post('/api/demo/reset', undefined, adminToken ? { 'x-demo-token': adminToken } : undefined),
   /** The API's GET /health. Not available from the simulated backend. */
   health: async (): Promise<Health | null> => {
     if (USE_MOCK) return null;

@@ -121,3 +121,48 @@ export async function registryLookup(by: RegistryField, value: string): Promise<
 export function registryResetMemory(): void {
   memory.clear();
 }
+
+export interface SeedDeps {
+  /** Runs a SQL statement. Defaults to the shared database connection. */
+  run?: (text: string, params?: unknown[]) => Promise<{ rows: Array<Record<string, unknown>> }>;
+  /** Defaults to DEMO_SEED from the environment. */
+  enabled?: boolean;
+}
+
+export interface SeedResult {
+  seeded: number;
+  reason: 'disabled' | 'not_empty' | 'seeded';
+}
+
+/**
+ * With DEMO_SEED=true and an empty merchant_records table, inserts the invented demo merchants so
+ * the hosted genuine store matches a registry record. It mirrors the in-memory registry: the
+ * impersonator is deliberately not a registered merchant. A table that already has rows is never
+ * touched, and the merchants are inserted with ON CONFLICT DO NOTHING so a second start is safe.
+ */
+export async function seedDemoMerchants(deps: SeedDeps = {}): Promise<SeedResult> {
+  const enabled = deps.enabled ?? process.env.DEMO_SEED?.trim().toLowerCase() === 'true';
+  if (!enabled) return { seeded: 0, reason: 'disabled' };
+  const run = deps.run ?? ((text: string, params?: unknown[]) => query(text, params));
+  const count = await run('SELECT COUNT(*)::int AS n FROM merchant_records');
+  if (Number(count.rows[0]?.n ?? 0) > 0) return { seeded: 0, reason: 'not_empty' };
+
+  let seeded = 0;
+  for (const store of loadStoreCatalog()) {
+    if (store.kind === 'impersonator') continue;
+    await run(
+      `INSERT INTO merchant_records (merchant_id, domain, claimed_name, payee_email, verification_status, metadata)
+       VALUES ($1,$2,$3,$4,'VERIFIED_GENUINE',$5)
+       ON CONFLICT (merchant_id) DO NOTHING`,
+      [
+        store.registeredMerchantId,
+        store.domain.replace(/^www\./, ''),
+        store.payeeName,
+        store.payeeEmail,
+        JSON.stringify({ seed: 'demo', brand: store.brand }),
+      ],
+    );
+    seeded += 1;
+  }
+  return { seeded, reason: 'seeded' };
+}

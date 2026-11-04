@@ -1,3 +1,4 @@
+import { usePageTitle } from '../hooks/usePageTitle';
 import { FormEvent, useState } from 'react';
 import { User, Mail, Phone, MapPin, Lock, Camera, CheckCircle2, Loader2, Shield } from 'lucide-react';
 import { cn } from '../lib/format';
@@ -51,6 +52,7 @@ function Avatar({ name }: { name: string }) {
 }
 
 export default function Profile() {
+  usePageTitle('Profile');
   const { toast } = useApp();
   const [profile, setProfile] = useState<UserProfile>(DEFAULT_PROFILE);
   const [draft, setDraft] = useState<UserProfile>(DEFAULT_PROFILE);

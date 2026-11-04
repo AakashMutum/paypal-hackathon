@@ -5,12 +5,13 @@ import { cn, telemetry } from '../lib/format';
 import { Modal } from './ui';
 import { ModeBadge, ModesFooter } from './Provenance';
 import { useInvestigations } from '../hooks/useOrderPolling';
-import { api } from '../api/apiClient';
+import { SHOW_RESET } from '../lib/env';
+import { ResetDialog } from './ResetDialog';
 import { useApp } from '../context/OrderStateContext';
 import trustoraLogo from '../assets/trustora-logo.png';
 const NAV = [
-  { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true }, { to: '/scanner', label: 'Scanner', icon: ScanLine },
-  { to: '/engine', label: 'Engine', icon: Radar }, { to: '/pay', label: 'Pay', icon: ShieldCheck }, { to: '/history', label: 'History', icon: History },
+  { to: '/', label: 'Overview', icon: LayoutDashboard, end: true }, { to: '/scanner', label: 'Scan', icon: ScanLine },
+  { to: '/engine', label: 'Check', icon: Radar }, { to: '/pay', label: 'Payment', icon: ShieldCheck }, { to: '/history', label: 'History', icon: History },
 ];
 function Notifications({ onClose }: { onClose: () => void }) {
   const { list } = useInvestigations();
@@ -20,6 +21,8 @@ function Notifications({ onClose }: { onClose: () => void }) {
 }
 function Account({ onClose }: { onClose: () => void }) {
   const { toast } = useApp();
+  const [resetting, setResetting] = useState(false);
+  if (resetting) return <ResetDialog onClose={() => setResetting(false)} onDone={() => { toast('Demo data reset', 'ok'); onClose(); }} />;
   const row = 'flex items-center gap-3 p-3 rounded-lg hover:bg-canvas text-sm font-medium';
   return <Modal open onClose={onClose} title="Alex Walker">
     <p className="text-sm text-muted mb-3 font-mono">alex.walker@mail.example</p>
@@ -27,7 +30,7 @@ function Account({ onClose }: { onClose: () => void }) {
     <Link to="/stores" onClick={onClose} className={row}><Store size={18} />Demo storefronts</Link>
     <Link to="/analyst" onClick={onClose} className={row}><Gauge size={18} />Analyst console</Link>
     <Link to="/onboarding" onClick={onClose} className={row}><BadgeCheck size={18} />Register a merchant</Link>
-    <button className={cn(row, 'w-full text-left')} onClick={async () => { await api.resetDemo(); toast('Demo data reset', 'ok'); onClose(); }}><RotateCcw size={18} />Reset demo data</button>
+    {SHOW_RESET && <button className={cn(row, 'w-full text-left')} onClick={() => setResetting(true)}><RotateCcw size={18} />Reset demo data</button>}
   </Modal>;
 }
 export default function Layout() {
@@ -38,11 +41,6 @@ export default function Layout() {
       <div className="max-w-3xl mx-auto px-4 h-14 flex items-center gap-3">
         <Link to="/" className="flex items-center gap-2 min-w-0">
           <img src={trustoraLogo} alt="TrustOra" className="h-9 w-auto object-contain" />
-          <span className="leading-tight hidden sm:block">
-            <span className="block font-mono text-[10px] font-semibold tracking-wider text-electric">
-              <span className="inline-block w-1.5 h-1.5 rounded-full bg-electric mr-1 animate-pulse" />ACTIVE SESSION
-            </span>
-          </span>
         </Link>
         <span className="hidden sm:block"><ModeBadge /></span>
         <nav className="hidden md:flex gap-1 ml-auto mr-2">{NAV.map(n => <NavLink key={n.to} to={n.to} end={n.end} className={({ isActive }) => cn('px-3 py-1.5 rounded text-sm font-medium', isActive ? 'bg-navy text-white' : 'text-muted hover:text-ink')}>{n.label}</NavLink>)}</nav>

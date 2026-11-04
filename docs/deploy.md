@@ -45,7 +45,9 @@ Names only. Values come from the places listed here.
 | `KERNEL_API_KEY`, `CHANNEL3_API_KEY` | API | Kernel and Channel3 dashboards. Only needed for live signals |
 | `ELASTIC_URL`, `ELASTIC_API_KEY` | API | Your Elasticsearch deployment. Without them the memory runs in the API |
 | `VITE_API_URL` | Web | The public URL of `trustora-api` (after the first deploy) |
-| `VITE_PAYPAL_CLIENT_ID` | Web | The sandbox client id again (public). Leave empty to use the simulated button |
+| `VITE_PAYPAL_CLIENT_ID` | Web | The sandbox client id again (public). Required when the API is in sandbox mode; without it the checkout shows a disabled "not configured" state |
+| `VITE_SHOW_RESET` | Web | Optional. `true` shows the Reset demo button. Leave unset on a public demo |
+| `DEMO_SEED` | API | Optional. `true` seeds the demo merchants into an empty `merchant_records` table (see "Demo seed") |
 
 Set automatically by the blueprint: `DATABASE_URL` (from the database), `NODE_ENV=production`,
 `PAYPAL_MODE=sandbox`, `SIGNALS_MODE=auto` (recorded signals for the demo stores, live for any other
@@ -91,6 +93,47 @@ signals.
    slash.
 3. Redeploy the web service: `VITE_*` values are baked in at build time, so a change needs a new
    build. The API restarts by itself when its variables change.
+
+## Hosting the web app on Vercel
+
+The web app is a single-page app: `/engine/INV-1`, `/pay/INV-1` and the other routes only exist in
+the browser. Without a rewrite to `index.html`, opening or refreshing one of those URLs returns a
+404. `apps/web/vercel.json` and `vercel.json` at the repository root both rewrite every path to
+`/index.html` (files that exist, such as `/assets/*`, are still served first). Which one applies
+depends on the Root Directory you choose. Settings (not verified: nothing was deployed from this
+repository to Vercel while writing this):
+
+| Setting | Value |
+| --- | --- |
+| Root Directory | `apps/web`, with "Include source files outside of the Root Directory" on (the app imports `packages/contracts`). Or leave it at the repository root and the root `vercel.json` supplies the commands below |
+| Install Command | `cd ../.. && npm ci --include=dev` (with Root Directory `apps/web`); `npm ci --include=dev` at the root |
+| Build Command | `npm run build` (in `apps/web`); `npm run build -w @checkout-guardian/web` at the root |
+| Output Directory | `dist` (in `apps/web`); `apps/web/dist` at the root |
+
+Environment variables (Project Settings, then Environment Variables). `VITE_*` values are baked in at
+build time, so redeploy after changing one:
+
+| Variable | Value |
+| --- | --- |
+| `VITE_API_URL` | The public URL of the API, no trailing slash |
+| `VITE_PAYPAL_CLIENT_ID` | The PayPal sandbox client id (public). Needed whenever the API runs with `PAYPAL_MODE=sandbox`: without it the checkout shows "PayPal sandbox button is not configured on this deployment" instead of a payment button |
+| `VITE_SHOW_RESET` | Leave unset on a public demo. `true` shows the Reset demo button, which asks for `DEMO_ADMIN_TOKEN` |
+
+On the API, `CORS_ORIGIN` must equal the Vercel URL exactly (scheme and host, no trailing slash), or the
+browser blocks every request.
+
+**Which payment button appears.** The web app reads the API's `GET /health` modes. API in sandbox mode
+and a client id set: PayPal's own button from its SDK. API in sandbox mode and no client id: a disabled
+state (the simulated button is not shown, because it would skip the buyer's approval and PayPal would
+refuse the order with a 422). API in simulated mode, or the web app's built-in simulated backend: a
+button labelled "Simulated payment".
+
+## Demo seed
+
+With `DEMO_SEED=true` (default `false`) and a database, the API fills an empty `merchant_records` table
+at startup with the invented demo merchants, so the hosted genuine store matches a registry record. It
+mirrors the in-memory registry: the impersonator store is deliberately not a registered merchant. A
+table that already has rows is never changed. The blueprint sets `DEMO_SEED=true` for the hosted demo.
 
 ## Smoke test
 

@@ -1,14 +1,16 @@
 ﻿import { ReactNode, useEffect } from 'react';
 import { X } from 'lucide-react';
 import type { Verdict } from '../types';
-import { cn, Tone, TONE, VERDICT } from '../lib/format';
+import { cn, Tone, TONE } from '../lib/format';
+import { VERDICT_WORDS } from '../lib/labels';
 
 export function Pill({ tone = 'neutral', pulse, children, className }: { tone?: Tone; pulse?: boolean; children: ReactNode; className?: string }) {
   return <span className={cn('pill', TONE[tone], className)}>{pulse && <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />}{children}</span>;
 }
 export function RiskBadge({ verdict }: { verdict?: Verdict }) {
-  if (!verdict) return <Pill tone="cyan" pulse>EVALUATING</Pill>;
-  return <Pill tone={VERDICT[verdict].tone}>{VERDICT[verdict].risk}</Pill>;
+  if (!verdict) return <Pill tone="cyan" pulse>Checking</Pill>;
+  const w = VERDICT_WORDS[verdict];
+  return <Pill tone={w.tone}>{w.word}<span className="font-normal opacity-80">· {w.subtitle}</span></Pill>;
 }
 export function Modal({ open, onClose, title, children }: { open: boolean; onClose: () => void; title: string; children: ReactNode }) {
   useEffect(() => { if (!open) return; const h = (e: KeyboardEvent) => e.key === 'Escape' && onClose(); window.addEventListener('keydown', h); return () => window.removeEventListener('keydown', h); }, [open, onClose]);
@@ -28,4 +30,12 @@ export function Switch({ on, onChange, label }: { on: boolean; onChange: (b: boo
   return <button role="switch" aria-checked={on} aria-label={label} onClick={() => onChange(!on)}
     className={cn('relative w-12 h-7 rounded-full transition focus-visible:ring-2 focus-visible:ring-accent', on ? 'bg-electric' : 'bg-white/20')}>
     <span className={cn('absolute top-0.5 w-6 h-6 rounded-full bg-white transition-all', on ? 'left-[22px]' : 'left-0.5')} /></button>;
+}
+
+export function Skeleton({ className }: { className?: string }) {
+  return <div aria-hidden="true" className={cn('rounded bg-ink/10 animate-pulse', className ?? 'h-4 w-full')} />;
+}
+export function WakeNote({ show }: { show: boolean }) {
+  if (!show) return null;
+  return <p role="status" className="card text-sm text-muted">Waking up the server. A free host sleeps when it is idle, so the first request can take up to a minute.</p>;
 }
