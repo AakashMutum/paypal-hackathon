@@ -10,6 +10,7 @@
     "build": "tsc && node -e \"import('node:fs').then(fs => { fs.cpSync('src/database/migrations', 'dist/src/database/migrations', { recursive: true }); })\"",
     "typecheck": "tsc --noEmit",
     "start": "node dist/src/server.js",
+    "test:registry": "tsx --test test/corporateRegistry.test.ts",
     "test": "tsx --test test/database.config.test.ts test/database.health.test.ts test/database.migration.test.ts test/database.integration.test.ts test/health.test.ts",
     "migrate": "tsx src/database/migrate.ts",
     "migrate:status": "tsx src/database/migrate.ts --status"
