@@ -1,0 +1,117 @@
+/*
+ * Design tokens. Colours are plain hex values so they can be read and checked
+ * (apps/web/tests/tokens.test.ts fails when a text or UI pair drops below WCAG AA).
+ *
+ * Themes: light is the default. With no choice stored, the operating system decides
+ * (prefers-color-scheme). An explicit choice sets data-theme="light" or "dark" on <html>.
+ * The dark values appear twice on purpose: once for data-theme="dark", once for the system
+ * preference. Keep both blocks identical; the test compares them.
+ */
+:root {
+  color-scheme: light;
+
+  --bg: #F7F9FC;
+  --surface: #FFFFFF;
+  --surface-2: #F1F5FA;
+  --border: #E3E8F0;          /* decoration: dividers and card edges */
+  --border-strong: #75849B;   /* controls: input and button edges, at least 3:1 on surface */
+  --text: #0A1A33;
+  --muted: #5B6B82;
+  --navy: #003087;
+  --on-navy: #FFFFFF;
+  --action: #006DDA;          /* adjusted from #0070E0, which was 4.37:1 on surface-2 */
+  --action-hover: #005AC4;
+  --on-action: #FFFFFF;
+  --success: #067647;
+  --success-bg: #ECFDF3;
+  --warn: #B54708;
+  --warn-bg: #FEF0C7;
+  --danger: #B42318;
+  --danger-bg: #FEE4E2;
+  --focus: #006DDA;
+  --overlay: rgba(10, 26, 51, 0.45);
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+
+  --shadow-1: 0 1px 2px rgba(10, 26, 51, 0.06), 0 1px 3px rgba(10, 26, 51, 0.04);
+  --shadow-2: 0 8px 24px rgba(10, 26, 51, 0.1), 0 2px 6px rgba(10, 26, 51, 0.06);
+
+  --text-xs: 12px;
+  --text-sm: 14px;
+  --text-base: 16px;
+  --text-lg: 20px;
+  --text-xl: 28px;
+  --text-2xl: 40px;
+
+  --motion-fast: 120ms;
+  --motion-base: 180ms;
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --bg: #0A0F1C;
+  --surface: #101828;
+  --surface-2: #162033;
+  --border: #1F2A44;
+  --border-strong: #6B7F9E;
+  --text: #EAF0FA;
+  --muted: #8EA0BC;
+  --navy: #123A8F;
+  --on-navy: #FFFFFF;
+  --action: #4C9AFF;
+  --action-hover: #7DB5FF;
+  --on-action: #0A0F1C;
+  --success: #32D583;
+  --success-bg: #0B2E1F;
+  --warn: #FDB022;
+  --warn-bg: #3A2A07;
+  --danger: #F97066;
+  --danger-bg: #3A1512;
+  --focus: #4C9AFF;
+  --overlay: rgba(2, 6, 14, 0.65);
+
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-2: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']):not([data-theme='dark']) {
+    color-scheme: dark;
+
+    --bg: #0A0F1C;
+    --surface: #101828;
+    --surface-2: #162033;
+    --border: #1F2A44;
+    --border-strong: #6B7F9E;
+    --text: #EAF0FA;
+    --muted: #8EA0BC;
+    --navy: #123A8F;
+    --on-navy: #FFFFFF;
+    --action: #4C9AFF;
+    --action-hover: #7DB5FF;
+    --on-action: #0A0F1C;
+    --success: #32D583;
+    --success-bg: #0B2E1F;
+    --warn: #FDB022;
+    --warn-bg: #3A2A07;
+    --danger: #F97066;
+    --danger-bg: #3A1512;
+    --focus: #4C9AFF;
+    --overlay: rgba(2, 6, 14, 0.65);
+
+    --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-2: 0 8px 24px rgba(0, 0, 0, 0.5);
+  }
+}
