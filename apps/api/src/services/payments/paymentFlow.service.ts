@@ -10,6 +10,7 @@ import {
   voidPayPalAuthorization,
 } from '../paypal/paypalOrders.service.js';
 import { getBackend } from '../persistence/recordStore.js';
+import { hashPayeeEmail } from '../persistence/auditPrivacy.js';
 import type { CaptureState, PaymentEvent, PaymentMode, UiVerdict } from '../investigation/investigation.types.js';
 
 /**
@@ -119,12 +120,16 @@ export async function createAuthorizeOrder(input: {
 }
 
 /** True when the real PayPal order pays someone other than the expected sandbox payee. */
-export async function payeeDiffers(record: PayableRecord, expected: { email?: string; merchantId?: string }): Promise<boolean> {
-  if (isSimulated() || !record.paypalOrderId || (!expected.email && !expected.merchantId)) return false;
+export async function payeeDiffers(
+  record: PayableRecord,
+  expected: { email?: string; emailHash?: string; merchantId?: string },
+): Promise<boolean> {
+  if (isSimulated() || !record.paypalOrderId || (!expected.email && !expected.emailHash && !expected.merchantId)) return false;
   const order = await getPayPalOrder(record.paypalOrderId);
   const payee = order.purchase_units?.[0]?.payee;
   if (!payee) return false;
   if (expected.email && payee.email_address && payee.email_address.toLowerCase() !== expected.email.toLowerCase()) return true;
+  if (expected.emailHash && payee.email_address && hashPayeeEmail(payee.email_address) !== expected.emailHash) return true;
   if (expected.merchantId && payee.merchant_id && payee.merchant_id !== expected.merchantId) return true;
   return false;
 }

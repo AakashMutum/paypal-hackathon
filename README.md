@@ -174,6 +174,48 @@ npm start
 Deployment on Render is described in `docs/deploy.md`. Using the real PayPal sandbox is described in
 `docs/paypal-sandbox.md`.
 
+### Audit privacy and encryption
+
+Investigation JSON and payment-event detail are redacted before they are persisted. A buyer email
+is stored only as a masked value, the expected sandbox payee email is stored only as a one-way
+fingerprint, and known sensitive keys (phone, card, credentials) are replaced. Domains, evidence,
+amounts and decisions remain available for the audit trail.
+
+Set `AUDIT_ENCRYPTION_KEY` to a 32-byte key (64 hex characters) to encrypt both JSONB payloads
+with AES-256-GCM. `GET /health` reports `modes.auditEncryption` as `enabled`, `disabled` or
+`invalid`. Without the key, redaction still applies but the audit JSON is not encrypted. Generate
+the key locally; never commit it:
+
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+```
+
+Existing plaintext rows remain readable. Encrypted rows require the same key. An optional
+`AUDIT_HMAC_KEY` separates the payee-email fingerprint from the encryption key.
+
+### External data sources and exact configuration
+
+| Source | Configuration | Without it |
+| --- | --- | --- |
+| Kernel remote browser | `KERNEL_API_KEY` | The page is fetched over plain HTTP; JavaScript-heavy pages may be blocked or unavailable. |
+| Channel3 catalogue | `CHANNEL3_API_KEY` | Price comparison is reported as `PRICE_UNKNOWN`; no comparison is invented. |
+| Corporate registry | None wired. The API uses the local `merchant_records` table and `POST /api/merchants`. | Identity verification is limited to local records and official marketplace hostnames; missing records are disclosed. |
+| Elasticsearch memory | `ELASTIC_URL`, `ELASTIC_API_KEY`, `ELASTIC_INDEX` | A persistent JSON file is used, or in-memory in tests. |
+| Real PayPal JS approval | `VITE_PAYPAL_CLIENT_ID` in `apps/web/.env` plus sandbox API credentials | The checkout uses a clearly labelled simulated button. |
+
+To use the real sandbox approval flow:
+
+1. In the API `.env`, set `PAYPAL_MODE=sandbox`, `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`,
+   `DATABASE_URL` and (recommended) `AUDIT_ENCRYPTION_KEY`.
+2. In `apps/web/.env`, set `VITE_API_URL=http://127.0.0.1:3000` (or `VITE_USE_MOCK=false`) and
+   `VITE_PAYPAL_CLIENT_ID` to the **public** sandbox client id.
+3. Restart the API and web app. The PayPal SDK renders a real approval button; a sandbox buyer
+   must approve the payment.
+4. After approval the backend authorizes and applies ALLOW/WARN/PAUSE. Capture and void also
+   require a valid authorization; no capture happens on a PAUSE or an unacknowledged WARN.
+
+The client secret never reaches the browser and no credential belongs in chat or git.
+
 ## Environment variables
 
 Names only; values never belong in the repository. See `.env.example` and `apps/web/.env.example`.
@@ -182,6 +224,7 @@ Names only; values never belong in the repository. See `.env.example` and `apps/
 | --- | --- |
 | `NODE_ENV`, `HOST`, `PORT`, `CORS_ORIGIN`, `RATE_LIMIT_WINDOW_MS`, `RATE_LIMIT_MAX` | `apps/api/src/config/env.ts` |
 | `DATABASE_URL`, `DATABASE_SSL`, `DATABASE_TIMEOUT_MS`, `DATABASE_MAX_CONNECTIONS` | `apps/api/src/config/env.ts` |
+| `AUDIT_ENCRYPTION_KEY`, `AUDIT_HMAC_KEY` | `apps/api/src/services/persistence/auditPrivacy.ts` |
 | `PAYPAL_MODE`, `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`, `PAYPAL_TIMEOUT_MS` | `apps/api/src/config/env.ts` |
 | `DEMO_ADMIN_TOKEN`, `GUARDIAN_API_KEY` | `apps/api/src/config/env.ts` |
 | `STORE_GENUINE_PAYEE_EMAIL`, `STORE_GENUINE_PAYEE_MERCHANT_ID`, and the same for `DISCOUNT` and `IMPERSONATOR` | `apps/api/src/config/storeCatalog.ts` |
@@ -247,6 +290,18 @@ Be clear about what has not been run live. These parts are written and tested ag
 - Live Kernel browser and Channel3 catalogue signals (their keys are not configured in this environment). RDAP, TLS, page metadata and structured product data are live.
 - PostgreSQL migrations 001–003 were applied locally and `/health` reports the database store; the automated migration test still uses a mock pool.
 - The web app in a browser (it builds and type-checks; routes verified locally at `http://localhost:5173`).
+- Full live Gemini latency under 2 seconds. The measured live merchant scan took 7.08 seconds; the
+  agent used the live model path for an ambiguous merchant-level scan. The deterministic fast path
+  is much shorter, but a full live response with model-written pattern, identity and explanation
+  calls cannot meet the 2-second target in this environment. The model is not disabled or faked to
+  hide that.
+- A reference-backed favicon mismatch. The page collector records the declared favicon URL and
+  whether it is same-origin, but no trusted reference favicon exists in the pipeline, so
+  `FAVICON_MISMATCH` is never invented. A third-party CDN is not treated as fraud.
+- Registrar reputation history. The RDAP collector extracts the registrar name and registration
+  date, not a historical reputation score.
+- An external corporate-registry provider. The local `merchant_records` table is the configured
+  identity source; no commercial registry adapter is present.
 
 Other limits: the evaluation is a small synthetic benchmark; retrieved similar cases are passed to
 the explanation writer only as context and can never change the deterministic decision; PayPal

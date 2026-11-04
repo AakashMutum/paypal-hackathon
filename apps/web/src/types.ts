@@ -54,6 +54,7 @@ export interface HealthModes {
   llmProvider?: string; llmModel?: string; llmModels?: { fast: string[]; strong: string[] };
   llmKeySource?: string; llmError?: string; memoryPersistent?: boolean; embeddings?: string;
   memorySize?: number; memoryLocation?: string;
+  auditEncryption?: 'enabled' | 'disabled' | 'invalid';
 }
 export interface Health { status: string; database: { status: string }; modes?: HealthModes }
 export interface CartItem { sku: string; name: string; price: number; qty: number }

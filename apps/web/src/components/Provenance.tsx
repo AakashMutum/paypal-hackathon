@@ -42,6 +42,7 @@ export function ModesFooter() {
     {modes.llmProvider && <span>Provider: <b className="text-ok">{modes.llmProvider}{modes.llmModel ? `/${modes.llmModel}` : ''}</b></span>}
     {modes.llmError && <span className="text-bad">LLM error: {modes.llmError}</span>}
     {modes.memoryPersistent && <span>memory: <b className="text-ok">persistent</b>{typeof modes.memorySize === 'number' ? ` (${modes.memorySize} cases)` : ''}</span>}
+    {modes.auditEncryption && <span>audit: <b className={modes.auditEncryption === 'enabled' ? 'text-ok' : 'text-warn'}>{modes.auditEncryption}</b></span>}
   </p>;
 }
 

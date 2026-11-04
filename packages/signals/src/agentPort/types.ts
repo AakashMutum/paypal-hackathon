@@ -48,6 +48,8 @@ export interface PageClaims {
   visibleText: string;
   hiddenText: string;
   sectionLinks: Partial<Record<SectionHint, string>>;
+  faviconUrl?: string;
+  faviconSameOrigin?: boolean;
   faviconHash?: string;
   hasContactPage: boolean;
   hasLegalPage: boolean;

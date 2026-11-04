@@ -25,6 +25,9 @@ export interface SafeClaims {
   visibleText: string;
   hiddenText: string;
   sectionLinks: Partial<Record<SectionHint, string>>;
+  faviconUrl?: string;
+  faviconSameOrigin?: boolean;
+  faviconHash?: string;
   hasContactPage: boolean;
   hasLegalPage: boolean;
   pageAccess?: PageAccess;
@@ -75,6 +78,13 @@ export function sanitizeClaims(claims: PageClaims | undefined | null): Sanitized
     visibleText: clean(claims.visibleText, 'visible', 6000),
     hiddenText: clean(claims.hiddenText, 'hidden', 2000),
     sectionLinks: isRecord(claims.sectionLinks) ? (claims.sectionLinks as Partial<Record<SectionHint, string>>) : {},
+    ...(typeof claims.faviconUrl === 'string' && /^https?:\/\//i.test(claims.faviconUrl)
+      ? { faviconUrl: claims.faviconUrl.slice(0, 2048) }
+      : {}),
+    ...(typeof claims.faviconSameOrigin === 'boolean' ? { faviconSameOrigin: claims.faviconSameOrigin } : {}),
+    ...(typeof claims.faviconHash === 'string' && claims.faviconHash.length > 0
+      ? { faviconHash: claims.faviconHash.slice(0, 128) }
+      : {}),
     hasContactPage: claims.hasContactPage === true,
     hasLegalPage: claims.hasLegalPage === true,
     pageAccess: sanitizePageAccess(claims.pageAccess),

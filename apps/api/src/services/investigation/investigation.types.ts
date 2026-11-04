@@ -72,8 +72,11 @@ export interface FrontendInvestigation {
   payeeMismatch?: boolean;
   /** Ids of the hard rules that fired, for example HF1. */
   hardRules?: string[];
-  /** The sandbox payee email the PayPal order was created for, when the store uses one. */
-  expectedPayeeEmail?: string;
+  /**
+   * One-way fingerprint of the sandbox payee email the PayPal order was created for.
+   * The raw address is never persisted; approval compares the observed payee email to this.
+   */
+  expectedPayeeEmailHash?: string;
   /** SHA-256 of the order token returned once when the order was created. */
   orderTokenHash?: string;
   reasons: string[];

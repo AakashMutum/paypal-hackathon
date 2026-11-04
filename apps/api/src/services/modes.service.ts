@@ -1,6 +1,7 @@
 import { llmInfo, memoryInfo, signalsMode } from './agent/agentPorts.js';
 import { paymentMode } from './payments/paymentFlow.service.js';
 import { getBackend } from './persistence/recordStore.js';
+import { auditEncryptionStatus } from './persistence/auditPrivacy.js';
 
 /** Which parts of the system run for real and which are simulated or replayed. */
 export interface RuntimeModes {
@@ -21,6 +22,8 @@ export interface RuntimeModes {
   embeddings?: string;
   memorySize?: number;
   memoryLocation?: string;
+  /** enabled when AUDIT_ENCRYPTION_KEY is a valid 32-byte key; disabled means redaction only. */
+  auditEncryption: 'enabled' | 'disabled' | 'invalid';
 }
 
 export async function getModes(): Promise<RuntimeModes> {
@@ -41,5 +44,6 @@ export async function getModes(): Promise<RuntimeModes> {
     embeddings: memory.embeddings,
     memorySize: memory.size,
     ...(memory.location ? { memoryLocation: memory.location } : {}),
+    auditEncryption: auditEncryptionStatus(),
   };
 }

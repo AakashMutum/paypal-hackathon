@@ -62,8 +62,8 @@ export default function Pay() {
       <div className="flex justify-between"><h2 className="font-semibold">Order Item Summary</h2><span className="font-mono text-xs text-muted">{inv.orderId ?? inv.id}</span></div>
       <div className="rounded-lg bg-tint p-3"><div className="font-semibold">{inv.productName}</div>
         <div className="flex items-baseline gap-2 mt-1"><span className="text-xl font-bold font-mono">{money(inv.price)}</span>{discounted && <><span className="font-mono text-sm line-through text-muted">{money(inv.benchmark)}</span><Pill tone="bad">{deviation}% Flag</Pill></>}</div></div>
-      <div className="grid grid-cols-2 gap-2 text-sm"><div className="rounded-lg bg-tint p-3"><div className="mono-label">Buyer identity</div><div className="font-semibold mt-1">Alex Walker</div><div className="font-mono text-xs text-muted">{maskEmail(inv.buyerEmail ?? 'alex.walker@mail.example')}</div></div>
-        <div className="rounded-lg bg-tint p-3"><div className="mono-label">Delivery zone</div><div className="font-semibold mt-1">San Francisco, CA</div><div className="font-mono text-xs text-muted">Direct Courier</div></div></div></section>
+      <div className="grid grid-cols-2 gap-2 text-sm"><div className="rounded-lg bg-tint p-3"><div className="mono-label">Buyer</div><div className="font-semibold mt-1">Provided at checkout</div><div className="font-mono text-xs text-muted">{inv.buyerEmail ? maskEmail(inv.buyerEmail) : 'Not stored'}</div></div>
+        <div className="rounded-lg bg-tint p-3"><div className="mono-label">Delivery</div><div className="font-semibold mt-1">Not collected</div><div className="font-mono text-xs text-muted">Handled by the store</div></div></div></section>
 
     {!running && <section className="card space-y-3">
       <div className="flex justify-between items-center"><h2 className="font-semibold">Claimed vs actual payee</h2><span className="mono-label bg-tint px-2 py-1 rounded">Confidence {inv.confidence}%</span></div>
