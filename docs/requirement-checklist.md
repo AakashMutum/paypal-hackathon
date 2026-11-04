@@ -1,7 +1,7 @@
 # TrustOra requirement checklist
 
-Status of the PRD requirements against the current implementation. Last verified: 2026-11-03
-(gap-closure pass).
+Status of the PRD requirements against the current implementation. Last verified: 2026-11-04
+(final closure pass).
 
 Status values: **COMPLETE** (implemented and tested), **PARTIAL** (implemented with an external
 dependency or an accounted limitation), **BLOCKED** (waiting on credentials or an external action).
@@ -41,7 +41,7 @@ dependency or an accounted limitation), **BLOCKED** (waiting on credentials or a
 | PayPal sandbox OAuth/order | COMPLETE | Live sandbox OAuth, order creation and retrieval passed. |
 | PayPal capture/void | BLOCKED (external) | Code and tests cover ALLOW/WARN/PAUSE, unapproved authorization, payee fingerprint mismatch, capture failure, idempotency and void. A real sandbox buyer approval/capture/void has not occurred. |
 | Real PayPal JS approval | PARTIAL | The SDK loads when `VITE_PAYPAL_CLIENT_ID` is set and `onApprove` calls the backend gate. The public client id is empty locally, so the simulated button is used. No real buyer approval has occurred. |
-| CI-equivalent checks | PARTIAL | Focused tests, build, typecheck, lint, contracts, brands and hygiene pass locally. The workflow runs on a pull request or a push to `main`; the new branch still needs a PR for CI. |
+| CI-equivalent checks | PARTIAL | Focused tests, build, typecheck, lint, contracts, brands and hygiene pass locally. PR #37 CI is green on the prior fix branch; this new branch needs its own PR for CI. |
 
 ## Remaining external configuration
 
