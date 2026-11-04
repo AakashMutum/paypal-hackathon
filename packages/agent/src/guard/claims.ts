@@ -1,4 +1,6 @@
 import type {
+  FaviconCheck,
+  FaviconCheckState,
   PageAccess,
   PageClaims,
   PageMarketplace,
@@ -28,6 +30,7 @@ export interface SafeClaims {
   faviconUrl?: string;
   faviconSameOrigin?: boolean;
   faviconHash?: string;
+  faviconCheck?: FaviconCheck;
   hasContactPage: boolean;
   hasLegalPage: boolean;
   pageAccess?: PageAccess;
@@ -85,6 +88,7 @@ export function sanitizeClaims(claims: PageClaims | undefined | null): Sanitized
     ...(typeof claims.faviconHash === 'string' && claims.faviconHash.length > 0
       ? { faviconHash: claims.faviconHash.slice(0, 128) }
       : {}),
+    ...(sanitizeFaviconCheck(claims.faviconCheck) ? { faviconCheck: sanitizeFaviconCheck(claims.faviconCheck) } : {}),
     hasContactPage: claims.hasContactPage === true,
     hasLegalPage: claims.hasLegalPage === true,
     pageAccess: sanitizePageAccess(claims.pageAccess),
@@ -99,6 +103,44 @@ type CleanFn = (value: unknown, location: SanitizationLocation, maxLen: number) 
 
 const ACCESS_STATES = new Set<PageAccess['state']>(['ok', 'blocked', 'empty', 'unreachable', 'unsupported']);
 const PRODUCT_SOURCES = new Set<PageProduct['source']>(['json-ld', 'opengraph', 'microdata', 'metadata', 'title']);
+
+const FAVICON_STATES = new Set<FaviconCheckState>([
+  'no_reference',
+  'reference_domain',
+  'no_favicon',
+  'fetch_failed',
+  'too_large',
+  'invalid',
+  'match',
+  'differs',
+]);
+const FAVICON_HASH = /^sha256:[0-9a-f]{64}$/;
+const FAVICON_DOMAIN = /^[a-z0-9.-]{3,253}$/;
+
+/** Keeps only the values the favicon check can produce. Nothing from the page itself is copied. */
+function sanitizeFaviconCheck(value: unknown): FaviconCheck | undefined {
+  if (!isRecord(value)) return undefined;
+  const state = typeof value.state === 'string' ? (value.state as FaviconCheckState) : undefined;
+  if (!state || !FAVICON_STATES.has(state)) return undefined;
+  const hash = (input: unknown): string | undefined =>
+    typeof input === 'string' && FAVICON_HASH.test(input) ? input : undefined;
+  const observedHash = hash(value.observedHash);
+  const referenceHash = hash(value.referenceHash);
+  const referenceDomain =
+    typeof value.referenceDomain === 'string' && FAVICON_DOMAIN.test(value.referenceDomain)
+      ? value.referenceDomain
+      : undefined;
+  const text = (input: unknown): string | undefined =>
+    typeof input === 'string' && input.length > 0 ? input.slice(0, 200) : undefined;
+  return {
+    state,
+    ...(observedHash ? { observedHash } : {}),
+    ...(referenceHash ? { referenceHash } : {}),
+    ...(referenceDomain ? { referenceDomain } : {}),
+    ...(text(value.referenceSource) ? { referenceSource: text(value.referenceSource) } : {}),
+    ...(text(value.referenceRetrievedOn) ? { referenceRetrievedOn: text(value.referenceRetrievedOn) } : {}),
+  };
+}
 
 function sanitizePageAccess(value: unknown): PageAccess | undefined {
   if (!isRecord(value)) return undefined;

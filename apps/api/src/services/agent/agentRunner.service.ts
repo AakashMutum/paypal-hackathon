@@ -181,6 +181,8 @@ const NODE_FOR_TYPE: Record<string, NodeId> = {
   PAGE_SECTION_CLAIMS: 'SURFACE',
   CONTACT_LEGAL_MISSING: 'SURFACE',
   FAVICON_MISMATCH: 'SURFACE',
+  FAVICON_OBSERVED: 'SURFACE',
+  PROMOTIONAL_LANGUAGE: 'SURFACE',
   IMAGE_REUSE: 'SURFACE',
   TOOL_UNAVAILABLE: 'SURFACE',
   AGENT_ERROR: 'SURFACE',
@@ -329,7 +331,15 @@ function computeSignalAvailability(
         ? 'unavailable'
         : 'not_checked';
 
-  return { page, domainAge, registry, price, tls, payee: payeeProvided ? 'provided' : 'not_provided' };
+  return {
+    page,
+    domainAge,
+    registry,
+    price,
+    tls,
+    payee: payeeProvided ? 'provided' : 'not_provided',
+    registrarReputation: 'not_assessed',
+  };
 }
 
 function priceEmptyReason(priceUnknown: Evidence | undefined, provenance: Provenance): string {

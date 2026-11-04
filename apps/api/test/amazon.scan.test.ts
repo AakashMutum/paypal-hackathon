@@ -135,6 +135,7 @@ test('Amazon India with a bot-check page is recognised and explained, not marked
   assert.equal(res.body.signalAvailability.page, 'blocked');
   assert.equal(res.body.signalAvailability.domainAge, 'known');
   assert.equal(res.body.signalAvailability.payee, 'not_provided');
+  assert.equal(res.body.signalAvailability.registrarReputation, 'not_assessed');
   assert.deepEqual(
     res.body.evidence.map((e: { node: string }) => e.node),
     ['SURFACE', 'MERCHANT', 'PRICE', 'PAYEE'],

@@ -16,12 +16,13 @@ const SIGNAL_LABEL: Record<string, string> = {
   price: 'Price comparison',
   tls: 'TLS certificate',
   payee: 'PayPal payee',
+  registrarReputation: 'Registrar reputation',
 };
 
 const signalTone = (value: string): Tone =>
   value === 'blocked' || value === 'invalid'
     ? 'bad'
-    : value === 'unavailable' || value === 'not_checked' || value === 'empty' || value === 'not_provided'
+    : value === 'unavailable' || value === 'not_checked' || value === 'not_assessed' || value === 'empty' || value === 'not_provided'
       ? 'warn'
       : 'ok';
 

@@ -40,6 +40,8 @@ export interface GuardianConfig {
 export interface FeatureConfig {
   investigatorLoop: boolean;
   identityLlm: boolean;
+  /** Model-assisted promotional and pressure language evidence. */
+  promoLanguage: boolean;
   memory: boolean;
 }
 
@@ -72,6 +74,7 @@ const ConfigSchema = z.object({
   features: z.object({
     investigatorLoop: z.boolean(),
     identityLlm: z.boolean(),
+    promoLanguage: z.boolean(),
     memory: z.boolean(),
   }),
   llm: z.object({
@@ -138,6 +141,7 @@ export function loadConfig(overrides: DeepPartial<InvestigatorAgentConfig> = {})
     features: {
       investigatorLoop: readFlag('FEATURE_INVESTIGATOR_LOOP', true),
       identityLlm: readFlag('FEATURE_IDENTITY_LLM', true),
+      promoLanguage: readFlag('FEATURE_PROMO_LANGUAGE', true),
       memory: readFlag('FEATURE_SCAM_MEMORY', true),
     },
     llm: {

@@ -291,6 +291,82 @@ function withTimeout<T>(fn: (options: CallOpts) => Promise<T>, timeoutMs: number
   });
 }
 
+const FAVICON_SUMMARIES: Record<string, string> = {
+  no_reference: 'A favicon is declared; there is no trusted reference favicon for this brand, so it was not compared.',
+  reference_domain: 'The page is on the brand\'s own domain, so its favicon was not compared.',
+  no_favicon: 'No favicon was found; this is an observation, not evidence of fraud.',
+  fetch_failed: 'The favicon could not be fetched, so it was not compared with the reference.',
+  too_large: 'The favicon was larger than the size limit, so it was not compared with the reference.',
+  invalid: 'The favicon file is not a usable image, so it was not compared with the reference.',
+  match: 'The favicon matches the trusted reference for this brand.',
+};
+
+/**
+ * One favicon evidence item. FAVICON_MISMATCH needs every condition at once: a valid reference
+ * for the claimed brand, a fetched and hashed favicon, a different hash, and a page that is not
+ * on the reference's own domain. Anything else stays FAVICON_OBSERVED with an explicit state.
+ */
+function faviconEvidence(claims: SafeClaims, ids: IdFactory): Evidence {
+  const check = claims.faviconCheck;
+  const common = {
+    ...(claims.faviconUrl ? { faviconUrl: claims.faviconUrl } : {}),
+    ...(claims.faviconSameOrigin !== undefined ? { sameOrigin: claims.faviconSameOrigin } : {}),
+  };
+
+  if (
+    check?.state === 'differs' &&
+    check.observedHash &&
+    check.referenceHash &&
+    check.observedHash !== check.referenceHash &&
+    check.referenceDomain &&
+    registrableDomain(claims.domain) !== registrableDomain(check.referenceDomain)
+  ) {
+    return {
+      id: ids.next('FAVICON_MISMATCH'),
+      type: 'FAVICON_MISMATCH',
+      severity: 'medium',
+      confidence: 0.8,
+      summary: truncate(
+        `The favicon does not match the trusted reference for the brand this page claims (${check.referenceDomain}).`,
+        240,
+      ),
+      source: 'rule',
+      deterministic: true,
+      data: {
+        ...common,
+        status: 'mismatch',
+        integrity: 'differs_from_reference',
+        referenceDomain: check.referenceDomain,
+        observedHash: check.observedHash,
+        referenceHash: check.referenceHash,
+        ...(check.referenceSource ? { referenceSource: check.referenceSource } : {}),
+        ...(check.referenceRetrievedOn ? { referenceRetrievedOn: check.referenceRetrievedOn } : {}),
+      },
+    };
+  }
+
+  const state = check?.state === 'differs' ? undefined : check?.state;
+  return {
+    id: ids.next('FAVICON_OBSERVED'),
+    type: 'FAVICON_OBSERVED',
+    severity: 'info',
+    confidence: 0.7,
+    summary: state
+      ? (FAVICON_SUMMARIES[state] ?? FAVICON_SUMMARIES.no_reference)
+      : claims.faviconUrl
+        ? 'A favicon is declared; its integrity was not compared to a trusted reference.'
+        : 'No favicon was declared; this is an observation, not evidence of fraud.',
+    source: 'rule',
+    deterministic: true,
+    data: {
+      status: claims.faviconUrl ? 'declared' : 'missing',
+      ...common,
+      ...(claims.faviconHash ? { faviconHash: claims.faviconHash } : {}),
+      integrity: state ?? 'not_compared',
+    },
+  };
+}
+
 /**
  * Turns what the page fetch actually returned into evidence. These facts explain missing data
  * (blocked, unsupported, empty, no structured product metadata); none of them adds risk points,
@@ -367,26 +443,7 @@ function buildPageEvidence(claims: SafeClaims | undefined, ids: IdFactory): Evid
       });
     }
 
-    // Favicon observation only. A true mismatch needs a trusted reference favicon; without one,
-    // a third-party CDN must not be reported as a mismatch. This evidence carries no points.
-    evidence.push({
-      id: ids.next('FAVICON_OBSERVED'),
-      type: 'FAVICON_OBSERVED',
-      severity: 'info',
-      confidence: 0.7,
-      summary: claims.faviconUrl
-        ? 'A favicon is declared; its integrity was not compared to a trusted reference.'
-        : 'No favicon was declared; this is an observation, not evidence of fraud.',
-      source: 'rule',
-      deterministic: true,
-      data: {
-        status: claims.faviconUrl ? 'declared' : 'missing',
-        ...(claims.faviconUrl ? { faviconUrl: claims.faviconUrl } : {}),
-        ...(claims.faviconSameOrigin !== undefined ? { sameOrigin: claims.faviconSameOrigin } : {}),
-        ...(claims.faviconHash ? { faviconHash: claims.faviconHash } : {}),
-        integrity: 'not_compared',
-      },
-    });
+    evidence.push(faviconEvidence(claims, ids));
   }
 
   if (access?.state === 'blocked') {

@@ -15,12 +15,13 @@ import {
 } from '../src/llm/prompts.js';
 import { sanitizeText } from '../src/guard/shield.js';
 
-test('all five prompts exist and ask for JSON only', () => {
+test('all six prompts exist and ask for JSON only', () => {
   assert.deepEqual(Object.keys(PROMPTS).sort(), [
     'explanation',
     'identity',
     'investigator',
     'pattern',
+    'promo',
     'shopper',
   ]);
   for (const prompt of Object.values(PROMPTS)) {

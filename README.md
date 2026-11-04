@@ -295,11 +295,13 @@ Be clear about what has not been run live. These parts are written and tested ag
   is much shorter, but a full live response with model-written pattern, identity and explanation
   calls cannot meet the 2-second target in this environment. The model is not disabled or faked to
   hide that.
-- A reference-backed favicon mismatch. The page collector records the declared favicon URL and
-  whether it is same-origin, but no trusted reference favicon exists in the pipeline, so
-  `FAVICON_MISMATCH` is never invented. A third-party CDN is not treated as fraud.
-- Registrar reputation history. The RDAP collector extracts the registrar name and registration
-  date, not a historical reputation score.
+- A populated favicon reference corpus. The comparison code exists (`docs/favicon-references.md`)
+  and is tested with fakes, but `packages/signals/data/favicon-references.json` is empty because
+  the invented demo stores have no favicon asset. Without a reference, `FAVICON_MISMATCH` is never
+  emitted. A third-party CDN is not treated as fraud.
+- Registrar reputation. The RDAP collector extracts the registrar name and registration date.
+  No reputation source exists, so registrar reputation is reported as `not_assessed`
+  (`signalAvailability.registrarReputation`) and the registrar name never changes the score.
 - An external corporate-registry provider. The local `merchant_records` table is the configured
   identity source; no commercial registry adapter is present.
 
@@ -370,7 +372,7 @@ The deadline on the Devpost page is 13 Nov 2026, 1:30 am GMT+5:30.
 
 | Tool or service | How it is used | Where | Status |
 | --- | --- | --- | --- |
-| Language model, through an OpenAI-compatible HTTP provider (`LLM_PROVIDER`, `LLM_BASE_URL`, `LLM_MODEL_FAST`, `LLM_MODEL_STRONG`) | Follow-up investigation steps, name comparison, the memory pattern sentence, retrieved-case relevance, the plain-language explanation | `packages/agent/src/llm`, `packages/agent/src/config.ts`, `apps/api/src/services/agent/agentPorts.ts` | Live Gemini 3.5 Flash verified with real structured JSON; deterministic fallbacks remain; no recordings committed |
+| Language model, through an OpenAI-compatible HTTP provider (`LLM_PROVIDER`, `LLM_BASE_URL`, `LLM_MODEL_FAST`, `LLM_MODEL_STRONG`) | Follow-up investigation steps, name comparison, a read of promotional and pressure wording (`docs/promotional-language.md`), the memory pattern sentence, retrieved-case relevance, the plain-language explanation | `packages/agent/src/llm`, `packages/agent/src/config.ts`, `apps/api/src/services/agent/agentPorts.ts` | Live Gemini 3.5 Flash verified with real structured JSON; deterministic fallbacks remain; no recordings committed |
 | Investigator agent (deterministic scoring, hard rules, identity matching, explanation checks) | Decides ALLOW, WARN or PAUSE on every scan, order and agent route | `packages/agent` | Runs in the default mode. It is rule-based; the language model only helps as described above |
 | Elasticsearch (`semantic_text`) | Scam-pattern memory | `packages/agent/src/adapters/memoryElastic.ts`, `packages/memory/src/patterns/elasticPatternStore.ts` | Optional (`ELASTIC_URL`, `ELASTIC_API_KEY`); in-memory store otherwise. Tested with fakes; not yet run live |
 | Kernel remote browser | Loads the checkout page for live signals | `packages/signals/src/agentPort/kernelClient.ts` | Optional (`KERNEL_API_KEY`). Tested with fakes; not yet run live |

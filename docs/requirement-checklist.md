@@ -11,8 +11,8 @@ dependency or an accounted limitation), **BLOCKED** (waiting on credentials or a
 
 | ID | Requirement | Status | Evidence |
 | --- | --- | --- | --- |
-| FR-001 | Website information collection | PARTIAL | `packages/signals/src/agentPort/html.ts` extracts title, site name, contact details, legal links and structured product metadata. Contact details or a contact link count as a contact page; a readable page with neither contact nor privacy/terms evidence emits a low `CONTACT_LEGAL_MISSING` signal. The declared favicon URL and same-origin flag are recorded in `FAVICON_OBSERVED`; a true mismatch needs a trusted reference favicon, which does not exist here, so no mismatch is invented. |
-| FR-002 | Domain authenticity analysis | COMPLETE | RDAP resolves the authoritative IANA endpoint (with registry fallbacks), extracts registration date, age and registrar name; TLS validity/issuer is reported separately. Registrar reputation history is not scored. |
+| FR-001 | Website information collection | PARTIAL | `packages/signals/src/agentPort/html.ts` extracts title, site name, contact details, legal links and structured product metadata. Contact details or a contact link count as a contact page; a readable page with neither contact nor privacy/terms evidence emits a low `CONTACT_LEGAL_MISSING` signal. The declared favicon URL and same-origin flag are recorded in `FAVICON_OBSERVED`. A medium `FAVICON_MISMATCH` is emitted only against a configured reference (`packages/signals/data/favicon-references.json`, `docs/favicon-references.md`); the shipped corpus is empty because the invented demo stores have no favicon asset, so no mismatch is produced today without a reference someone adds. |
+| FR-002 | Domain authenticity analysis | COMPLETE | RDAP resolves the authoritative IANA endpoint (with registry fallbacks), extracts registration date, age and registrar name; TLS validity/issuer is reported separately. Registrar reputation is reported as `not_assessed` because no reputation source exists; the registrar name is shown but never scored. |
 | FR-003 | Merchant identity verification | PARTIAL | The agent compares claimed names with the local `merchant_records` registry and identifies official marketplace hostnames. No external corporate-registry provider is configured; missing records are disclosed, never invented. |
 | FR-004 | Product and price analysis | PARTIAL | Structured JSON-LD/OpenGraph/microdata product data is extracted. Comparable-price analysis needs Channel3 (`CHANNEL3_API_KEY`); without it the response says `price: unavailable` instead of inventing a price. |
 | FR-005 | Payment recipient verification | COMPLETE | Payee binding and PayPal payee comparison produce deterministic evidence. A scan without a payee is labelled a merchant-level scan, not an identity check. |
@@ -74,7 +74,7 @@ dependency or an accounted limitation), **BLOCKED** (waiting on credentials or a
   restarts on the local machine.
 - Kernel remote-browser and Channel3 catalogue keys are not configured. RDAP, TLS, page metadata,
   product metadata and structured server-rendered pages are live.
-- A reference-backed favicon mismatch and registrar reputation history are not implemented.
+- The favicon reference corpus is empty (see `docs/favicon-references.md`), so no favicon mismatch is produced until references are added. Registrar reputation is not assessed (no source).
 | CI-equivalent checks | PARTIAL | Package and integration suites pass. Final full build/lint/hygiene and the pushed CI run are the remaining verification steps. |
 
 ## Known limitations
