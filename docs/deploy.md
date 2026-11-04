@@ -135,6 +135,28 @@ at startup with the invented demo merchants, so the hosted genuine store matches
 mirrors the in-memory registry: the impersonator store is deliberately not a registered merchant. A
 table that already has rows is never changed. The blueprint sets `DEMO_SEED=true` for the hosted demo.
 
+## Checking the web build in a browser
+
+`npm run qa:screens` is a visual and accessibility check of the built web app with its built-in
+simulated backend (no API, no accounts). It uses `playwright-core` (already a dependency) and a browser
+that is already installed; nothing is added to the repository.
+
+```bash
+npm run build -w @checkout-guardian/web
+npm run preview -w @checkout-guardian/web -- --host 127.0.0.1 --port 4173
+```
+
+In a second terminal, with `CHROME_PATH` pointing at Chrome or Edge:
+
+```bash
+npm run qa:screens
+```
+
+It saves screenshots to `.cache/screenshots` (not committed), writes `report.json` and prints each
+finding: horizontal overflow, clipped text, text contrast against the real background, controls
+without an accessible name, heading order and a missing focus indicator. It checks the simulated
+backend only; run it with `BASE_URL=<url>` to point it at another build.
+
 ## Smoke test
 
 ```bash

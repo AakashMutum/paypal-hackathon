@@ -20,30 +20,30 @@ export function ClaimedVsActual({ inv, className }: { inv: Investigation; classN
   const match = claimMatch(inv);
   const c = CONNECTOR[match];
   const done = inv.status === 'COMPLETE';
-  return <section aria-label="Claimed versus actual" className={cn('grid gap-3 md:grid-cols-[1fr_minmax(140px,200px)_1fr] items-stretch', className)}>
+  return <section aria-label="Claimed versus actual" className={cn('cva', className)}><div className="cva-grid">
     <div className="card !p-4 space-y-1">
-      <h3 className="text-sm font-medium text-muted">Storefront says</h3>
+      <p className="text-sm font-medium text-muted">Storefront says</p>
       <p className="text-lg font-semibold break-words">{displayBrand(inv.claimedBrand, inv.domain)}</p>
       <p className="font-mono text-xs text-muted break-all">{inv.domain}</p>
       <p className="text-sm">{inv.productName}</p>
       <p className="font-mono text-sm num">{money(inv.price, inv.currency)}</p>
     </div>
 
-    <div className="flex md:flex-col items-center justify-center gap-2 text-center" role="group" aria-label={`Result: ${c.word}`}>
-      <span aria-hidden="true" className="hidden md:block w-px flex-1 bg-line-strong" />
+    <div className="cva-mid" role="group" aria-label={`Result: ${c.word}`}>
+      <span aria-hidden="true" className="cva-line" />
       <div className={cn('rounded-md border-2 bg-surface px-3 py-2 w-full', c.edge)}>
         <div className={cn('flex items-center justify-center gap-1.5 font-semibold text-sm', c.text)}><Icon icon={c.glyph} size={20} />{done ? c.word : 'CHECKING'}</div>
         <p className="text-xs text-muted mt-1">{done ? CLAIM_SENTENCE[match] : 'The check is still running.'}</p>
       </div>
-      <span aria-hidden="true" className="hidden md:block w-px flex-1 bg-line-strong" />
+      <span aria-hidden="true" className="cva-line" />
     </div>
 
     <div className={cn('card !p-4 space-y-1 border-2', done ? c.edge : 'border-line')}>
-      <h3 className="text-sm font-medium text-muted">PayPal pays</h3>
+      <p className="text-sm font-medium text-muted">PayPal pays</p>
       <p className="text-lg font-semibold break-words">{inv.payeeName ?? 'Not supplied'}</p>
       <p className="font-mono text-xs text-muted break-all">{inv.payeeId ? `Merchant id ${inv.payeeId}` : 'No merchant id'}</p>
       <p className="text-sm">{inv.payeeTier ?? 'Account type not checked'}</p>
       <p className="text-xs text-muted">Account email: kept private, never shown</p>
     </div>
-  </section>;
+  </div></section>;
 }

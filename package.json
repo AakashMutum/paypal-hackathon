@@ -42,6 +42,7 @@
     "test:packages": "npm run test:agent && npm run test:mcp && npm run test:web && npm run test:scripts && npm test -w @checkout-guardian/signals -w @checkout-guardian/memory -w @checkout-guardian/eval",
     "smoke:deploy": "node scripts/smoke-deploy.mjs",
     "measure:latency": "node scripts/measure-latency.mjs",
+    "qa:screens": "node scripts/qa-screens.mjs",
     "test:scripts": "node --test scripts/*.test.mjs"
   },
   "dependencies": {

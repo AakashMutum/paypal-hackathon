@@ -119,10 +119,10 @@ export function paymentSteps(inv: { status: string; verdict?: string; captureSta
   const decision: PaymentStep = !complete || !inv.verdict
     ? { label: 'Decision', detail: 'Waiting for the merchant check', state: 'todo' }
     : inv.verdict === 'ALLOW'
-      ? { label: 'Decision', detail: 'ALLOW · Cleared', state: 'done' }
+      ? { label: 'Decision', detail: 'Cleared', state: 'done' }
       : inv.verdict === 'WARN'
-        ? { label: 'Decision', detail: inv.acknowledged ? 'WARN · Needs review, acknowledged' : 'WARN · Needs review', state: inv.acknowledged ? 'done' : 'held' }
-        : { label: 'Decision', detail: 'PAUSE · Held', state: 'held' };
+        ? { label: 'Decision', detail: inv.acknowledged ? 'Needs review; you acknowledged it' : 'Needs review', state: inv.acknowledged ? 'done' : 'held' }
+        : { label: 'Decision', detail: 'The payee does not match; nothing will be captured', state: 'held' };
   const outcome: PaymentStep =
     cs === 'CAPTURED' ? { label: 'Captured', detail: 'The money was released to the merchant', state: 'done' }
     : cs === 'VOIDED' ? { label: 'Voided', detail: 'The authorization was cancelled; nothing was taken', state: 'done' }

@@ -38,7 +38,7 @@ export default function Investigations() {
   const selected = id ?? (typeof window !== 'undefined' && window.matchMedia?.('(min-width: 1024px)').matches ? rows[0]?.id : undefined);
 
   const listPane = <div className={cn('space-y-3 min-w-0', id && 'hidden lg:block')}>
-    <div className="flex items-center justify-between gap-2"><h1 className="text-xl font-semibold">Investigations</h1>
+    <div className="flex items-center justify-between gap-2"><h2 className="text-xl font-semibold">All investigations</h2>
       <button className="btn-secondary !h-9" onClick={() => download('trustora-investigations.json', rows)}><Icon icon={Download} size={16} />Export</button></div>
     <div className="relative"><Icon icon={Search} size={16} className="absolute left-3 top-3 text-muted" /><input className="input pl-9" placeholder="Search domain, brand or recipient" value={q} onChange={e => { setQ(e.target.value); setShown(PAGE_SIZE); }} aria-label="Search investigations" /></div>
     <div className="inline-flex rounded-md border border-line-strong p-0.5 bg-surface" role="group" aria-label="Filter by decision">{FILTERS.map(x =>
@@ -57,11 +57,12 @@ export default function Investigations() {
     {rows.length > visible.length && <button className="btn-secondary w-full" onClick={() => setShown(n => n + PAGE_SIZE)}>Load more ({rows.length - visible.length} more)</button>}
   </div>;
 
-  return <div className="grid gap-6 lg:grid-cols-[minmax(320px,400px)_1fr] items-start">
+  return <div className="space-y-4"><h1 className="sr-only">Investigations</h1>
+  <div className="grid gap-6 lg:grid-cols-[minmax(320px,400px)_1fr] items-start">
     {listPane}
     <div className={cn('min-w-0', !id && 'hidden lg:block')}>
       {id && <Link to="/investigations" className="lg:hidden inline-flex items-center gap-1 text-sm text-action mb-3"><Icon icon={ArrowLeft} size={16} />All investigations</Link>}
       {selected ? <Detail key={selected} id={selected} /> : <EmptyState icon={<ListChecks size={24} strokeWidth={1.5} />} title="Pick an investigation">Choose one from the list to see its decision and evidence.</EmptyState>}
     </div>
-  </div>;
+  </div></div>;
 }
