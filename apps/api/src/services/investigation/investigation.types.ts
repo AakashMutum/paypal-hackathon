@@ -29,6 +29,11 @@ export interface SignalAvailability {
   price: 'known' | 'unavailable' | 'not_checked';
   tls: 'valid' | 'invalid' | 'unavailable' | 'not_checked';
   payee: 'provided' | 'not_provided';
+  /**
+   * Registrar reputation is never assessed: no reputation source exists, so the registrar name is
+   * shown as a fact and never changes the score.
+   */
+  registrarReputation: 'not_assessed';
 }
 
 export interface FrontendInvestigation {

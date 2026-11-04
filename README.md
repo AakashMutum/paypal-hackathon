@@ -295,11 +295,13 @@ Be clear about what has not been run live. These parts are written and tested ag
   is much shorter, but a full live response with model-written pattern, identity and explanation
   calls cannot meet the 2-second target in this environment. The model is not disabled or faked to
   hide that.
-- A reference-backed favicon mismatch. The page collector records the declared favicon URL and
-  whether it is same-origin, but no trusted reference favicon exists in the pipeline, so
-  `FAVICON_MISMATCH` is never invented. A third-party CDN is not treated as fraud.
-- Registrar reputation history. The RDAP collector extracts the registrar name and registration
-  date, not a historical reputation score.
+- A populated favicon reference corpus. The comparison code exists (`docs/favicon-references.md`)
+  and is tested with fakes, but `packages/signals/data/favicon-references.json` is empty because
+  the invented demo stores have no favicon asset. Without a reference, `FAVICON_MISMATCH` is never
+  emitted. A third-party CDN is not treated as fraud.
+- Registrar reputation. The RDAP collector extracts the registrar name and registration date.
+  No reputation source exists, so registrar reputation is reported as `not_assessed`
+  (`signalAvailability.registrarReputation`) and the registrar name never changes the score.
 - An external corporate-registry provider. The local `merchant_records` table is the configured
   identity source; no commercial registry adapter is present.
 

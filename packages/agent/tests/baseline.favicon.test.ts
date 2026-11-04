@@ -142,3 +142,37 @@ test('a claimed mismatch is refused when the hashes are equal or malformed', asy
     assert.equal(result.evidence.some((e) => e.type === 'FAVICON_MISMATCH'), false, JSON.stringify(check));
   }
 });
+
+test('a registrar name never changes the score or the decision', async () => {
+  const outcomes = new Set<string>();
+  for (const registrar of [undefined, 'Example Registrar', 'Bulk Budget Domains', 'Unknown Registrar LLC']) {
+    const page = claims(undefined);
+    const base = depsFor(page);
+    const deps: AgentDeps = {
+      ...base,
+      signals: {
+        ...base.signals,
+        async getDomainReport() {
+          return [
+            {
+              id: 'EVD-AGE-01',
+              type: 'DOMAIN_AGE',
+              severity: 'low',
+              confidence: 1,
+              summary: 'The domain was registered 60 days ago.',
+              source: 'rdap',
+              deterministic: true,
+              data: { ageDays: 60, ...(registrar ? { registrar } : {}) },
+            },
+          ];
+        },
+      },
+    };
+    const result = await runInvestigatorAgentDetailed({ orderId: 'ORD-REG', merchantUrl: URL_UNDER_TEST }, deps, {
+      timeoutMs: 8000,
+      features: { investigatorLoop: false, identityLlm: false, memory: false },
+    });
+    outcomes.add(`${result.verdict.score}/${result.verdict.decision}`);
+  }
+  assert.equal(outcomes.size, 1, [...outcomes].join(', '));
+});

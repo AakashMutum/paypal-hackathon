@@ -33,6 +33,7 @@ export interface SignalAvailability {
   price: 'known' | 'unavailable' | 'not_checked';
   tls: 'valid' | 'invalid' | 'unavailable' | 'not_checked';
   payee: 'provided' | 'not_provided';
+  registrarReputation: 'not_assessed';
 }
 export interface TraceStep { step: number; tool: string; why: string; input: string; result: string; ok: boolean; ms: number }
 export interface Investigation {
