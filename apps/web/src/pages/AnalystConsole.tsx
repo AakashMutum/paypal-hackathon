@@ -16,6 +16,7 @@ import { ProvenanceChips, SimilarCases } from '../components/Provenance';
 import { Pill, RiskBadge } from '../components/ui';
 import { CAPTURE_LABEL, cn, money } from '../lib/format';
 import { formatDateTime } from '../lib/labels';
+import { gridTheme } from '../lib/gridTheme';
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
@@ -45,7 +46,7 @@ export default function AnalystConsole() {
   const [resetting, setResetting] = useState(false);
 
   return <div className="min-h-screen bg-canvas">
-    <header className="bg-white border-b border-ink/10"><div className="max-w-[1440px] mx-auto px-8 h-14 flex items-center gap-4">
+    <header className="bg-surface border-b border-ink/10"><div className="max-w-[1440px] mx-auto px-8 h-14 flex items-center gap-4">
       <Link to="/" className="btn-secondary !h-9"><ArrowLeft size={14} />App</Link>
       <span className="w-8 h-8 rounded bg-navy text-white grid place-items-center"><ShieldHalf size={18} /></span><h1 className="font-bold">Analyst Console</h1>
       <Pill tone={USE_MOCK ? 'warn' : 'cyan'} pulse>{USE_MOCK ? 'SIMULATED' : 'LIVE'}</Pill>
@@ -56,13 +57,14 @@ export default function AnalystConsole() {
         <div className="card flex flex-wrap items-center gap-2"><span className="mono-label mr-2">Launch demo</span>
           {STORES.map(s => <Link key={s.id} to={`/store/${s.id}`} target="_blank" className="btn-secondary !h-9 text-xs">{s.name}<ExternalLink size={12} /></Link>)}</div>
         <div className="flex flex-wrap items-center gap-3">
-          <div className="bg-canvas border border-ink/10 p-0.5 rounded-md flex">{F.map(x => <button key={x} onClick={() => setF(x)} className={cn('px-3 py-1.5 rounded text-xs font-semibold', f === x ? 'bg-white shadow-l1' : 'text-muted')}>{x}</button>)}</div>
+          <div className="bg-canvas border border-ink/10 p-0.5 rounded-md flex">{F.map(x => <button key={x} onClick={() => setF(x)} className={cn('px-3 py-1.5 rounded text-xs font-semibold', f === x ? 'bg-surface shadow-l1' : 'text-muted')}>{x}</button>)}</div>
           <div className="relative flex-1 min-w-[160px]"><Search size={14} className="absolute left-3 top-3 text-muted" /><input className="input pl-8" placeholder="Filter domain, brand or payee" value={q} onChange={e => setQ(e.target.value)} aria-label="Filter" /></div>
           <label className="flex items-center gap-2 text-xs font-mono text-muted">MIN RISK {min}<input type="range" min={0} max={100} value={min} onChange={e => setMin(+e.target.value)} /></label>
           <button className="btn-secondary !h-9 text-xs" onClick={() => grid.current?.api.exportDataAsCsv({ fileName: 'trustora-investigations.csv' })}><Download size={14} />Export CSV</button></div>
         <div className="card !p-0 overflow-hidden" style={{ height: 460 }} role="region" aria-label="Investigations">
           <AgGridReact<Investigation>
             ref={grid}
+            theme={gridTheme}
             rowData={rows}
             columnDefs={columns}
             defaultColDef={{ sortable: true, filter: true, resizable: true, floatingFilter: true }}

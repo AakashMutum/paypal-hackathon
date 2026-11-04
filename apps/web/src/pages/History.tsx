@@ -23,7 +23,7 @@ export default function HistoryPage() {
     <div className="flex justify-between items-center"><h1 className="text-2xl font-bold">History</h1>
       <button className="btn-secondary !h-9" onClick={() => download('guardian-history.json', rows)}><Download size={14} aria-hidden="true" />Export</button></div>
     <div className="relative"><Search size={16} className="absolute left-3 top-3 text-muted" aria-hidden="true" /><input className="input pl-9" placeholder="Search domain, brand or recipient" value={q} onChange={e => { setQ(e.target.value); setShown(HISTORY_PAGE_SIZE); }} aria-label="Search history" /></div>
-    <div className="bg-canvas border border-ink/10 p-0.5 rounded-md inline-flex" role="group" aria-label="Filter by decision">{F.map(x => <button key={x} aria-pressed={f === x} onClick={() => { setF(x); setShown(HISTORY_PAGE_SIZE); }} className={cn('px-3 py-1.5 rounded text-xs font-semibold', f === x ? 'bg-white shadow-l1 text-ink' : 'text-muted')}>{x}</button>)}</div>
+    <div className="bg-canvas border border-ink/10 p-0.5 rounded-md inline-flex" role="group" aria-label="Filter by decision">{F.map(x => <button key={x} aria-pressed={f === x} onClick={() => { setF(x); setShown(HISTORY_PAGE_SIZE); }} className={cn('px-3 py-1.5 rounded text-xs font-semibold', f === x ? 'bg-surface shadow-l1 text-ink' : 'text-muted')}>{x}</button>)}</div>
     <WakeNote show={slow} />
     {error && !loading && <p role="alert" className="card text-sm text-bad">Could not load investigations: {error}</p>}
     <div className="card !p-0 divide-y divide-ink/5">

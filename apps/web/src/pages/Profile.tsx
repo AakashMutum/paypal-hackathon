@@ -42,7 +42,7 @@ function Avatar({ name }: { name: string }) {
         {initials}
       </div>
       <button
-        className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-electric text-white grid place-items-center shadow-l2 hover:opacity-90 transition"
+        className="absolute bottom-0 right-0 w-8 h-8 rounded-md bg-action text-action-on grid place-items-center shadow-l2 hover:opacity-90 transition"
         title="Change photo"
       >
         <Camera size={14} />
@@ -92,7 +92,7 @@ export default function Profile() {
   const tabCls = (active: boolean) =>
     cn(
       'px-4 py-2 rounded-lg text-sm font-semibold transition',
-      active ? 'bg-navy text-white shadow-l1' : 'text-muted hover:text-ink'
+      active ? 'bg-action text-action-on shadow-l1' : 'text-muted hover:text-content'
     );
 
   const inputGroup = (

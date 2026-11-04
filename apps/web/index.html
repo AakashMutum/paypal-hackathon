@@ -1,7 +1,13 @@
 <!doctype html>
 <html lang="en"><head><meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="color-scheme" content="light dark" />
 <title>TrustOra</title>
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet" />
+<!-- Sets the theme before the first paint so there is no flash. Mirrors src/lib/theme.ts. -->
+<script>
+  try {
+    var t = localStorage.getItem('trustora.theme');
+    if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+  } catch (e) { /* storage blocked: the system preference applies */ }
+</script>
 </head><body><div id="root"></div><script type="module" src="/src/main.tsx"></script></body></html>

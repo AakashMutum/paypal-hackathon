@@ -48,7 +48,7 @@ export default function Pay() {
       <p className="text-sm text-muted mt-1">{funds.text}</p>
       {inv.simulated && <p className="text-xs mt-2 font-mono uppercase tracking-wide">Simulated payment: no real money moved</p>}
       <div className="grid grid-cols-3 gap-2 mt-4">{(['ALLOW', 'WARN', 'PAUSE'] as Verdict[]).map(v => { const w = VERDICT_WORDS[v]; const on = inv.verdict === v;
-        return <div key={v} className={cn('rounded p-2 text-center border', on ? (v === 'ALLOW' ? 'bg-ok text-white border-ok' : v === 'WARN' ? 'bg-warn text-ink border-warn' : 'bg-bad-deep text-white border-bad-deep') : 'bg-canvas text-muted border-ink/10')} aria-current={on ? 'true' : undefined}>
+        return <div key={v} className={cn('rounded p-2 text-center border', on ? (v === 'ALLOW' ? 'bg-success text-bg border-ok' : v === 'WARN' ? 'bg-warning-bg text-warning border-warning' : 'bg-danger text-bg border-bad-deep') : 'bg-canvas text-muted border-ink/10')} aria-current={on ? 'true' : undefined}>
           <div className="text-[12px] font-semibold">{w.word} · {w.subtitle}</div><div className="text-[11px]">{WHAT_HAPPENS[v]}</div></div>; })}</div></section>
 
     {running

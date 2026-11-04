@@ -91,7 +91,7 @@ export default function Engine() {
       {[['Who is paid', 'Storefront says', displayBrand(inv.claimedBrand, inv.domain), 'PayPal pays', inv.payeeName ?? 'Not supplied'],
         ['Price', 'Comparable price', inv.benchmark === null ? 'Not available' : money(inv.benchmark), 'Checkout price', inv.price === null ? 'Not provided' : money(inv.price)],
         ['Merchant', 'Registered business records', inv.registryRecords === null ? 'Not checked' : `${inv.registryRecords} found`, 'Domain age', ageLabel(inv.domainAgeDays)]].map(([h, a, av, b, bv]) => <div key={h} className="rounded-lg bg-tint p-3">
-        <div className="mono-label mb-2">{h}</div><div className="grid grid-cols-2 gap-2"><div className="bg-white rounded p-2"><div className="mono-label">{a}</div><div className="text-sm font-semibold break-words">{av}</div></div>
+        <div className="mono-label mb-2">{h}</div><div className="grid grid-cols-2 gap-2"><div className="bg-surface rounded p-2"><div className="mono-label">{a}</div><div className="text-sm font-semibold break-words">{av}</div></div>
           <div className={inv.verdict === 'ALLOW' ? 'rounded p-2 bg-ok-bg' : 'rounded p-2 bg-bad-bg'}><div className={inv.verdict === 'ALLOW' ? 'mono-label' : 'mono-label !text-bad-deep'}>{b}</div><div className="text-sm font-semibold break-words">{bv}</div></div></div></div>)}</section>}
 
     <section className="card space-y-3"><h2 className="font-semibold">Actions</h2>

@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { Link, NavLink, Outlet } from 'react-router-dom';
 import { Bell, LayoutDashboard, ScanLine, Radar, ShieldCheck, History, User, Store, Gauge, BadgeCheck, RotateCcw } from 'lucide-react';
 import { cn, telemetry } from '../lib/format';
-import { Modal } from './ui';
+import { Icon, Modal } from './ui';
+import { ThemeToggle } from './ThemeToggle';
 import { ModeBadge, ModesFooter } from './Provenance';
 import { useInvestigations } from '../hooks/useOrderPolling';
 import { SHOW_RESET } from '../lib/env';
@@ -35,9 +36,9 @@ function Account({ onClose }: { onClose: () => void }) {
 }
 export default function Layout() {
   const [panel, setPanel] = useState<'bell' | 'user' | null>(null);
-  const tab = (a: boolean) => cn('flex flex-col items-center gap-1 px-3 py-2 rounded-xl text-[11px] font-medium min-w-[64px]', a ? 'bg-navy text-white' : 'text-muted hover:text-ink');
+  const tab = (a: boolean) => cn('flex flex-col items-center gap-1 px-3 py-2 rounded-xl text-[11px] font-medium min-w-[64px]', a ? 'bg-action text-action-on' : 'text-muted hover:text-content');
   return <div className="min-h-screen pb-28 md:pb-10">
-    <header className="sticky top-0 z-30 bg-white/90 backdrop-blur border-b border-ink/10">
+    <header className="sticky top-0 z-30 bg-surface border-b border-ink/10">
       <div className="max-w-3xl mx-auto px-4 h-14 flex items-center gap-3">
         <Link to="/" className="flex items-center gap-2 min-w-0">
           <img src={trustoraLogo} alt="TrustOra" className="h-9 w-auto object-contain" />
@@ -45,12 +46,13 @@ export default function Layout() {
         <span className="hidden sm:block"><ModeBadge /></span>
         <nav className="hidden md:flex gap-1 ml-auto mr-2">{NAV.map(n => <NavLink key={n.to} to={n.to} end={n.end} className={({ isActive }) => cn('px-3 py-1.5 rounded text-sm font-medium', isActive ? 'bg-navy text-white' : 'text-muted hover:text-ink')}>{n.label}</NavLink>)}</nav>
         <div className="flex items-center gap-2 ml-auto md:ml-0">
-          <button aria-label="Notifications" onClick={() => setPanel('bell')} className="p-2 rounded hover:bg-canvas"><Bell size={20} /></button>
-          <button aria-label="Account" onClick={() => setPanel('user')} className="w-9 h-9 rounded-full bg-navy text-white grid place-items-center"><User size={18} /></button></div>
+          <ThemeToggle />
+          <button aria-label="Notifications" onClick={() => setPanel('bell')} className="p-2 rounded hover:bg-surface-2"><Icon icon={Bell} /></button>
+          <button aria-label="Account" onClick={() => setPanel('user')} className="p-2 rounded hover:bg-surface-2"><Icon icon={User} /></button></div>
       </div></header>
     <main className="max-w-3xl mx-auto px-4 py-4 space-y-4"><Outlet /><div className="sm:hidden"><ModeBadge /></div></main>
     <footer className="max-w-3xl mx-auto px-4 pb-24 md:pb-6"><ModesFooter /></footer>
-    <nav className="md:hidden fixed bottom-0 inset-x-0 z-30 bg-white border-t border-ink/10 px-2 pb-3 pt-2 flex justify-around" aria-label="Primary">
+    <nav className="md:hidden fixed bottom-0 inset-x-0 z-30 bg-surface border-t border-ink/10 px-2 pb-3 pt-2 flex justify-around" aria-label="Primary">
       {NAV.map(n => <NavLink key={n.to} to={n.to} end={n.end} className={({ isActive }) => tab(isActive)}><n.icon size={20} />{n.label}</NavLink>)}</nav>
     {panel === 'bell' && <Notifications onClose={() => setPanel(null)} />}
     {panel === 'user' && <Account onClose={() => setPanel(null)} />}
