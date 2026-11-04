@@ -81,7 +81,7 @@ async function approve(order: Placed) {
 async function investigation(id: string) {
   const res = await request(app).get(`/api/investigations/${id}`);
   assert.equal(res.status, 200);
-  return res.body as { id: string; verdict: string; captureState: string; captureReason?: string; simulated?: boolean; evidence: unknown[]; orderTokenHash?: string };
+  return res.body as { id: string; verdict: string; captureState: string; captureReason?: string; simulated?: boolean; evidence: unknown[]; orderTokenHash?: string; payeeMismatch?: boolean };
 }
 
 async function states(id: string): Promise<string[]> {
@@ -452,7 +452,7 @@ interface PayPalCall {
   body?: unknown;
 }
 
-function fakePayPal(opts: { failCapture?: boolean; noAuthorizationId?: boolean } = {}): PayPalCall[] {
+function fakePayPal(opts: { failCapture?: boolean; noAuthorizationId?: boolean; failAuthorize?: boolean; payeeEmail?: string } = {}): PayPalCall[] {
   const calls: PayPalCall[] = [];
   setPaypalConfig({ paypalClientId: 'test-client', paypalClientSecret: 'test-secret' });
   setAuthFetch(async () => new Response(JSON.stringify({ access_token: 'TOKEN-123', token_type: 'Bearer', expires_in: 3600 }), { status: 200 }));
@@ -465,13 +465,22 @@ function fakePayPal(opts: { failCapture?: boolean; noAuthorizationId?: boolean }
       return json({ id: 'ORDER-1', status: 'CREATED', intent: 'AUTHORIZE', purchase_units: [], links: [{ rel: 'payer-action', href: 'https://www.sandbox.paypal.com/checkoutnow?token=ORDER-1', method: 'GET' }] }, 201);
     }
     if (url.endsWith('/authorize')) {
+      if (opts.failAuthorize) return json({ name: 'ORDER_NOT_APPROVED', message: 'Payer has not approved this order' }, 422);
       return json({ id: 'ORDER-1', status: 'COMPLETED', intent: 'AUTHORIZE', purchase_units: [{ payments: { authorizations: opts.noAuthorizationId ? [] : [{ id: 'AUTH-1', status: 'CREATED' }] } }] }, 201);
     }
     if (url.endsWith('/capture')) {
       return opts.failCapture ? json({ message: 'Instrument declined', name: 'UNPROCESSABLE_ENTITY' }, 422) : json({ id: 'CAP-1', status: 'COMPLETED' }, 201);
     }
     if (url.endsWith('/void')) return new Response(null, { status: 204 });
-    return json({ id: 'ORDER-1', status: 'APPROVED', intent: 'AUTHORIZE', purchase_units: [{ amount: { currency_code: 'USD', value: '50.00' } }] });
+    return json({
+      id: 'ORDER-1',
+      status: 'APPROVED',
+      intent: 'AUTHORIZE',
+      purchase_units: [{
+        amount: { currency_code: 'USD', value: '50.00' },
+        ...(opts.payeeEmail ? { payee: { email_address: opts.payeeEmail } } : {}),
+      }],
+    });
   });
   return calls;
 }
@@ -522,6 +531,32 @@ test('sandbox flow: no authorization id from PayPal ends FAILED', async () => {
   const res = await approve(order);
   assert.equal(res.body.captureState, 'FAILED');
   assert.match(res.body.captureReason, /authorization id/);
+});
+
+test('sandbox flow: an unapproved order ends FAILED and is never captured', async () => {
+  const calls = fakePayPal({ failAuthorize: true });
+  const order = await placeOrder('genuine');
+  const res = await approve(order);
+  assert.equal(res.body.captureState, 'FAILED');
+  assert.match(res.body.captureReason, /Authorization failed/);
+  assert.equal(calls.some((c) => c.url.endsWith('/capture')), false);
+});
+
+test('sandbox flow: a PayPal payee mismatch blocks capture after approval', async () => {
+  const previous = process.env.STORE_GENUINE_PAYEE_EMAIL;
+  process.env.STORE_GENUINE_PAYEE_EMAIL = 'payments@harborline-outfitters.example';
+  try {
+    const calls = fakePayPal({ payeeEmail: 'collect@other-merchant.example' });
+    const order = await placeOrder('genuine');
+    const res = await approve(order);
+    assert.equal(res.body.captureState, 'HELD');
+    assert.match(res.body.captureReason, /not the merchant/i);
+    assert.equal((await investigation(order.investigationId)).payeeMismatch, true);
+    assert.equal(calls.some((c) => c.url.endsWith('/capture')), false);
+  } finally {
+    if (previous === undefined) delete process.env.STORE_GENUINE_PAYEE_EMAIL;
+    else process.env.STORE_GENUINE_PAYEE_EMAIL = previous;
+  }
 });
 
 test('sandbox flow: a failed order creation is an error, not a made-up order', async () => {

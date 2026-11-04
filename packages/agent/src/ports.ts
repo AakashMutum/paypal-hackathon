@@ -14,6 +14,16 @@ export interface CallOpts {
 
 export type SectionHint = 'about' | 'contact' | 'returns' | 'terms' | 'privacy' | 'shipping';
 
+/** Result of a bounded, SSRF-safe check of a linked contact or legal page. */
+export interface SectionValidation {
+  url: string;
+  reachable: boolean;
+  status?: number;
+  contentType?: string;
+  meaningful: boolean;
+  reason?: string;
+}
+
 export type PageAccessState = 'ok' | 'blocked' | 'empty' | 'unreachable' | 'unsupported';
 
 /** Whether the page could actually be read, and why it could not. */
@@ -58,6 +68,8 @@ export interface PageClaims {
   faviconHash?: string;
   hasContactPage: boolean;
   hasLegalPage: boolean;
+  contactValidation?: SectionValidation;
+  legalValidation?: SectionValidation;
   screenshotUrl?: string;
   pageAccess?: PageAccess;
   product?: PageProduct;
@@ -73,6 +85,9 @@ export interface RegistryRecord {
   country?: string;
   status: 'verified' | 'pending' | 'revoked';
   linkedBrandIds?: string[];
+  /** Provenance of a registry record, for example local or a corporate provider. */
+  source?: string;
+  fetchedAt?: string;
 }
 
 export interface SectionResult {
@@ -90,6 +105,14 @@ export interface OfferSummary {
   minPrice?: number;
   currency?: string;
   sampleDomains: string[];
+  /** Where the offers came from. */
+  source?: 'channel3' | 'fixture' | 'history';
+  /** Provider/client identifier for provenance. */
+  provider?: string;
+  /** When the provider response was received. */
+  fetchedAt?: string;
+  /** Historical norms are only present when a genuine history source supplied them. */
+  history?: 'available' | 'unavailable';
 }
 
 export interface SignalsPort {

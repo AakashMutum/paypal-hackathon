@@ -48,6 +48,8 @@ export interface InvestigatorAgentConfig {
   maxToolCalls: number;
   maxFollowUps: number;
   timeoutMs: number;
+  /** Total time allowed for model calls; 0 disables the separate budget. */
+  modelBudgetMs: number;
   confidenceThreshold: number;
   memoryMatchMin: number;
   baselineCountsTowardCap: boolean;
@@ -66,6 +68,7 @@ const ConfigSchema = z.object({
   maxToolCalls: z.number().int().min(0).max(20),
   maxFollowUps: z.number().int().min(0).max(20),
   timeoutMs: z.number().int().min(1).max(120000),
+  modelBudgetMs: z.number().int().min(0).max(120000),
   confidenceThreshold: z.number().min(0).max(1),
   memoryMatchMin: z.number().min(0).max(1),
   baselineCountsTowardCap: z.boolean(),
@@ -132,6 +135,7 @@ export function loadConfig(overrides: DeepPartial<InvestigatorAgentConfig> = {})
     maxToolCalls: maxFollowUps,
     maxFollowUps,
     timeoutMs: readNumber('AGENT_TIMEOUT_MS', 12000),
+    modelBudgetMs: readNumber('AGENT_MODEL_BUDGET_MS', 1200),
     confidenceThreshold: readNumber('AGENT_CONF_THRESHOLD', 0.7),
     memoryMatchMin: readNumber('MEMORY_MATCH_MIN', 0.75),
     baselineCountsTowardCap: readFlag('BASELINE_COUNTS_TOWARD_CAP', false),

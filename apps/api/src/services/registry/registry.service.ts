@@ -2,6 +2,11 @@ import { randomBytes } from 'node:crypto';
 import { query } from '../../database/connection.js';
 import { loadStoreCatalog } from '../../config/storeCatalog.js';
 import { getBackend } from '../persistence/recordStore.js';
+import {
+  corporateRegistryConfig,
+  lookupCorporateRegistry,
+  type CorporateRegistryRecord,
+} from './corporateRegistry.js';
 
 /**
  * Merchant registry: who is registered under which brand. Uses the merchant_records table when
@@ -15,6 +20,10 @@ export interface RegistryMerchant {
   domain: string;
   payeeEmail?: string;
   status: 'verified' | 'pending' | 'revoked';
+  /** Where the record came from: local merchant_records or the configured corporate provider. */
+  source?: string;
+  /** When a corporate-provider record was fetched. */
+  fetchedAt?: string;
 }
 
 const memory = new Map<string, RegistryMerchant>();
@@ -96,25 +105,67 @@ const fromRow = (r: MerchantRow): RegistryMerchant => ({
 
 export type RegistryField = 'name' | 'domain' | 'merchantId';
 
-/** Looks up registered merchants. At most five are returned. */
-export async function registryLookup(by: RegistryField, value: string): Promise<RegistryMerchant[]> {
+function corporateToLocal(record: CorporateRegistryRecord, fallbackDomain: string): RegistryMerchant {
+  return {
+    merchantId: record.merchantId,
+    legalName: record.legalName,
+    brandNames: record.brandNames,
+    domain: record.domain ?? fallbackDomain,
+    status: record.status,
+    source: record.source,
+    fetchedAt: record.fetchedAt,
+  };
+}
+
+/** Looks up registered merchants locally, then optionally in the configured corporate provider. */
+export async function registryLookup(
+  by: RegistryField,
+  value: string,
+  options: { timeoutMs?: number; signal?: AbortSignal; fetchImpl?: typeof fetch } = {},
+): Promise<RegistryMerchant[]> {
   const q = value.trim().toLowerCase();
   const backend = await getBackend();
+  let local: RegistryMerchant[] = [];
   if (backend.mode === 'database') {
     const column = by === 'name' ? 'lower(claimed_name)' : by === 'domain' ? 'lower(domain)' : 'lower(merchant_id)';
     const res = await query<MerchantRow>(`SELECT * FROM merchant_records WHERE ${column} = $1 LIMIT 5`, [by === 'domain' ? cleanDomain(q) : q]);
-    return res.rows.map(fromRow);
+    local = res.rows.map(fromRow);
+  } else {
+    seedMemory();
+    for (const m of memory.values()) {
+      const hit =
+        (by === 'name' && m.brandNames.some((n) => n.toLowerCase() === q)) ||
+        (by === 'merchantId' && m.merchantId.toLowerCase() === q) ||
+        (by === 'domain' && m.domain === cleanDomain(q));
+      if (hit) local.push(m);
+    }
+    local = local.slice(0, 5);
   }
-  seedMemory();
-  const out: RegistryMerchant[] = [];
-  for (const m of memory.values()) {
-    const hit =
-      (by === 'name' && m.brandNames.some((n) => n.toLowerCase() === q)) ||
-      (by === 'merchantId' && m.merchantId.toLowerCase() === q) ||
-      (by === 'domain' && m.domain === cleanDomain(q));
-    if (hit) out.push(m);
+
+  // A local record is an authoritative configured source. Only ask the optional corporate
+  // provider when the local registry has nothing, so known demo data does not incur a network
+  // round-trip and unknown merchants get an explicit external lookup.
+  if (local.length > 0 || !corporateRegistryConfig()) return local;
+
+  const result = await lookupCorporateRegistry(
+    { by, query: value },
+    {
+      timeoutMs: options.timeoutMs ?? 2500,
+      ...(options.signal ? { signal: options.signal } : {}),
+      ...(options.fetchImpl ? { fetchImpl: options.fetchImpl } : {}),
+    },
+  );
+  if (result.error) {
+    console.warn(`[registry] corporate provider unavailable: ${result.error}`);
+    return local;
   }
-  return out.slice(0, 5);
+  const fallbackDomain = by === 'domain' ? cleanDomain(value) : '';
+  return result.records.map((record) => corporateToLocal(record, fallbackDomain)).slice(0, 5);
+}
+
+/** Health/diagnostics: whether the optional corporate provider is configured. */
+export function registryProviderStatus(): 'corporate+local' | 'local' {
+  return corporateRegistryConfig() ? 'corporate+local' : 'local';
 }
 
 /** Empties merchants added at run time. Tests and the demo reset use it. */

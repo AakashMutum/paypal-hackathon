@@ -26,6 +26,7 @@ export class Channel3ApiClient implements Channel3Client {
   constructor(
     private readonly apiKey: string,
     private readonly fetchImpl: typeof fetch = fetch,
+    private readonly baseUrl: string = CHANNEL3_SEARCH_URL,
   ) {}
 
   /** Removes the API key from any text that might reach an error message or a log. */
@@ -44,7 +45,7 @@ export class Channel3ApiClient implements Channel3Client {
 
     let response: Response;
     try {
-      response = await fetchWithTimeout(this.fetchImpl, CHANNEL3_SEARCH_URL, options.timeoutMs, {
+      response = await fetchWithTimeout(this.fetchImpl, this.baseUrl, options.timeoutMs, {
         method: 'POST',
         headers: { 'x-api-key': this.apiKey, 'Content-Type': 'application/json' },
         body: JSON.stringify({ query: input.productQuery, filters, limit: 20 }),
@@ -77,12 +78,17 @@ export class Channel3ApiClient implements Channel3Client {
     };
     const list = body.products ?? body.results ?? body.data;
     const products = Array.isArray(list) ? (list as Array<{ offers?: Offer[] }>) : [];
-    const offers = products.flatMap((product) => (Array.isArray(product?.offers) ? product.offers : []));
+    const offers = products.flatMap((product) =>
+      Array.isArray(product?.offers) ? product.offers : [],
+    );
 
+    const requestedCurrency = input.currency?.trim().toUpperCase();
     const valid = offers
       .map((offer) => {
         const price = typeof offer.price === 'number' ? offer.price : offer.price?.price ?? offer.price?.amount;
-        const currency = offer.currency ?? (typeof offer.price === 'object' ? offer.price?.currency : undefined);
+        const currency = (
+          offer.currency ?? (typeof offer.price === 'object' ? offer.price?.currency : undefined)
+        )?.trim().toUpperCase();
         const domain = offer.domain ?? (offer.url ? hostOf(offer.url) : undefined);
         return { price, currency, domain };
       })
@@ -90,7 +96,8 @@ export class Channel3ApiClient implements Channel3Client {
         (offer) =>
           typeof offer.price === 'number' &&
           Number.isFinite(offer.price) &&
-          (input.currency === undefined || offer.currency === input.currency) &&
+          offer.price > 0 &&
+          (requestedCurrency === undefined || offer.currency === requestedCurrency) &&
           (input.maxPrice === undefined || offer.price <= input.maxPrice),
       );
 
@@ -103,8 +110,12 @@ export class Channel3ApiClient implements Channel3Client {
       offerCount: valid.length,
       medianPrice,
       minPrice: prices[0],
-      currency: valid.find((offer) => offer.currency)?.currency,
+      currency: valid.find((offer) => offer.currency)?.currency ?? requestedCurrency,
       sampleDomains: [...new Set(valid.map((offer) => offer.domain).filter((d): d is string => !!d))].slice(0, 5),
+      source: 'channel3',
+      provider: 'channel3',
+      fetchedAt: new Date().toISOString(),
+      history: 'unavailable',
     };
   }
 }

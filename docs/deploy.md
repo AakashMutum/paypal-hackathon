@@ -39,14 +39,18 @@ Names only. Values come from the places listed here.
 | `STORE_DISCOUNT_PAYEE_EMAIL`, `STORE_DISCOUNT_PAYEE_MERCHANT_ID` | API | A second sandbox business account |
 | `STORE_IMPERSONATOR_PAYEE_EMAIL`, `STORE_IMPERSONATOR_PAYEE_MERCHANT_ID` | API | A third sandbox business account |
 | `LLM_API_KEY`, `LLM_BASE_URL`, `LLM_MODEL_FAST`, `LLM_MODEL_STRONG` | API | Your language-model provider. Only needed for `LLM_MODE=live` |
-| `KERNEL_API_KEY`, `CHANNEL3_API_KEY` | API | Kernel and Channel3 dashboards. Only needed for live signals |
+| `KERNEL_API_KEY`, `CHANNEL3_API_KEY`, `CHANNEL3_BASE_URL` | API | Kernel and Channel3 dashboards. Channel3 base URL is optional for a compatible endpoint |
+| `CORPORATE_REGISTRY_URL`, `CORPORATE_REGISTRY_API_KEY`, `CORPORATE_REGISTRY_TIMEOUT_MS` | API | Optional corporate-registry provider. The local `merchant_records` table is used when absent |
+| `AUDIT_ENCRYPTION_KEY` | API | A 32-byte key (64 hex characters) generated locally. Enables AES-256-GCM audit storage; never commit it |
+| `AGENT_MODEL_BUDGET_MS`, `VALIDATE_SECTION_PAGES` | API | Optional. Defaults `1200` and `true`; set `0` to disable the model budget or `false` to skip section validation |
 | `ELASTIC_URL`, `ELASTIC_API_KEY` | API | Your Elasticsearch deployment. Without them the memory runs in the API |
 | `VITE_API_URL` | Web | The public URL of `trustora-api` (after the first deploy) |
 | `VITE_PAYPAL_CLIENT_ID` | Web | The sandbox client id again (public). Leave empty to use the simulated button |
 
 Set automatically by the blueprint: `DATABASE_URL` (from the database), `NODE_ENV=production`,
 `PAYPAL_MODE=sandbox`, `SIGNALS_MODE=auto` (recorded signals for the demo stores, live for any other
-domain), `LLM_MODE=replay`, `VITE_USE_MOCK=false`, `NODE_VERSION=22`. Render provides `PORT`; the API reads it.
+domain), `LLM_MODE=live` (deterministic fallbacks when no key is supplied), `AGENT_MODEL_BUDGET_MS=1200`,
+`VALIDATE_SECTION_PAGES=true`, `VITE_USE_MOCK=false`, `NODE_VERSION=22`. Render provides `PORT`; the API reads it.
 
 Everything the API and web app read, and where:
 
@@ -55,8 +59,10 @@ Everything the API and web app read, and where:
 | `NODE_ENV`, `HOST`, `PORT`, `CORS_ORIGIN`, `RATE_LIMIT_WINDOW_MS`, `RATE_LIMIT_MAX` | `apps/api/src/config/env.ts` |
 | `DATABASE_URL`, `DATABASE_SSL`, `DATABASE_TIMEOUT_MS`, `DATABASE_MAX_CONNECTIONS` | `apps/api/src/config/env.ts` |
 | `PAYPAL_MODE`, `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`, `PAYPAL_TIMEOUT_MS` | `apps/api/src/config/env.ts` |
-| `AGENT_*`, `FEATURE_*`, `LLM_*`, `SIGNALS_*`, `ELASTIC_*`, `MEMORY_MATCH_MIN` | `packages/agent/src/config.ts`, read when the agent runs; all optional |
-| `KERNEL_API_KEY`, `CHANNEL3_API_KEY` | `packages/signals/src/agentPort/liveClients.ts` (`createLiveClientsFromEnv`); the live clients are chosen in `apps/api/src/services/agent/agentPorts.ts` |
+| `AGENT_*`, `FEATURE_*`, `LLM_*`, `SIGNALS_*`, `ELASTIC_*`, `MEMORY_MATCH_MIN`, `VALIDATE_SECTION_PAGES` | `packages/agent/src/config.ts` / `apps/api/src/services/agent/agentPorts.ts`, read when the agent runs |
+| `KERNEL_API_KEY`, `CHANNEL3_API_KEY`, `CHANNEL3_BASE_URL` | `packages/signals/src/agentPort/liveClients.ts` (`createLiveClientsFromEnv`); the live clients are chosen in `apps/api/src/services/agent/agentPorts.ts` |
+| `CORPORATE_REGISTRY_URL`, `CORPORATE_REGISTRY_API_KEY`, `CORPORATE_REGISTRY_TIMEOUT_MS` | `apps/api/src/services/registry/corporateRegistry.ts` |
+| `AUDIT_ENCRYPTION_KEY`, `AUDIT_HMAC_KEY` | `apps/api/src/services/persistence/auditPrivacy.ts` |
 | `DEMO_ADMIN_TOKEN`, `GUARDIAN_API_KEY` | `apps/api/src/config/env.ts` |
 | `SIGNALS_MODE`, `LLM_MODE`, `LLM_API_KEY`, `LLM_BASE_URL`, `LLM_MODEL_FAST`, `LLM_MODEL_STRONG`, `LLM_FIXTURE_DIR`, `KERNEL_API_KEY`, `CHANNEL3_API_KEY`, `ELASTIC_URL`, `ELASTIC_API_KEY`, `ELASTIC_INDEX` | `apps/api/src/services/agent/agentPorts.ts` |
 | `STORE_GENUINE_PAYEE_EMAIL`, `STORE_GENUINE_PAYEE_MERCHANT_ID`, and the same for `DISCOUNT` and `IMPERSONATOR` | `apps/api/src/config/storeCatalog.ts` |

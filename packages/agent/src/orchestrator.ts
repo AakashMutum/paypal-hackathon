@@ -110,6 +110,12 @@ export async function runInvestigatorAgentDetailed(
   const now = safeNow(deps.now);
   const clock = makeClock(config.timeoutMs, now);
   const started = now();
+  const modelDeadline = config.modelBudgetMs > 0 ? started + config.modelBudgetMs : Infinity;
+  const modelBudget = (limit: number): number => {
+    const clockBudget = clock.step(limit);
+    if (modelDeadline === Infinity) return clockBudget;
+    return Math.max(0, Math.min(clockBudget, modelDeadline - deps.now()));
+  };
   const ids = createIdFactory();
 
   try {
@@ -168,7 +174,7 @@ export async function runInvestigatorAgentDetailed(
         parsed.data.claimedBrand,
       ].filter((term): term is string => typeof term === 'string' && term.trim().length > 0);
 
-      const patternBudget = clock.step(PATTERN_TIMEOUT_MS);
+      const patternBudget = modelBudget(PATTERN_TIMEOUT_MS);
       const pattern =
         patternBudget > 0
           ? await writePatternSentence(facts, {
@@ -202,7 +208,7 @@ export async function runInvestigatorAgentDetailed(
         ? matchIdentity(buildIdentityInput(state, parsed.data), ids, {
             llm: deps.llm,
             useLlm: config.features.identityLlm,
-            timeoutMs: IDENTITY_TIMEOUT_MS,
+            timeoutMs: modelBudget(IDENTITY_TIMEOUT_MS),
             signal: clock.signal,
           })
         : Promise.resolve(undefined);
@@ -232,7 +238,7 @@ export async function runInvestigatorAgentDetailed(
     let explanation: Explanation;
     let explanationFallback = false;
 
-    const writerBudget = clock.step(EXPLANATION_TIMEOUT_MS);
+    const writerBudget = modelBudget(EXPLANATION_TIMEOUT_MS);
     if (path === 'FAST_ALLOW' || writerBudget <= 0) {
       explanation =
         templateExplanation(ordered, score.decision) ??

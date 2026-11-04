@@ -341,6 +341,27 @@ function buildPageEvidence(claims: SafeClaims | undefined, ids: IdFactory): Evid
         legalName: claims.legalName ?? null,
         hasContactPage: claims.hasContactPage,
         hasLegalPage: claims.hasLegalPage,
+        contactPageValidated: claims.contactValidation?.meaningful === true,
+        legalPageValidated: claims.legalValidation?.meaningful === true,
+      },
+    });
+  }
+
+  const failedContactValidation = claims.contactValidation && !claims.contactValidation.meaningful;
+  const failedLegalValidation = claims.legalValidation && !claims.legalValidation.meaningful;
+  if (failedContactValidation || failedLegalValidation) {
+    evidence.push({
+      id: ids.next('CONTACT_LEGAL_UNVERIFIED'),
+      type: 'CONTACT_LEGAL_UNVERIFIED',
+      severity: 'info',
+      confidence: 0.7,
+      summary:
+        'A contact or legal link is present but could not be verified as a meaningful page. Link presence alone is not treated as proof of legitimacy.',
+      source: 'rule',
+      deterministic: true,
+      data: {
+        ...(claims.contactValidation ? { contact: claims.contactValidation } : {}),
+        ...(claims.legalValidation ? { legal: claims.legalValidation } : {}),
       },
     });
   }

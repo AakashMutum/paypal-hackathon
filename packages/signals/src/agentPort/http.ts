@@ -19,6 +19,7 @@ export interface SafeGetResult {
   status: number;
   ok: boolean;
   text: string;
+  contentType?: string;
 }
 
 /** Identifies the verifier honestly. It does not impersonate a browser or evade a challenge. */
@@ -75,7 +76,8 @@ export async function safeGet(url: string, options: SafeGetOptions): Promise<Saf
 
       const text = res.ok ? await readLimitedText(res, options.maxBytes ?? 256 * 1024) : '';
       if (!res.ok) await res.body?.cancel().catch(() => undefined);
-      return { finalUrl: current, status: res.status, ok: res.ok, text };
+      const contentType = res.headers.get('content-type') ?? undefined;
+      return { finalUrl: current, status: res.status, ok: res.ok, text, ...(contentType ? { contentType } : {}) };
     }
   }
   throw new Error('Too many redirects');

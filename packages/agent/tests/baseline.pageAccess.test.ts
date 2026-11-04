@@ -187,6 +187,33 @@ test('a readable page without contact or legal disclosure is a low technical sig
   assert.notEqual(result.verdict.decision, 'PAUSE');
 });
 
+test('an unverified contact link is informational and never scored as legitimacy', async () => {
+  const result = await runInvestigatorAgentDetailed(
+    { orderId: 'ORD-AMZ-CONTACT-UNVERIFIED', merchantUrl: PRODUCT_URL },
+    depsFor(
+      claims({
+        pageAccess: { state: 'ok', httpStatus: 200 },
+        hasContactPage: true,
+        hasLegalPage: true,
+        contactValidation: {
+          url: 'https://shop.example/contact',
+          reachable: false,
+          meaningful: false,
+          reason: 'http_error',
+        },
+        visibleText: 'A shop with a product.',
+      }),
+    ),
+    overrides,
+  );
+
+  const unverified = result.evidence.find((entry) => entry.type === 'CONTACT_LEGAL_UNVERIFIED');
+  assert.ok(unverified);
+  assert.equal(unverified?.severity, 'info');
+  assert.equal(unverified?.data?.contact && (unverified.data.contact as { meaningful: boolean }).meaningful, false);
+  assert.equal(result.verdict.score, 0);
+});
+
 test('favicon observation is non-scoring and never invents a mismatch', async () => {
   const result = await runInvestigatorAgentDetailed(
     { orderId: 'ORD-AMZ-FAVICON', merchantUrl: PRODUCT_URL },

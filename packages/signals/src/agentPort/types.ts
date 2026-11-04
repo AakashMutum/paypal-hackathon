@@ -9,6 +9,17 @@ export interface CallOpts {
 
 export type SectionHint = 'about' | 'contact' | 'returns' | 'terms' | 'privacy' | 'shipping';
 
+/** Result of a bounded, SSRF-safe check of a linked contact or legal page. */
+export interface SectionValidation {
+  url: string;
+  reachable: boolean;
+  status?: number;
+  contentType?: string;
+  /** True only when the page is reachable, textual and contains a meaningful section body. */
+  meaningful: boolean;
+  reason?: string;
+}
+
 export type PageAccessState = 'ok' | 'blocked' | 'empty' | 'unreachable' | 'unsupported';
 
 /** Whether the page could actually be read, and why it could not. */
@@ -53,6 +64,9 @@ export interface PageClaims {
   faviconHash?: string;
   hasContactPage: boolean;
   hasLegalPage: boolean;
+  /** Present only when live section validation is enabled. Mere link presence is not verification. */
+  contactValidation?: SectionValidation;
+  legalValidation?: SectionValidation;
   screenshotUrl?: string;
   pageAccess?: PageAccess;
   product?: PageProduct;
@@ -74,6 +88,14 @@ export interface OfferSummary {
   minPrice?: number;
   currency?: string;
   sampleDomains: string[];
+  /** Where the offers came from. */
+  source?: 'channel3' | 'fixture' | 'history';
+  /** Provider/client identifier for provenance. */
+  provider?: string;
+  /** When the provider response was received. */
+  fetchedAt?: string;
+  /** Historical norms are only present when a genuine history source supplied them. */
+  history?: 'available' | 'unavailable';
 }
 
 export type AgentSeverity = 'info' | 'low' | 'medium' | 'high';
@@ -161,4 +183,6 @@ export interface LocalSignalsPortOptions {
   tlsProbe?: (hostname: string, address: string, timeoutMs: number) => Promise<CertificateProbe>;
   /** Directory of fixture JSON files for mock mode. Defaults to tests/fixtures at the repo root. */
   fixturesDir?: string;
+  /** Validate linked contact/privacy/terms pages with bounded, SSRF-safe fetches. */
+  validateSectionPages?: boolean;
 }

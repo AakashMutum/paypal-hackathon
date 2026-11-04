@@ -20,6 +20,7 @@ import type {
   PageClaims,
   SectionHint,
   SectionResult,
+  SectionValidation,
 } from './types.js';
 
 export const ageSeverity = (ageDays: number): AgentSeverity =>
@@ -108,6 +109,43 @@ export function createLocalSignalsPort(options: LocalSignalsPortOptions): AgentS
     signal: o.signal,
   });
 
+  async function validateSection(url: string, o: CallOpts): Promise<SectionValidation> {
+    try {
+      const page = await safeGet(url, {
+        ...getOpts(o),
+        timeoutMs: Math.min(o.timeoutMs, 1200),
+        maxBytes: 128 * 1024,
+        maxRetries: 0,
+      });
+      const contentType = page.contentType?.split(';')[0]?.trim().toLowerCase();
+      const textual =
+        !contentType ||
+        contentType === 'text/html' ||
+        contentType === 'application/xhtml+xml' ||
+        contentType === 'text/plain';
+      const section = page.ok ? extractSection(page.text, page.finalUrl, 4000, page.status) : { found: false };
+      const meaningful =
+        page.ok && textual && section.found && (section.text?.trim().length ?? 0) >= 80;
+      return {
+        url: page.finalUrl,
+        reachable: page.ok,
+        status: page.status,
+        ...(contentType ? { contentType } : {}),
+        meaningful,
+        ...(meaningful
+          ? {}
+          : { reason: !page.ok ? 'http_error' : !textual ? 'not_textual' : 'not_meaningful' }),
+      };
+    } catch (error) {
+      return {
+        url,
+        reachable: false,
+        meaningful: false,
+        reason: error instanceof UnsafeUrlError ? 'unsafe_url' : 'unreachable',
+      };
+    }
+  }
+
   async function domainAge(domain: string, o: CallOpts): Promise<AgentEvidence[]> {
     const rdapDomain = registrableDomain(domain);
     const url = await rdapUrlFor(rdapDomain, {
@@ -189,7 +227,7 @@ export function createLocalSignalsPort(options: LocalSignalsPortOptions): AgentS
   return {
     async getPageClaims(url, o) {
       try {
-        const claims = options.kernel
+        let claims = options.kernel
           ? withMarketplace(await options.kernel.getPageClaims(url, o))
           : await (async () => {
               const page = await safeGet(url, { ...getOpts(o), maxBytes: 512 * 1024 });
@@ -201,6 +239,19 @@ export function createLocalSignalsPort(options: LocalSignalsPortOptions): AgentS
         const brand = claims.claimedBrand ?? claims.siteName;
         if (brand && claims.domain && claims.pageAccess?.state !== 'blocked') {
           brandByDomain.set(registrableDomain(claims.domain), brand);
+        }
+        if (options.validateSectionPages && claims.pageAccess?.state === 'ok') {
+          const contactUrl = claims.sectionLinks.contact;
+          const legalUrl = claims.sectionLinks.terms ?? claims.sectionLinks.privacy;
+          const [contactValidation, legalValidation] = await Promise.all([
+            contactUrl ? validateSection(contactUrl, o) : Promise.resolve(undefined),
+            legalUrl ? validateSection(legalUrl, o) : Promise.resolve(undefined),
+          ]);
+          claims = {
+            ...claims,
+            ...(contactValidation ? { contactValidation } : {}),
+            ...(legalValidation ? { legalValidation } : {}),
+          };
         }
         return claims;
       } catch (error) {
@@ -247,6 +298,7 @@ export function createLocalSignalsPort(options: LocalSignalsPortOptions): AgentS
         return [
           evidence('PRICE_UNKNOWN', 'channel3', 'info', 'No price comparison was available.', {
             reason,
+            history: 'unavailable',
             ...(input.claims.product?.source ? { productSource: input.claims.product.source } : {}),
           }),
         ];
@@ -254,7 +306,12 @@ export function createLocalSignalsPort(options: LocalSignalsPortOptions): AgentS
       try {
         const offers = await options.channel3.searchOffers({ productQuery, maxPrice: price, currency: input.currency }, o);
         if (offers.offerCount === 0 || !offers.medianPrice) {
-          return [evidence('PRICE_UNKNOWN', 'channel3', 'info', 'No comparable offers were found.', { reason: 'no_offers' })];
+          return [
+            evidence('PRICE_UNKNOWN', 'channel3', 'info', 'No comparable offers were found.', {
+              reason: 'no_offers',
+              history: 'unavailable',
+            }),
+          ];
         }
         const discountPct = Math.max(0, Math.round(((offers.medianPrice - price) / offers.medianPrice) * 100));
         return [
@@ -263,7 +320,17 @@ export function createLocalSignalsPort(options: LocalSignalsPortOptions): AgentS
             'channel3',
             discountSeverity(discountPct),
             discountPct >= 40 ? 'The price is far below comparable sellers.' : 'The price is in line with comparable sellers.',
-            { discountPct, price, medianPrice: offers.medianPrice, offerCount: offers.offerCount },
+            {
+              discountPct,
+              price,
+              medianPrice: offers.medianPrice,
+              offerCount: offers.offerCount,
+              currency: offers.currency ?? input.currency,
+              ...(offers.source ? { source: offers.source } : {}),
+              ...(offers.provider ? { provider: offers.provider } : {}),
+              ...(offers.fetchedAt ? { fetchedAt: offers.fetchedAt } : {}),
+              history: offers.history ?? 'unavailable',
+            },
           ),
         ];
       } catch (e) {

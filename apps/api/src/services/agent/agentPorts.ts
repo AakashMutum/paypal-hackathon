@@ -265,6 +265,7 @@ export function getSignalsPort(): SignalsPort {
     return createLocalSignalsPort({
       mode: 'live',
       knownBrandDomains,
+      validateSectionPages: process.env.VALIDATE_SECTION_PAGES !== 'false',
       ...clients,
       // Page and RDAP fetches use this client too, not only the Kernel and Channel3 adapters.
       ...(customSignalsFetch ? { fetchImpl: customSignalsFetch } : {}),
@@ -461,8 +462,12 @@ export async function searchMemory(query: MemoryQuery, options: CallOpts): Promi
 // ---------------------------------------------------------------------------------------------
 
 export const registryPort: RegistryPort = {
-  async lookup(input: RegistryLookup, _options: CallOpts): Promise<RegistryRecord[]> {
-    const rows = await registryLookup(input.by, input.query);
+  async lookup(input: RegistryLookup, options: CallOpts): Promise<RegistryRecord[]> {
+    const rows = await registryLookup(input.by, input.query, {
+      timeoutMs: options.timeoutMs,
+      ...(options.signal ? { signal: options.signal } : {}),
+      ...(customSignalsFetch ? { fetchImpl: customSignalsFetch } : {}),
+    });
     return rows.map((m) => ({
       merchantId: m.merchantId,
       legalName: m.legalName,
@@ -470,6 +475,8 @@ export const registryPort: RegistryPort = {
       domain: m.domain,
       status: m.status,
       linkedBrandIds: [],
+      ...(m.source ? { source: m.source } : {}),
+      ...(m.fetchedAt ? { fetchedAt: m.fetchedAt } : {}),
     }));
   },
 };

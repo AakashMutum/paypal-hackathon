@@ -4,6 +4,7 @@ import type {
   PageMarketplace,
   PageProduct,
   SectionHint,
+  SectionValidation,
 } from '../ports.js';
 import { sanitizeText, type SanitizationLocation, type ShieldFinding } from './shield.js';
 
@@ -30,6 +31,8 @@ export interface SafeClaims {
   faviconHash?: string;
   hasContactPage: boolean;
   hasLegalPage: boolean;
+  contactValidation?: SectionValidation;
+  legalValidation?: SectionValidation;
   pageAccess?: PageAccess;
   product?: PageProduct;
   marketplace?: PageMarketplace;
@@ -87,6 +90,8 @@ export function sanitizeClaims(claims: PageClaims | undefined | null): Sanitized
       : {}),
     hasContactPage: claims.hasContactPage === true,
     hasLegalPage: claims.hasLegalPage === true,
+    contactValidation: sanitizeSectionValidation(claims.contactValidation),
+    legalValidation: sanitizeSectionValidation(claims.legalValidation),
     pageAccess: sanitizePageAccess(claims.pageAccess),
     product: sanitizeProduct(claims.product, clean),
     marketplace: sanitizeMarketplace(claims.marketplace, clean),
@@ -99,6 +104,22 @@ type CleanFn = (value: unknown, location: SanitizationLocation, maxLen: number) 
 
 const ACCESS_STATES = new Set<PageAccess['state']>(['ok', 'blocked', 'empty', 'unreachable', 'unsupported']);
 const PRODUCT_SOURCES = new Set<PageProduct['source']>(['json-ld', 'opengraph', 'microdata', 'metadata', 'title']);
+
+function sanitizeSectionValidation(value: unknown): SectionValidation | undefined {
+  if (!isRecord(value) || typeof value.url !== 'string' || !/^https?:\/\//i.test(value.url)) return undefined;
+  const status =
+    typeof value.status === 'number' && Number.isFinite(value.status) ? value.status : undefined;
+  const contentType = typeof value.contentType === 'string' ? value.contentType.slice(0, 100) : undefined;
+  const reason = typeof value.reason === 'string' ? value.reason.slice(0, 120) : undefined;
+  return {
+    url: value.url.slice(0, 2048),
+    reachable: value.reachable === true,
+    ...(status !== undefined ? { status } : {}),
+    ...(contentType ? { contentType } : {}),
+    meaningful: value.meaningful === true,
+    ...(reason ? { reason } : {}),
+  };
+}
 
 function sanitizePageAccess(value: unknown): PageAccess | undefined {
   if (!isRecord(value)) return undefined;

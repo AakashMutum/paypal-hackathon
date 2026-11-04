@@ -29,6 +29,25 @@ test('computes offer statistics from the documented response shape', async () =>
   assert.equal(result.minPrice, 100);
   assert.equal(result.currency, 'USD');
   assert.deepEqual(result.sampleDomains, ['a.example', 'b.example', 'c.example']);
+  assert.equal(result.source, 'channel3');
+  assert.equal(result.provider, 'channel3');
+  assert.equal(result.history, 'unavailable');
+  assert.match(result.fetchedAt ?? '', /^\d{4}-\d{2}-\d{2}T/);
+});
+
+test('normalizes currency and supports a configured endpoint', async () => {
+  let requested = '';
+  const fetchImpl = (async (url: string) => {
+    requested = url;
+    return new Response(JSON.stringify({ products: [{ offers: [offer(50, 'usd')] }] }), { status: 200 });
+  }) as unknown as typeof fetch;
+  const result = await new Channel3ApiClient(KEY, fetchImpl, 'https://channel3.example.test/v1/search').searchOffers(
+    { productQuery: 'x', currency: 'USD' },
+    opts,
+  );
+  assert.equal(requested, 'https://channel3.example.test/v1/search');
+  assert.equal(result.offerCount, 1);
+  assert.equal(result.currency, 'USD');
 });
 
 test('median of an even count is the mean of the middle two', async () => {

@@ -22,8 +22,17 @@ export function createLiveClientsFromEnv(
 ): LiveClients {
   const kernelKey = env.KERNEL_API_KEY?.trim();
   const channel3Key = env.CHANNEL3_API_KEY?.trim();
+  const channel3BaseUrl = env.CHANNEL3_BASE_URL?.trim();
   return {
     ...(kernelKey ? { kernel: new KernelBrowserClient(kernelKey, options.kernelDeps) } : {}),
-    ...(channel3Key ? { channel3: new Channel3ApiClient(channel3Key, options.fetchImpl) } : {}),
+    ...(channel3Key
+      ? {
+          channel3: new Channel3ApiClient(
+            channel3Key,
+            options.fetchImpl,
+            channel3BaseUrl || undefined,
+          ),
+        }
+      : {}),
   };
 }

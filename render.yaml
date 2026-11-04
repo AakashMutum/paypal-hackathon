@@ -54,7 +54,7 @@ services:
       - key: SIGNALS_MODE
         value: auto
       - key: LLM_MODE
-        value: replay
+        value: live
       - key: LLM_API_KEY
         sync: false
       - key: LLM_BASE_URL
@@ -66,6 +66,23 @@ services:
       - key: KERNEL_API_KEY
         sync: false
       - key: CHANNEL3_API_KEY
+        sync: false
+      - key: CHANNEL3_BASE_URL
+        sync: false
+      # Optional corporate registry. Without a URL the local merchant_records table is used.
+      - key: CORPORATE_REGISTRY_URL
+        sync: false
+      - key: CORPORATE_REGISTRY_API_KEY
+        sync: false
+      - key: CORPORATE_REGISTRY_TIMEOUT_MS
+        value: "2500"
+      # Bound slow model calls; template explanations remain available.
+      - key: AGENT_MODEL_BUDGET_MS
+        value: "1200"
+      - key: VALIDATE_SECTION_PAGES
+        value: "true"
+      # 64 hex characters. Generate locally; never commit it.
+      - key: AUDIT_ENCRYPTION_KEY
         sync: false
       # Scam memory in Elasticsearch. Without these the memory runs in the API process.
       - key: ELASTIC_URL

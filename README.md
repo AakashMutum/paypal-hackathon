@@ -159,6 +159,8 @@ See `docs/agentic-demo.md`.
 | `signals` (`SIGNALS_MODE`) | `replay`, `live`, `auto` | Recorded signals for the demo stores; live signals; or replay for the demo stores and live for any other domain |
 | `llm` (`LLM_MODE`) | `live`, `replay`, `none` | A language model (needs `LLM_API_KEY` or `GEMINI_API_KEY`), recorded answers, or the agent's deterministic fallbacks |
 | `memory` | `elastic`, `file`, `memory` | Elasticsearch when configured; otherwise a persistent JSON file in `.cache/`; in-memory in tests |
+| `registry` | `corporate+local`, `local` | `corporate+local` when `CORPORATE_REGISTRY_URL` is configured; otherwise local `merchant_records` only |
+| `auditEncryption` | `enabled`, `disabled`, `invalid` | Whether `AUDIT_ENCRYPTION_KEY` is a valid 32-byte key for AES-256-GCM audit storage |
 
 Every investigation also carries a `provenance` object with the signals, LLM provider/model, memory backend and embedding provider it used.
 The API refuses to start if `PAYPAL_MODE` is anything but `sandbox`.
@@ -198,8 +200,8 @@ Existing plaintext rows remain readable. Encrypted rows require the same key. An
 | Source | Configuration | Without it |
 | --- | --- | --- |
 | Kernel remote browser | `KERNEL_API_KEY` | The page is fetched over plain HTTP; JavaScript-heavy pages may be blocked or unavailable. |
-| Channel3 catalogue | `CHANNEL3_API_KEY` | Price comparison is reported as `PRICE_UNKNOWN`; no comparison is invented. |
-| Corporate registry | None wired. The API uses the local `merchant_records` table and `POST /api/merchants`. | Identity verification is limited to local records and official marketplace hostnames; missing records are disclosed. |
+| Channel3 catalogue | `CHANNEL3_API_KEY`; optional `CHANNEL3_BASE_URL` | Price comparison is reported as `PRICE_UNKNOWN`; no comparison or historical norm is invented. Offers carry source/provider/fetched-at provenance and normalized currency. |
+| Corporate registry | `CORPORATE_REGISTRY_URL`, `CORPORATE_REGISTRY_API_KEY`, `CORPORATE_REGISTRY_TIMEOUT_MS` (HTTPS endpoint returning `{ records: [...] }`) | The local `merchant_records` table is used alone; missing records remain explicit UNKNOWN/UNVERIFIED. Malformed, failed or timed-out provider responses never create a match. |
 | Elasticsearch memory | `ELASTIC_URL`, `ELASTIC_API_KEY`, `ELASTIC_INDEX` | A persistent JSON file is used, or in-memory in tests. |
 | Real PayPal JS approval | `VITE_PAYPAL_CLIENT_ID` in `apps/web/.env` plus sandbox API credentials | The checkout uses a clearly labelled simulated button. |
 
@@ -229,7 +231,9 @@ Names only; values never belong in the repository. See `.env.example` and `apps/
 | `DEMO_ADMIN_TOKEN`, `GUARDIAN_API_KEY` | `apps/api/src/config/env.ts` |
 | `STORE_GENUINE_PAYEE_EMAIL`, `STORE_GENUINE_PAYEE_MERCHANT_ID`, and the same for `DISCOUNT` and `IMPERSONATOR` | `apps/api/src/config/storeCatalog.ts` |
 | `SIGNALS_MODE`, `LLM_MODE`, `LLM_API_KEY`, `GEMINI_API_KEY`, `LLM_BASE_URL`, `LLM_MODEL_FAST`, `LLM_MODEL_STRONG`, `LLM_FIXTURE_DIR`, `KERNEL_API_KEY`, `CHANNEL3_API_KEY`, `ELASTIC_URL`, `ELASTIC_API_KEY`, `ELASTIC_INDEX`, `MEMORY_MODE`, `MEMORY_FILE`, `GEMINI_EMBEDDING_MODEL` | `apps/api/src/services/agent/agentPorts.ts`; `packages/memory/src/patterns/embeddings.ts` |
-| `AGENT_TIMEOUT_MS`, `AGENT_MAX_FOLLOWUPS`, `AGENT_CONF_THRESHOLD`, `FEATURE_*`, `MEMORY_MATCH_MIN` | `packages/agent/src/config.ts` |
+| `AGENT_TIMEOUT_MS`, `AGENT_MODEL_BUDGET_MS`, `AGENT_MAX_FOLLOWUPS`, `AGENT_CONF_THRESHOLD`, `FEATURE_*`, `MEMORY_MATCH_MIN` | `packages/agent/src/config.ts` |
+| `CORPORATE_REGISTRY_URL`, `CORPORATE_REGISTRY_API_KEY`, `CORPORATE_REGISTRY_TIMEOUT_MS` | `apps/api/src/services/registry/corporateRegistry.ts` |
+| `CHANNEL3_BASE_URL`, `VALIDATE_SECTION_PAGES` | `packages/signals/src/agentPort/liveClients.ts`; `apps/api/src/services/agent/agentPorts.ts` |
 | `LLM_PROVIDER` | `packages/agent/src/config.ts` |
 | `SIGNALS_BASE_URL`, `SIGNALS_FIXTURE_DIR` | `packages/agent/src/config.ts` |
 | `ELASTIC_URL`, `ELASTIC_API_KEY`, `ELASTIC_INDEX`, `ELASTIC_INFERENCE_ID` | `packages/agent/src/config.ts`; `ELASTIC_NODE` also in `packages/memory/src/store/factory.ts` |
@@ -290,18 +294,19 @@ Be clear about what has not been run live. These parts are written and tested ag
 - Live Kernel browser and Channel3 catalogue signals (their keys are not configured in this environment). RDAP, TLS, page metadata and structured product data are live.
 - PostgreSQL migrations 001–003 were applied locally and `/health` reports the database store; the automated migration test still uses a mock pool.
 - The web app in a browser (it builds and type-checks; routes verified locally at `http://localhost:5173`).
-- Full live Gemini latency under 2 seconds. The measured live merchant scan took 7.08 seconds; the
-  agent used the live model path for an ambiguous merchant-level scan. The deterministic fast path
-  is much shorter, but a full live response with model-written pattern, identity and explanation
-  calls cannot meet the 2-second target in this environment. The model is not disabled or faked to
-  hide that.
+- Consistent full live latency under 2 seconds. With `AGENT_MODEL_BUDGET_MS=1200`, five live
+  ambiguous scans measured 1733, 1848, 1887, 2055 and 3740 ms; the warm median is 1887 ms and 4 of
+  5 were under 2 s. The first cold request exceeded 2 s. Slow model calls fall back to template
+  explanations; the deterministic decision is unchanged.
 - A reference-backed favicon mismatch. The page collector records the declared favicon URL and
   whether it is same-origin, but no trusted reference favicon exists in the pipeline, so
   `FAVICON_MISMATCH` is never invented. A third-party CDN is not treated as fraud.
 - Registrar reputation history. The RDAP collector extracts the registrar name and registration
   date, not a historical reputation score.
-- An external corporate-registry provider. The local `merchant_records` table is the configured
-  identity source; no commercial registry adapter is present.
+- Historical product-price norms. The current evidence reports `history: unavailable` unless a
+  genuine persisted/provider history source is added.
+- A configured corporate registry. The adapter exists, but no provider URL/key is set here, so
+  identity remains local-only and explicit.
 
 Other limits: the evaluation is a small synthetic benchmark; retrieved similar cases are passed to
 the explanation writer only as context and can never change the deterministic decision; PayPal

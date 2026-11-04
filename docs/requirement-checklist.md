@@ -10,10 +10,10 @@ dependency or an accounted limitation), **BLOCKED** (waiting on credentials or a
 
 | ID | Requirement | Status | Evidence |
 | --- | --- | --- | --- |
-| FR-001 | Website information collection | PARTIAL | `packages/signals/src/agentPort/html.ts` extracts title, site name, contact details, legal links and structured product metadata. Contact details or a contact link count as a contact page; a readable page with neither contact nor privacy/terms evidence emits a low `CONTACT_LEGAL_MISSING` signal. The declared favicon URL and same-origin flag are recorded in `FAVICON_OBSERVED`; a true mismatch needs a trusted reference favicon, which does not exist here, so no mismatch is invented. |
+| FR-001 | Website information collection | PARTIAL | `packages/signals/src/agentPort/html.ts` extracts title, site name, contact details, legal links and structured product metadata. Contact details or a link count as a contact page; readable pages with neither contact nor legal evidence emit low `CONTACT_LEGAL_MISSING`. Live contact/privacy/terms links are fetched with bounded, SSRF-safe checks; failures emit informational `CONTACT_LEGAL_UNVERIFIED`, not a legitimacy claim. A true favicon mismatch still needs a trusted reference favicon and is never invented. |
 | FR-002 | Domain authenticity analysis | COMPLETE | RDAP resolves the authoritative IANA endpoint (with registry fallbacks), extracts registration date, age and registrar name; TLS validity/issuer is reported separately. Registrar reputation history is not scored. |
-| FR-003 | Merchant identity verification | PARTIAL | The agent compares claimed names with the local `merchant_records` registry and identifies official marketplace hostnames. No external corporate-registry provider is configured; missing records are disclosed, never invented. |
-| FR-004 | Product and price analysis | PARTIAL | Structured JSON-LD/OpenGraph/microdata product data is extracted. Comparable-price analysis needs Channel3 (`CHANNEL3_API_KEY`); without it the response says `price: unavailable` instead of inventing a price. |
+| FR-003 | Merchant identity verification | PARTIAL | Local `merchant_records` is authoritative and is checked first. An optional schema-validated corporate-registry HTTP adapter (`CORPORATE_REGISTRY_URL`, API key, timeout) is used only when local records are empty; malformed, failed or timed-out responses fall back to local-only. No provider is configured here, so missing records remain explicit UNKNOWN/UNVERIFIED. |
+| FR-004 | Product and price analysis | PARTIAL | Structured JSON-LD/OpenGraph/microdata product data is extracted. Channel3 now has response validation, normalized currency, configurable endpoint, source/provider/fetched-at provenance and explicit `history: unavailable`. Without `CHANNEL3_API_KEY` the result is `PRICE_UNKNOWN`; no market price or historical norm is invented. |
 | FR-005 | Payment recipient verification | COMPLETE | Payee binding and PayPal payee comparison produce deterministic evidence. A scan without a payee is labelled a merchant-level scan, not an identity check. |
 | FR-006 | AI risk assessment | COMPLETE | Deterministic scoring with hard-rule floors plus live Gemini structured analysis; the model cannot override the rules. |
 | FR-007 | Risk explanation generation | COMPLETE | Gemini explanations are validated against Zod schemas and the explanation checker; unsafe or uncited output falls back to neutral templates. |
@@ -25,7 +25,7 @@ dependency or an accounted limitation), **BLOCKED** (waiting on credentials or a
 
 | Requirement | Status | Evidence |
 | --- | --- | --- |
-| Latency under 2 seconds | PARTIAL | Deterministic fast-path decisions are short. A measured live ambiguous merchant scan took 7.08 seconds because the pattern, identity and explanation model calls run live. The model is not disabled or faked to meet the target. |
+| Latency under 2 seconds | PARTIAL | With `AGENT_MODEL_BUDGET_MS=1200`, five live ambiguous scans of the same public page measured 1733, 1848, 1887, 2055 and 3740 ms (the first was a cold request). Warm median: **1887 ms**; 4 of 5 under 2 s. Slow model calls fall back to the existing template explanation; the deterministic decision is unchanged. A cold process can still exceed 2 s. |
 | Security and privacy | COMPLETE | No secrets in source or responses; URL safety checks; page text sanitized; memory stores anonymous pattern records. Persisted buyer PII is redacted; audit JSON is encrypted when `AUDIT_ENCRYPTION_KEY` is set and `/health` reports the encryption status. |
 | Reliability and graceful degradation | COMPLETE | Bounded retries for transient failures only; blocked/CAPTCHA/unavailable/empty states are distinct; model, registry and memory failures fall back explicitly. |
 | Explainability | COMPLETE | Every decision cites evidence; availability and missing-data reasons are shown separately. |
@@ -39,18 +39,21 @@ dependency or an accounted limitation), **BLOCKED** (waiting on credentials or a
 | RAG storage and retrieval | COMPLETE | Persistent JSON file with Gemini embeddings (`gemini-embedding-001`); exact, embedding and lexical retrieval; citations and relevance are validated. |
 | RAG persistence across restarts | COMPLETE | A case stored in one process was retrieved by a restarted process with `retrieval: embedding (gemini)`. |
 | PayPal sandbox OAuth/order | COMPLETE | Live sandbox OAuth, order creation and retrieval passed. |
-| PayPal capture/void | BLOCKED (external) | Requires sandbox buyer approval; the gate and capture/void paths are mock-tested. |
+| PayPal capture/void | BLOCKED (external) | Code and tests cover ALLOW/WARN/PAUSE, unapproved authorization, payee fingerprint mismatch, capture failure, idempotency and void. A real sandbox buyer approval/capture/void has not occurred. |
 | Real PayPal JS approval | PARTIAL | The SDK loads when `VITE_PAYPAL_CLIENT_ID` is set and `onApprove` calls the backend gate. The public client id is empty locally, so the simulated button is used. No real buyer approval has occurred. |
-| CI-equivalent checks | PARTIAL | Focused tests, build, typecheck, lint, contracts, brands and hygiene pass locally. The workflow runs on a pull request or a push to `main`; the feature-branch push has not triggered it. |
+| CI-equivalent checks | PARTIAL | Focused tests, build, typecheck, lint, contracts, brands and hygiene pass locally. The workflow runs on a pull request or a push to `main`; the new branch still needs a PR for CI. |
 
 ## Remaining external configuration
 
 - `AUDIT_ENCRYPTION_KEY`: generate a local 32-byte key (64 hex characters) and set it in the API
   `.env` to enable encryption at rest. Without it, redaction still applies.
 - `KERNEL_API_KEY`: enables the remote browser for JavaScript-heavy pages.
-- `CHANNEL3_API_KEY`: enables live price comparison.
-- Corporate registry: no adapter is wired; the local `merchant_records` table is the identity
-  source. A provider adapter would be required for a commercial registry.
+- `CHANNEL3_API_KEY`: enables live price comparison; optional `CHANNEL3_BASE_URL` points at a
+  compatible endpoint.
+- `CORPORATE_REGISTRY_URL`, `CORPORATE_REGISTRY_API_KEY`, `CORPORATE_REGISTRY_TIMEOUT_MS`: enable
+  the optional corporate-registry adapter. Without them, identity is local-only and explicit.
+- `AGENT_MODEL_BUDGET_MS=1200`: bounds model calls and protects the warm latency target.
+- `VALIDATE_SECTION_PAGES=true`: enables the bounded contact/legal link checks.
 - `VITE_PAYPAL_CLIENT_ID` plus sandbox API credentials and a sandbox buyer approval: required for a
   real capture/void. No capture occurs without buyer approval and a valid authorization.
 
@@ -61,5 +64,9 @@ dependency or an accounted limitation), **BLOCKED** (waiting on credentials or a
 - Kernel remote-browser and Channel3 catalogue keys are not configured. RDAP, TLS, page metadata,
   product metadata and structured server-rendered pages are live.
 - A reference-backed favicon mismatch and registrar reputation history are not implemented.
+- Historical product-price norms are not implemented. Only a genuine persisted/provider source may
+  supply them; the current evidence reports `history: unavailable`.
 - PayPal webhooks are not handled.
 - Web UI was built and type-checked; browser automation was not available in this environment.
+- The latency target is met on warm runs but not guaranteed for cold starts or slow external
+  providers.

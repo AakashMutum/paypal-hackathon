@@ -286,6 +286,42 @@ test('structured product price is used for a price comparison when no amount was
   assert.equal((price.data as { discountPct: number }).discountPct, 85);
 });
 
+test('validates linked contact and legal pages with bounded safe fetches', async () => {
+  const long = 'Contact the merchant by email or phone. '.repeat(4);
+  const main = '<html><head><title>Example Shop</title></head><body>Welcome to the shop. <a href="/contact">Contact</a> <a href="/privacy">Privacy</a></body></html>';
+  const port = createLocalSignalsPort(
+    baseOptions(
+      {
+        pages: {
+          'https://shop.example/': main,
+          'https://shop.example/contact': `<html><body>${long}</body></html>`,
+          'https://shop.example/privacy': `<html><body>${long}</body></html>`,
+        },
+      },
+      { validateSectionPages: true },
+    ),
+  );
+  const claims = await port.getPageClaims('https://shop.example/', callOpts);
+  assert.equal(claims.contactValidation?.reachable, true);
+  assert.equal(claims.contactValidation?.meaningful, true);
+  assert.equal(claims.legalValidation?.meaningful, true);
+  assert.equal(claims.contactValidation?.contentType, 'text/html');
+});
+
+test('a missing contact page is unverified, not treated as a successful validation', async () => {
+  const main = '<html><head><title>Example Shop</title></head><body>Welcome. <a href="/contact">Contact</a></body></html>';
+  const port = createLocalSignalsPort(
+    baseOptions(
+      { pages: { 'https://shop.example/': main } },
+      { validateSectionPages: true },
+    ),
+  );
+  const claims = await port.getPageClaims('https://shop.example/', callOpts);
+  assert.equal(claims.contactValidation?.reachable, false);
+  assert.equal(claims.contactValidation?.meaningful, false);
+  assert.equal(claims.contactValidation?.reason, 'http_error');
+});
+
 test('fetchPageSection finds the first usual path and caps text', async () => {
   const about =
     '<html><body><h1>About us</h1><p>Veloura Outdoor Pvt Ltd, registration no: U12345AB2020.</p><address>5 Test Lane, Pune</address></body></html>';
