@@ -3,6 +3,7 @@ import { domainAgeDays, findRegistrarName, findRegistrationDate, rdapUrlFor } fr
 import { PayeeBindingCollector } from '../payee/binding.js';
 import { assertSafeUrl, UnsafeUrlError } from '../safety/url.js';
 import { readLimitedText, registrableDomain } from '../util.js';
+import { checkFavicon, loadDefaultFaviconReferences } from './favicon.js';
 import { classifyPageAccess, extractPageClaims, extractSection, SECTION_PATHS } from './html.js';
 import { safeGet } from './http.js';
 import { detectLookalike } from './lookalike.js';
@@ -67,6 +68,7 @@ export function createLocalSignalsPort(options: LocalSignalsPortOptions): AgentS
   const known = options.knownBrandDomains ?? [];
   const bindingCollector = new PayeeBindingCollector();
   const brandByDomain = new Map<string, string>();
+  const faviconReferences = options.faviconReferences ?? loadDefaultFaviconReferences();
   let counter = 0;
 
   const evidence = (
@@ -189,7 +191,7 @@ export function createLocalSignalsPort(options: LocalSignalsPortOptions): AgentS
   return {
     async getPageClaims(url, o) {
       try {
-        const claims = options.kernel
+        let claims = options.kernel
           ? withMarketplace(await options.kernel.getPageClaims(url, o))
           : await (async () => {
               const page = await safeGet(url, { ...getOpts(o), maxBytes: 512 * 1024 });
@@ -199,6 +201,21 @@ export function createLocalSignalsPort(options: LocalSignalsPortOptions): AgentS
               return extractPageClaims(page.text, page.finalUrl, page.status);
             })();
         const brand = claims.claimedBrand ?? claims.siteName;
+        // The favicon is fetched only when a trusted reference exists for the claimed brand.
+        if (claims.pageAccess?.state === 'ok') {
+          const faviconCheck = await checkFavicon({
+            pageDomain: claims.domain,
+            claimedBrand: brand,
+            faviconUrl: claims.faviconUrl,
+            references: faviconReferences,
+            fetchOptions: getOpts(o),
+          });
+          claims = {
+            ...claims,
+            faviconCheck,
+            ...(faviconCheck.observedHash ? { faviconHash: faviconCheck.observedHash } : {}),
+          };
+        }
         if (brand && claims.domain && claims.pageAccess?.state !== 'blocked') {
           brandByDomain.set(registrableDomain(claims.domain), brand);
         }

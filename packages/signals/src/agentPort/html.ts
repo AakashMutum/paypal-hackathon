@@ -545,8 +545,8 @@ export function extractPageClaims(html: string, finalUrl: string, httpStatus = 2
   );
   const hasLegalPage = Boolean(sectionLinks.terms || sectionLinks.privacy);
 
-  // The favicon URL is recorded, but it is not compared to a trusted reference: no such
-  // reference exists in this pipeline. A third-party CDN is common and is not a mismatch.
+  // The favicon URL is only recorded here. The comparison with a trusted reference happens in
+  // port.ts (favicon.ts). A third-party CDN is common and is not a mismatch.
   let faviconUrl: string | undefined;
   let faviconSameOrigin: boolean | undefined;
   if (page.faviconUrl) {

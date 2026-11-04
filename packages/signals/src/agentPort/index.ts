@@ -30,3 +30,14 @@ export type { KernelClientDeps, KernelSdkLike, ChromiumLike, BrowserLike, PageLi
 export { Channel3ApiClient, CHANNEL3_SEARCH_URL } from './channel3Client.js';
 export { createLiveClientsFromEnv } from './liveClients.js';
 export type { LiveClients } from './liveClients.js';
+export {
+  checkFavicon,
+  findFaviconReference,
+  hashFavicon,
+  loadDefaultFaviconReferences,
+  looksLikeIcon,
+  validateFaviconReferences,
+  FAVICON_MAX_BYTES,
+} from './favicon.js';
+export type { FaviconReference } from './favicon.js';
+export type { FaviconCheck, FaviconCheckState } from './types.js';
