@@ -2,7 +2,7 @@
 
 Generated 2026-11-03 at commit `f11a055` by `npm run eval -w @checkout-guardian/eval`.
 
-These numbers describe how the systems behave on a small synthetic benchmark. They are not a claim about real-world accuracy. See the limitations below.
+These numbers describe how the systems behave on a small, synthetic, author-labelled benchmark: the cases were invented and labelled by the people who built the systems. They are not a claim about real-world accuracy, and a 0.0% false-positive rate on invented legitimate cases is not evidence that real merchants are never flagged. No evaluation on real, independently labelled merchants exists yet (see `docs/benchmark-roadmap.md`). See the limitations below.
 
 ## Summary
 
