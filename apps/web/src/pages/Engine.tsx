@@ -1,22 +1,29 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { Cpu, ShieldAlert, ShieldCheck, Ban, Download, Loader2, Radar, ArrowRight, Printer } from 'lucide-react';
+import { ShieldAlert, Ban, Download, Loader2, Radar, ArrowRight, Printer } from 'lucide-react';
 import { useApp } from '../context/OrderStateContext';
 import { useInvestigations, useOrderPolling } from '../hooks/useOrderPolling';
+import { usePageTitle } from '../hooks/usePageTitle';
 import { api } from '../api/apiClient';
-import { Empty, Modal, Pill } from '../components/ui';
+import { Empty, Modal, Pill, Skeleton } from '../components/ui';
+import { StatusRows } from '../components/StatusRows';
 import { Timeline } from '../components/Timeline';
 import { ProvenanceChips, SimilarCases } from '../components/Provenance';
-import { ageLabel, CAPTURE_LABEL, cn, download, money, VERDICT, type Tone } from '../lib/format';
+import { ageLabel, download, money, type Tone } from '../lib/format';
+import { displayBrand } from '../lib/labels';
 
 const SIGNAL_LABEL: Record<string, string> = {
   page: 'Merchant page',
   domainAge: 'Domain age',
   registry: 'Merchant registry',
   price: 'Price comparison',
-  tls: 'TLS certificate',
-  payee: 'PayPal payee',
+  tls: 'Security certificate',
+  payee: 'Receiving account',
   registrarReputation: 'Registrar reputation',
+};
+const SIGNAL_VALUE: Record<string, string> = {
+  ok: 'read', blocked: 'blocked the checker', empty: 'no readable content', unavailable: 'could not be checked', not_checked: 'not checked',
+  known: 'known', found: 'found', valid: 'valid', invalid: 'problem found', provided: 'supplied', not_provided: 'not supplied', not_assessed: 'not assessed',
 };
 
 const signalTone = (value: string): Tone =>
@@ -27,6 +34,7 @@ const signalTone = (value: string): Tone =>
       : 'ok';
 
 export default function Engine() {
+  usePageTitle('Investigation');
   const { id } = useParams(); const nav = useNavigate();
   const { latestId, setLatestId, toast } = useApp();
   const { list, loading } = useInvestigations();
@@ -35,68 +43,65 @@ export default function Engine() {
   const [busy, setBusy] = useState(false); const [exp, setExp] = useState(false);
   useEffect(() => { if (id) setLatestId(id); }, [id, setLatestId]);
 
-  if (!target) return loading ? null : <Empty icon={<Radar />} title="No investigations yet">Scan a URL or check out from a demo store to start the engine.<div className="mt-4 flex gap-2 justify-center"><Link className="btn-direct" to="/scanner">Scan URL</Link><Link className="btn-secondary" to="/stores">Demo stores</Link></div></Empty>;
-  if (error && !inv) return <Empty icon={<ShieldAlert />} title="Can't reach the engine"><p>{error}</p><button className="btn-primary mt-4" onClick={refresh}>Retry</button></Empty>;
-  if (!inv) return <p className="text-sm text-muted p-4">Loading investigation…</p>;
+  if (!target) return loading ? <Skeleton className="h-40 w-full" /> : <Empty icon={<Radar />} title="No investigations yet">Scan a URL or check out from a demo store to start the checker.<div className="mt-4 flex gap-2 justify-center"><Link className="btn-direct" to="/scanner">Scan URL</Link><Link className="btn-secondary" to="/stores">Demo stores</Link></div></Empty>;
+  if (error && !inv) return <Empty icon={<ShieldAlert />} title="Cannot reach the checker"><p>{error}</p><button className="btn-primary mt-4" onClick={refresh}>Retry</button></Empty>;
+  if (!inv) return <div className="space-y-3" aria-busy="true"><Skeleton className="h-24 w-full" /><Skeleton className="h-40 w-full" /></div>;
 
-  const done = inv.status === 'COMPLETE', v = inv.verdict ? VERDICT[inv.verdict] : null;
-  const phaseTone = !done ? 'text-electric' : inv.verdict === 'PAUSE' ? 'text-bad-deep' : inv.verdict === 'WARN' ? 'text-warn' : 'text-ok';
+  const done = inv.status === 'COMPLETE';
   const act = async () => {
     setBusy(true);
-    try { if (inv.orderId) { await api.cancelOrder(inv.id); toast('Purchase aborted. PayPal authorization voided.', 'ok'); } else { await api.reportMerchant({ domain: inv.domain, reason: 'Blocked from scanner', investigationId: inv.id }); toast(`${inv.domain} reported`, 'ok'); } refresh(); }
-    catch (e) { toast((e as Error).message, 'bad'); } finally { setBusy(false); }
+    try {
+      if (inv.orderId) { await api.cancelOrder(inv.id); toast('Purchase cancelled. The PayPal authorization was voided.', 'ok'); }
+      else { await api.reportMerchant({ domain: inv.domain, reason: 'Reported from the scan screen', investigationId: inv.id }); toast(`${inv.domain} reported`, 'ok'); }
+      refresh();
+    } catch (e) { toast((e as Error).message, 'bad'); } finally { setBusy(false); }
   };
   const voided = inv.captureState === 'VOIDED';
-  const bannerCls = inv.verdict === 'PAUSE' ? 'bg-bad-deep text-white' : inv.verdict === 'WARN' ? 'bg-warn text-ink' : 'bg-ok text-white';
   return <>
     <section className="card space-y-3">
-      <div className="flex justify-between gap-2"><Pill tone="info"><Cpu size={12} />ENGINE CORE ACTIVE</Pill><Pill tone="neutral" className="font-mono">LATENCY: {latency}ms</Pill></div>
-      <h1 className="text-[22px] font-semibold leading-7">Merchant Identity & Offer Consistency Engine</h1>
+      <div className="flex justify-between gap-2"><Pill tone="info">{done ? 'Check finished' : 'Check running'}</Pill><Pill tone="neutral" className="font-mono">{latency} ms</Pill></div>
+      <h1 className="text-[22px] font-semibold leading-7">Merchant check</h1>
       <p className="text-sm text-muted">Compares what the website claims with the account that would be paid, using rule-based checks.</p>
-      <div className="grid grid-cols-3 gap-2 rounded-lg bg-tint p-3">
-        <div><div className="mono-label">Pipeline phase</div><div className={cn('font-mono font-semibold text-sm mt-1', phaseTone)}>T-{inv.evidence.length} {done ? (inv.verdict === 'PAUSE' ? 'Blocked' : inv.verdict === 'WARN' ? 'Review' : 'Cleared') : 'Running'}</div></div>
-        <div><div className="mono-label">Confidence</div><div className="font-mono font-semibold text-sm mt-1">{done ? `${inv.confidence}%` : '—'}</div></div>
-        <div><div className="mono-label">Capture state</div><div className={cn('font-mono font-semibold text-sm mt-1', phaseTone)}>{inv.orderId ? CAPTURE_LABEL[inv.captureState] : 'No order'}</div></div></div>
+      <dl className="grid grid-cols-3 gap-2 rounded-lg bg-tint p-3">
+        <div><dt className="mono-label">Checks done</dt><dd className="font-mono font-semibold text-sm mt-1">{inv.evidence.length} of 4</dd></div>
+        <div><dt className="mono-label">Confidence</dt><dd className="font-mono font-semibold text-sm mt-1">{done ? `${inv.confidence}%` : '—'}</dd></div>
+        <div><dt className="mono-label">Site</dt><dd className="font-mono font-semibold text-sm mt-1 break-all">{displayBrand(inv.claimedBrand, inv.domain)}</dd></div></dl>
     </section>
 
-    {done && v ? <section className={cn('rounded-lg p-5', bannerCls)} role="alert">
-      <div className="flex gap-3"><span className="w-12 h-12 rounded bg-white/90 text-current grid place-items-center shrink-0">{inv.verdict === 'ALLOW' ? <ShieldCheck className="text-ok" /> : <ShieldAlert className="text-bad-deep" />}</span>
-        <div><h2 className="text-lg font-bold uppercase leading-tight">{v.headline}</h2>
-          <span className="inline-block mt-1 px-2 rounded-full bg-white/20 text-[11px] font-semibold tracking-wide">{voided ? 'AUTH VOIDED' : inv.orderId ? (inv.captureState === 'HELD' ? 'AUTH PAUSED' : 'AUTH ' + inv.captureState) : 'SCAN ONLY'}</span></div></div>
-      <p className="text-sm mt-3 opacity-95">{inv.reasons[0]}</p></section>
-      : <section className="card flex items-center gap-3"><Loader2 className="animate-spin text-electric" /><div><div className="font-semibold">Investigation in progress</div><div className="text-sm text-muted">Collecting signals from {inv.domain}…</div></div></section>}
+    {done ? <StatusRows inv={inv} />
+      : <section className="card flex items-center gap-3" aria-busy="true"><Loader2 className="animate-spin text-electric" /><div><div className="font-semibold">Investigation in progress</div><div className="text-sm text-muted">Collecting signals from {inv.domain}…</div></div></section>}
 
     <section className="card">
-      <div className="flex justify-between items-center mb-4"><h2 className="font-semibold">Inspection Telemetry Pipeline</h2><span className="mono-label bg-tint rounded px-2 py-1">4 checkpoints</span></div>
+      <div className="flex justify-between items-center mb-4"><h2 className="font-semibold">Checks run</h2><span className="mono-label bg-tint rounded px-2 py-1">{inv.evidence.length} of 4</span></div>
       <Timeline evidence={inv.evidence} /></section>
 
     {done && <ProvenanceChips inv={inv} />}
     {done && <SimilarCases cases={inv.similarCases} />}
 
-    {done && inv.signalAvailability && <section className="card space-y-3" aria-label="Signal availability">
-      <div className="flex justify-between items-center"><h2 className="font-semibold">Signal availability</h2><span className="mono-label bg-tint px-2 py-1 rounded">what was checked</span></div>
+    {done && inv.signalAvailability && <section className="card space-y-3" aria-label="What was checked">
+      <div className="flex justify-between items-center"><h2 className="font-semibold">What was checked</h2></div>
       <div className="grid grid-cols-2 md:grid-cols-3 gap-2">{Object.entries(inv.signalAvailability).map(([key, value]) => <div key={key} className="rounded-lg bg-tint p-2">
         <div className="mono-label">{SIGNAL_LABEL[key] ?? key}</div>
-        <div className="mt-1"><Pill tone={signalTone(value)}>{value.replace(/_/g, ' ')}</Pill></div></div>)}</div>
+        <div className="mt-1"><Pill tone={signalTone(value)}>{SIGNAL_VALUE[value] ?? value.replace(/_/g, ' ')}</Pill></div></div>)}</div>
       {inv.confidenceReason && <p className="text-xs text-muted">{inv.confidenceReason}</p>}
     </section>}
 
     {done && <section className="card space-y-3">
-      <div className="flex justify-between items-center"><h2 className="font-semibold">Ledger Discrepancy Matrix</h2>{inv.verdict !== 'ALLOW' && <Pill tone="bad">NOT CLEARED</Pill>}</div>
-      {[['Entity discrepancy', 'Storefront promised', inv.claimedBrand, 'PayPal destination', inv.payeeName ?? 'Not supplied'],
-        ['Price verification', 'Comparable price', inv.benchmark === null ? 'Not available' : money(inv.benchmark), 'Submitted checkout', inv.price === null ? 'Not provided' : money(inv.price)],
-        ['Merchant status', 'Registry records', inv.registryRecords === null ? 'Not checked' : `${inv.registryRecords} found`, 'Domain age', ageLabel(inv.domainAgeDays)]].map(([h, a, av, b, bv]) => <div key={h} className="rounded-lg bg-tint p-3">
+      <div className="flex justify-between items-center"><h2 className="font-semibold">Claimed vs actual</h2>{inv.verdict !== 'ALLOW' && <Pill tone="bad">Not cleared</Pill>}</div>
+      {[['Who is paid', 'Storefront says', displayBrand(inv.claimedBrand, inv.domain), 'PayPal pays', inv.payeeName ?? 'Not supplied'],
+        ['Price', 'Comparable price', inv.benchmark === null ? 'Not available' : money(inv.benchmark), 'Checkout price', inv.price === null ? 'Not provided' : money(inv.price)],
+        ['Merchant', 'Registered business records', inv.registryRecords === null ? 'Not checked' : `${inv.registryRecords} found`, 'Domain age', ageLabel(inv.domainAgeDays)]].map(([h, a, av, b, bv]) => <div key={h} className="rounded-lg bg-tint p-3">
         <div className="mono-label mb-2">{h}</div><div className="grid grid-cols-2 gap-2"><div className="bg-white rounded p-2"><div className="mono-label">{a}</div><div className="text-sm font-semibold break-words">{av}</div></div>
-          <div className={cn('rounded p-2', inv.verdict === 'ALLOW' ? 'bg-ok-bg' : 'bg-bad-bg')}><div className={cn('mono-label', inv.verdict !== 'ALLOW' && '!text-bad-deep')}>{b}</div><div className="text-sm font-semibold break-words">{bv}</div></div></div></div>)}</section>}
+          <div className={inv.verdict === 'ALLOW' ? 'rounded p-2 bg-ok-bg' : 'rounded p-2 bg-bad-bg'}><div className={inv.verdict === 'ALLOW' ? 'mono-label' : 'mono-label !text-bad-deep'}>{b}</div><div className="text-sm font-semibold break-words">{bv}</div></div></div></div>)}</section>}
 
-    <section className="card space-y-3"><h2 className="font-semibold">Forensic Mitigation Controls</h2>
-      {done && inv.verdict !== 'ALLOW' && <button className="btn-danger w-full" disabled={busy || voided} onClick={act}>{busy ? <Loader2 className="animate-spin" size={16} /> : <Ban size={16} />}{voided ? 'Purchase Aborted' : inv.orderId ? 'Abort Purchase & Report Seller' : 'Report Seller'}</button>}
-      {inv.orderId && <button className="btn-primary w-full" onClick={() => nav(`/pay/${inv.id}`)}>View payment outcome<ArrowRight size={16} /></button>}
-      <button className="btn-secondary w-full !bg-tint" onClick={() => setExp(true)} disabled={!done}><Download size={16} />Export Forensic Audit Log (JSON / PDF)</button></section>
+    <section className="card space-y-3"><h2 className="font-semibold">Actions</h2>
+      {done && inv.verdict !== 'ALLOW' && <button className="btn-danger w-full" disabled={busy || voided} onClick={act}>{busy ? <Loader2 className="animate-spin" size={16} /> : <Ban size={16} />}{voided ? 'Purchase cancelled' : inv.orderId ? 'Cancel purchase and report seller' : 'Report seller'}</button>}
+      {inv.orderId && <button className="btn-primary w-full" onClick={() => nav(`/pay/${inv.id}`)}>View payment<ArrowRight size={16} /></button>}
+      <button className="btn-secondary w-full !bg-tint" onClick={() => setExp(true)} disabled={!done}><Download size={16} />Export this record</button></section>
 
-    <Modal open={exp} onClose={() => setExp(false)} title="Export audit log">
-      <p className="text-sm text-muted mb-4">Includes all evidence nodes, confidence scores and the final verdict.</p>
-      <div className="grid grid-cols-2 gap-2"><button className="btn-primary" onClick={() => { download(`audit-${inv.id}.json`, inv); setExp(false); }}><Download size={16} />JSON</button>
-        <button className="btn-secondary" onClick={() => { setExp(false); setTimeout(() => window.print(), 100); }}><Printer size={16} />PDF (print)</button></div></Modal>
+    <Modal open={exp} onClose={() => setExp(false)} title="Export this record">
+      <p className="text-sm text-muted mb-4">Includes every check, the confidence scores and the final decision.</p>
+      <div className="grid grid-cols-2 gap-2"><button className="btn-primary" onClick={() => { download(`record-${inv.id}.json`, inv); setExp(false); }}><Download size={16} />JSON</button>
+        <button className="btn-secondary" onClick={() => { setExp(false); setTimeout(() => window.print(), 100); }}><Printer size={16} />Print or save as PDF</button></div></Modal>
   </>;
 }
