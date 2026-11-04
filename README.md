@@ -190,8 +190,13 @@ the key locally; never commit it:
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```
 
-Existing plaintext rows remain readable. Encrypted rows require the same key. An optional
+Existing plaintext rows remain readable. Encrypted rows require the key that sealed them. An optional
 `AUDIT_HMAC_KEY` separates the payee-email fingerprint from the encryption key.
+
+To replace the key, set the new one as `AUDIT_ENCRYPTION_KEY` and the old one as
+`AUDIT_ENCRYPTION_KEY_PREVIOUS` (used to decrypt only), then run `npm run audit:rotate` (a dry run that
+prints counts) and `npm run audit:rotate -- --apply`. See `docs/key-rotation.md`. The rotation is
+tested with an in-memory store and a mock pool; it has not been run against a real PostgreSQL.
 
 ### External data sources and exact configuration
 
@@ -224,7 +229,7 @@ Names only; values never belong in the repository. See `.env.example` and `apps/
 | --- | --- |
 | `NODE_ENV`, `HOST`, `PORT`, `CORS_ORIGIN`, `RATE_LIMIT_WINDOW_MS`, `RATE_LIMIT_MAX` | `apps/api/src/config/env.ts` |
 | `DATABASE_URL`, `DATABASE_SSL`, `DATABASE_TIMEOUT_MS`, `DATABASE_MAX_CONNECTIONS` | `apps/api/src/config/env.ts` |
-| `AUDIT_ENCRYPTION_KEY`, `AUDIT_HMAC_KEY` | `apps/api/src/services/persistence/auditPrivacy.ts` |
+| `AUDIT_ENCRYPTION_KEY`, `AUDIT_ENCRYPTION_KEY_PREVIOUS`, `AUDIT_HMAC_KEY` | `apps/api/src/services/persistence/auditPrivacy.ts` |
 | `PAYPAL_MODE`, `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`, `PAYPAL_TIMEOUT_MS` | `apps/api/src/config/env.ts` |
 | `DEMO_ADMIN_TOKEN`, `GUARDIAN_API_KEY` | `apps/api/src/config/env.ts` |
 | `STORE_GENUINE_PAYEE_EMAIL`, `STORE_GENUINE_PAYEE_MERCHANT_ID`, and the same for `DISCOUNT` and `IMPERSONATOR` | `apps/api/src/config/storeCatalog.ts` |
@@ -257,8 +262,9 @@ Names only; values never belong in the repository. See `.env.example` and `apps/
 ## Evaluation
 
 `npm run eval -w @checkout-guardian/eval` compares two baselines with the full agent on a
-labelled benchmark and writes `docs/eval-results.md`. It is a small synthetic benchmark written by
-the team, not a claim about real-world accuracy.
+labelled benchmark and writes `docs/eval-results.md`. It is a small, synthetic, author-labelled
+benchmark written by the team, not a claim about real-world accuracy or about false positives on
+real merchants. See `docs/benchmark-roadmap.md` for what a real benchmark would need; none exists.
 
 ## What is real and what is simulated
 
@@ -308,7 +314,7 @@ Be clear about what has not been run live. These parts are written and tested ag
 - An external corporate-registry provider. The local `merchant_records` table is the configured
   identity source; no commercial registry adapter is present.
 
-Other limits: the evaluation is a small synthetic benchmark; retrieved similar cases are passed to
+Other limits: the evaluation is a small, synthetic, author-labelled benchmark; retrieved similar cases are passed to
 the explanation writer only as context and can never change the deterministic decision; PayPal
 webhooks are not handled.
 
