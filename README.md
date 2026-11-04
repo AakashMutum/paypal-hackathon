@@ -229,7 +229,7 @@ Names only; values never belong in the repository. See `.env.example` and `apps/
 | `DEMO_ADMIN_TOKEN`, `GUARDIAN_API_KEY` | `apps/api/src/config/env.ts` |
 | `STORE_GENUINE_PAYEE_EMAIL`, `STORE_GENUINE_PAYEE_MERCHANT_ID`, and the same for `DISCOUNT` and `IMPERSONATOR` | `apps/api/src/config/storeCatalog.ts` |
 | `SIGNALS_MODE`, `LLM_MODE`, `LLM_API_KEY`, `GEMINI_API_KEY`, `LLM_BASE_URL`, `LLM_MODEL_FAST`, `LLM_MODEL_STRONG`, `LLM_FIXTURE_DIR`, `KERNEL_API_KEY`, `CHANNEL3_API_KEY`, `ELASTIC_URL`, `ELASTIC_API_KEY`, `ELASTIC_INDEX`, `MEMORY_MODE`, `MEMORY_FILE`, `GEMINI_EMBEDDING_MODEL` | `apps/api/src/services/agent/agentPorts.ts`; `packages/memory/src/patterns/embeddings.ts` |
-| `AGENT_TIMEOUT_MS`, `AGENT_MAX_FOLLOWUPS`, `AGENT_CONF_THRESHOLD`, `FEATURE_*`, `MEMORY_MATCH_MIN` | `packages/agent/src/config.ts` |
+| `AGENT_TIMEOUT_MS`, `AGENT_MODEL_BUDGET_MS`, `AGENT_MAX_FOLLOWUPS`, `AGENT_CONF_THRESHOLD`, `FEATURE_*`, `MEMORY_MATCH_MIN` | `packages/agent/src/config.ts` |
 | `LLM_PROVIDER` | `packages/agent/src/config.ts` |
 | `SIGNALS_BASE_URL`, `SIGNALS_FIXTURE_DIR` | `packages/agent/src/config.ts` |
 | `ELASTIC_URL`, `ELASTIC_API_KEY`, `ELASTIC_INDEX`, `ELASTIC_INFERENCE_ID` | `packages/agent/src/config.ts`; `ELASTIC_NODE` also in `packages/memory/src/store/factory.ts` |
@@ -290,11 +290,14 @@ Be clear about what has not been run live. These parts are written and tested ag
 - Live Kernel browser and Channel3 catalogue signals (their keys are not configured in this environment). RDAP, TLS, page metadata and structured product data are live.
 - PostgreSQL migrations 001–003 were applied locally and `/health` reports the database store; the automated migration test still uses a mock pool.
 - The web app in a browser (it builds and type-checks; routes verified locally at `http://localhost:5173`).
-- Full live Gemini latency under 2 seconds. The measured live merchant scan took 7.08 seconds; the
-  agent used the live model path for an ambiguous merchant-level scan. The deterministic fast path
-  is much shorter, but a full live response with model-written pattern, identity and explanation
-  calls cannot meet the 2-second target in this environment. The model is not disabled or faked to
-  hide that.
+- Latency under 2 seconds for a live scan. Not shown. Measured on one machine (`docs/latency.md`): with
+  recorded signals and no model, every request to the three demo stores took under 150 ms. An
+  earlier local run of live scans took 1.7 to 3.7 seconds (not reproduced by the committed script),
+  and one live ambiguous scan took 7.08 seconds. `AGENT_MODEL_BUDGET_MS` (default 1200) now caps the
+  total model time per scan and falls back to deterministic output when it runs out; with a
+  simulated 700 ms model it kept warm scans under 2 seconds. A real model and the hosted instance
+  were not measured. The free Render instance sleeps after about 15 minutes, so the first request
+  to the hosted demo is cold and slow.
 - A populated favicon reference corpus. The comparison code exists (`docs/favicon-references.md`)
   and is tested with fakes, but `packages/signals/data/favicon-references.json` is empty because
   the invented demo stores have no favicon asset. Without a reference, `FAVICON_MISMATCH` is never
