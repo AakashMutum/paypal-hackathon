@@ -52,24 +52,25 @@ export default function Layout() {
   const link = (active: boolean) => cn('flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium', active ? 'bg-surface-2 text-content' : 'text-muted hover:text-content hover:bg-surface-2');
   const tab = (active: boolean) => cn('flex flex-col items-center gap-1 px-2 py-2 rounded-md text-[11px] font-medium min-w-[60px]', active ? 'text-action' : 'text-muted');
   return <div className="min-h-screen lg:grid lg:grid-cols-[232px_1fr]">
+    <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[70] focus:bg-surface focus:text-content focus:border focus:border-line-strong focus:rounded-md focus:px-3 focus:py-2">Skip to main content</a>
     <aside className="hidden lg:flex flex-col gap-6 border-r border-line bg-surface sticky top-0 h-screen p-4" aria-label="Sidebar">
-      <Link to="/" className="flex items-center gap-2 px-1"><img src={trustoraLogo} alt="TrustOra" className="h-9 w-auto object-contain" /></Link>
+      <Link to="/" aria-label="TrustOra home" className="inline-flex self-start rounded-md bg-white p-1"><img src={trustoraLogo} alt="" className="h-9 w-auto object-contain" /></Link>
       <nav aria-label="Primary" className="flex flex-col gap-1">{NAV.map(n => <NavLink key={n.to} to={n.to} aria-current={n.match(pathname) ? 'page' : undefined} className={link(n.match(pathname))}><Icon icon={n.icon} />{n.label}</NavLink>)}</nav>
     </aside>
 
     <div className="min-w-0 flex flex-col pb-24 lg:pb-0">
       <header className="sticky top-0 z-30 bg-surface border-b border-line">
-        <div className="max-w-[1200px] mx-auto px-4 lg:px-8 h-14 flex items-center gap-3">
-          <Link to="/" className="lg:hidden flex items-center gap-2"><img src={trustoraLogo} alt="TrustOra" className="h-8 w-auto object-contain" /></Link>
+        <div className="max-w-[1200px] mx-auto px-4 lg:px-8 h-14 flex items-center gap-2 sm:gap-3">
+          <Link to="/" aria-label="TrustOra home" className="lg:hidden inline-flex rounded-md bg-white p-1"><img src={trustoraLogo} alt="" className="h-7 w-auto object-contain" /></Link>
           <ModeBadge />
-          <div className="flex items-center gap-2 ml-auto">
+          <div className="flex items-center gap-1 sm:gap-2 ml-auto">
             <ThemeToggle />
-            <button aria-label="Notifications" onClick={() => setPanel('bell')} className="p-2 rounded-md hover:bg-surface-2"><Icon icon={Bell} /></button>
-            <button aria-label="Account menu" onClick={() => setPanel('user')} className="p-2 rounded-md hover:bg-surface-2"><Icon icon={User} /></button>
+            <button aria-label="Notifications" onClick={() => setPanel('bell')} className="p-1.5 sm:p-2 rounded-md hover:bg-surface-2"><Icon icon={Bell} /></button>
+            <button aria-label="Account menu" onClick={() => setPanel('user')} className="p-1.5 sm:p-2 rounded-md hover:bg-surface-2"><Icon icon={User} /></button>
           </div>
         </div>
       </header>
-      <main id="main" className="w-full max-w-[1200px] mx-auto px-4 lg:px-8 py-6 flex-1 space-y-4"><Outlet /></main>
+      <main id="main" tabIndex={-1} className="w-full max-w-[1200px] mx-auto px-4 lg:px-8 py-6 flex-1 space-y-4"><Outlet /></main>
       <div className="max-w-[1200px] w-full mx-auto px-4 lg:px-8"><SiteFooter /></div>
     </div>
 

@@ -30,6 +30,18 @@
 /* Dark-on-light and light-on-dark overlays for the few old translucent white surfaces. */
 :root[data-theme='dark'] .bg-white\/5, :root[data-theme='dark'] .bg-white\/20 { background-color: color-mix(in srgb, var(--text) 10%, transparent); }
 
+/* ClaimedVsActual: stacked in a narrow container, side by side in a wide one. */
+.cva { container-type: inline-size; }
+.cva-grid { display: grid; gap: 12px; align-items: stretch; }
+.cva-grid > * { min-width: 0; }
+.cva-mid { display: flex; align-items: center; justify-content: center; gap: 8px; text-align: center; }
+.cva-line { display: none; width: 1px; flex: 1; background: var(--border-strong); }
+@container (min-width: 640px) {
+  .cva-grid { grid-template-columns: 1fr minmax(150px, 190px) 1fr; }
+  .cva-mid { flex-direction: column; }
+  .cva-line { display: block; }
+}
+
 /* Staged appearance of data that is already complete. Skipped under reduced motion (below). */
 .reveal { animation: reveal var(--motion-base) var(--ease) both; }
 @keyframes reveal { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }

@@ -16,6 +16,6 @@ export function ThemeToggle() {
   const pick = (value: ThemeChoice) => { setChoice(value); applyTheme(value); saveTheme(value); };
   return <div role="radiogroup" aria-label="Colour theme" className="inline-flex rounded-md border border-line-strong p-0.5 bg-surface">
     {OPTIONS.map(o => <button key={o.value} type="button" role="radio" aria-checked={choice === o.value} aria-label={o.label} title={o.label} onClick={() => pick(o.value)}
-      className={cn('h-8 w-8 grid place-items-center rounded', choice === o.value ? 'bg-action text-action-on' : 'text-muted hover:text-content')}>
+      className={cn('h-8 w-7 sm:w-8 grid place-items-center rounded', choice === o.value ? 'bg-action text-action-on' : 'text-muted hover:text-content')}>
       <Icon icon={o.glyph} size={16} /></button>)}</div>;
 }

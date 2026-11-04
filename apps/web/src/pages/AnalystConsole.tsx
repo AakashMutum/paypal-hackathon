@@ -34,10 +34,10 @@ export default function AnalystConsole() {
   const cur = list.find(i => i.id === (sel ?? rows[0]?.id));
 
   const columns = useMemo<ColDef<Investigation>[]>(() => [
-    { headerName: 'Time', field: 'createdAt', valueFormatter: p => (p.value ? formatDateTime(p.value as string) : ''), sort: 'desc', width: 170 },
+    { headerName: 'Time', field: 'createdAt', valueFormatter: p => (p.value ? formatDateTime(p.value as string) : ''), sort: 'desc', width: 175, filter: 'agTextColumnFilter' },
     { headerName: 'Domain', field: 'domain', flex: 2, minWidth: 180, filter: 'agTextColumnFilter' },
     { headerName: 'Claimed brand', field: 'claimedBrand', flex: 1, minWidth: 140, filter: 'agTextColumnFilter' },
-    { headerName: 'Verdict', field: 'verdict', width: 130, filter: 'agTextColumnFilter', cellRenderer: (p: ICellRendererParams<Investigation>) => <RiskBadge verdict={p.data?.verdict} /> },
+    { headerName: 'Verdict', field: 'verdict', width: 200, filter: 'agTextColumnFilter', cellRenderer: (p: ICellRendererParams<Investigation>) => <RiskBadge verdict={p.data?.verdict} /> },
     { headerName: 'Score', field: 'riskScore', width: 120, filter: 'agNumberColumnFilter', valueFormatter: p => (p.data?.status === 'COMPLETE' ? String(p.value) : '…') },
     { headerName: 'Capture state', field: 'captureState', width: 140, filter: 'agTextColumnFilter', valueFormatter: p => CAPTURE_LABEL[p.value as keyof typeof CAPTURE_LABEL] ?? String(p.value) },
     { headerName: 'Provenance', valueGetter: p => (p.data ? provenanceText(p.data) : ''), flex: 2, minWidth: 220, filter: 'agTextColumnFilter' },
