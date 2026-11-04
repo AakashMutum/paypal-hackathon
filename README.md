@@ -205,6 +205,12 @@ Existing plaintext rows remain readable. Encrypted rows require the same key. An
 | Elasticsearch memory | `ELASTIC_URL`, `ELASTIC_API_KEY`, `ELASTIC_INDEX` | A persistent JSON file is used, or in-memory in tests. |
 | Real PayPal JS approval | `VITE_PAYPAL_CLIENT_ID` in `apps/web/.env` plus sandbox API credentials | The checkout uses a clearly labelled simulated button. |
 
+**Live external-provider status (2026-11-04):** no corporate-registry URL/key, Channel3 key or
+Kernel key is configured in this environment. Their adapters and focused tests are ready, but no
+live lookup, offer comparison or JavaScript-rendered page was performed. The Kernel client now
+rejects private/reserved targets, credentials and non-standard ports before and after navigation,
+and caps returned HTML.
+
 To use the real sandbox approval flow:
 
 1. In the API `.env`, set `PAYPAL_MODE=sandbox`, `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`,

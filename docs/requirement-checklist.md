@@ -43,6 +43,16 @@ dependency or an accounted limitation), **BLOCKED** (waiting on credentials or a
 | Real PayPal JS approval | PARTIAL | The SDK loads when `VITE_PAYPAL_CLIENT_ID` is set and `onApprove` calls the backend gate. The public client id is empty locally, so the simulated button is used. No real buyer approval has occurred. |
 | CI-equivalent checks | PARTIAL | Focused tests, build, typecheck, lint, contracts, brands and hygiene pass locally. PR #37 CI is green on the prior fix branch; this new branch needs its own PR for CI. |
 
+## Live external-provider status (2026-11-04)
+
+- **Corporate registry: BLOCKED.** No `CORPORATE_REGISTRY_URL` or API key is configured. The
+  adapter, schema validation, timeout and local fallback tests pass; no live lookup was made.
+- **Channel3: BLOCKED.** No `CHANNEL3_API_KEY` is configured. The adapter, currency, provenance,
+  schema, timeout and fallback tests pass; no live offers were requested.
+- **Kernel remote browser: BLOCKED.** No `KERNEL_API_KEY` is configured. Unit tests cover success,
+  timeout, provider failure, cleanup, private/credential targets, non-standard ports and private
+  final URLs; no JavaScript-rendered page was fetched live.
+
 ## Remaining external configuration
 
 - `AUDIT_ENCRYPTION_KEY`: generate a local 32-byte key (64 hex characters) and set it in the API

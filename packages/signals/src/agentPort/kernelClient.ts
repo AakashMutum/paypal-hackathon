@@ -1,5 +1,6 @@
 import Kernel from '@onkernel/sdk';
 import { chromium } from 'playwright-core';
+import { assertSafeUrl, UnsafeUrlError } from '../safety/url.js';
 import { extractPageClaims } from './html.js';
 import type { CallOpts, KernelClient, PageClaims } from './types.js';
 
@@ -39,6 +40,8 @@ export interface ChromiumLike {
 export interface KernelClientDeps {
   kernel?: KernelSdkLike;
   chromium?: ChromiumLike;
+  /** DNS lookup used to reject private/reserved targets before and after navigation. */
+  lookup?: (hostname: string) => Promise<string[]>;
 }
 
 function abortReason(signal: AbortSignal): Error {
@@ -87,14 +90,29 @@ export function assertHttpUrl(input: string): void {
 export class KernelBrowserClient implements KernelClient {
   private readonly kernel: KernelSdkLike;
   private readonly chromium: ChromiumLike;
+  private readonly lookup?: (hostname: string) => Promise<string[]>;
 
   constructor(apiKey: string, deps: KernelClientDeps = {}) {
     this.kernel = deps.kernel ?? (new Kernel({ apiKey }) as unknown as KernelSdkLike);
     this.chromium = deps.chromium ?? (chromium as unknown as ChromiumLike);
+    this.lookup = deps.lookup;
+  }
+
+  /**
+   * The remote browser must not be pointed at localhost, private, link-local or reserved
+   * addresses. The initial URL is checked before a session exists; the final URL is checked
+   * before any page content is returned. Kernel should also enforce its own egress policy.
+   */
+  private async validateUrl(input: string): Promise<string> {
+    const safe = await assertSafeUrl(input, this.lookup ? { lookup: this.lookup } : {});
+    if (safe.url.port && safe.url.port !== '80' && safe.url.port !== '443') {
+      throw new UnsafeUrlError('Non-standard ports are not allowed for remote-browser navigation');
+    }
+    return safe.url.toString();
   }
 
   async getPageClaims(url: string, options: CallOpts): Promise<PageClaims> {
-    assertHttpUrl(url);
+    const safeUrl = await this.validateUrl(url);
     if (options.signal?.aborted) throw abortReason(options.signal);
 
     const controller = new AbortController();
@@ -130,9 +148,10 @@ export class KernelBrowserClient implements KernelClient {
       const page = context.pages()[0] ?? (await raced(context.newPage(), signal));
 
       const remaining = Math.max(1, deadline - Date.now());
-      await raced(page.goto(url, { waitUntil: 'domcontentloaded', timeout: remaining }), signal);
-      const html = await raced(page.content(), signal);
-      return extractPageClaims(html, page.url());
+      await raced(page.goto(safeUrl, { waitUntil: 'domcontentloaded', timeout: remaining }), signal);
+      const finalUrl = await this.validateUrl(page.url());
+      const html = (await raced(page.content(), signal)).slice(0, 512 * 1024);
+      return extractPageClaims(html, finalUrl);
     } finally {
       clearTimeout(timer);
       options.signal?.removeEventListener('abort', onCallerAbort);

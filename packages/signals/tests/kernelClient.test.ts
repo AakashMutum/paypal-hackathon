@@ -20,7 +20,14 @@ interface Calls {
   gotoUrls: string[];
 }
 
-function fakes(opts: { gotoDelayMs?: number; createDelayMs?: number; gotoError?: Error; hang?: boolean } = {}) {
+function fakes(opts: {
+  gotoDelayMs?: number;
+  createDelayMs?: number;
+  gotoError?: Error;
+  hang?: boolean;
+  finalUrl?: string;
+  lookup?: (hostname: string) => Promise<string[]>;
+} = {}) {
   const calls: Calls = { created: 0, deleted: [], closed: 0, gotoUrls: [] };
   const wait = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
   const page: PageLike = {
@@ -34,7 +41,7 @@ function fakes(opts: { gotoDelayMs?: number; createDelayMs?: number; gotoError?:
       return HTML;
     },
     url() {
-      return 'https://www.harborline-outfitters.example/';
+      return opts.finalUrl ?? 'https://www.harborline-outfitters.example/';
     },
   };
   const browser: BrowserLike = {
@@ -56,7 +63,14 @@ function fakes(opts: { gotoDelayMs?: number; createDelayMs?: number; gotoError?:
     },
   };
   const chromium: ChromiumLike = { connectOverCDP: async () => browser };
-  return { calls, client: new KernelBrowserClient('test-key', { kernel, chromium }) };
+  return {
+    calls,
+    client: new KernelBrowserClient('test-key', {
+      kernel,
+      chromium,
+      lookup: opts.lookup ?? (async () => ['93.184.216.34']),
+    }),
+  };
 }
 
 test('returns page claims on success and cleans up', async () => {
@@ -76,6 +90,31 @@ test('rejects non-http URLs before creating a session', async () => {
     await assert.rejects(() => client.getPageClaims(url, { timeoutMs: 1000 }), url);
     assert.equal(calls.created, 0, url);
   }
+});
+
+test('rejects private, credential-bearing and non-standard-port URLs before creating a session', async () => {
+  const urls = [
+    'http://127.0.0.1/',
+    'http://10.0.0.1/',
+    'http://169.254.169.254/latest/meta-data',
+    'https://user:pass@shop.example/',
+    'https://shop.example:8443/',
+  ];
+  for (const url of urls) {
+    const { client, calls } = fakes();
+    await assert.rejects(() => client.getPageClaims(url, { timeoutMs: 1000 }), url);
+    assert.equal(calls.created, 0, url);
+  }
+});
+
+test('rejects a private final URL after navigation and still cleans up', async () => {
+  const { client, calls } = fakes({ finalUrl: 'http://127.0.0.1/' });
+  await assert.rejects(
+    () => client.getPageClaims('https://shop.example/', { timeoutMs: 1000 }),
+    /Private|not allowed/,
+  );
+  assert.equal(calls.closed, 1);
+  assert.deepEqual(calls.deleted, ['sess-1']);
 });
 
 test('times out the whole operation, including a slow session start', async () => {
