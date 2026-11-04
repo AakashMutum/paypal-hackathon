@@ -1,3 +1,4 @@
+import { usePageTitle } from '../hooks/usePageTitle';
 import { useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Download, ExternalLink, RotateCcw, Search, ShieldHalf } from 'lucide-react';
@@ -5,13 +6,16 @@ import { AgGridReact } from 'ag-grid-react';
 import { AllCommunityModule, ModuleRegistry, type ColDef, type ICellRendererParams } from 'ag-grid-community';
 import type { Investigation } from '../types';
 import { useInvestigations } from '../hooks/useOrderPolling';
-import { api, setAdminToken, USE_MOCK } from '../api/apiClient';
+import { USE_MOCK } from '../api/apiClient';
+import { SHOW_RESET } from '../lib/env';
+import { ResetDialog } from '../components/ResetDialog';
 import { useApp } from '../context/OrderStateContext';
 import { STORES } from '../data/stores';
 import { EvidenceCard } from '../components/EvidenceCard';
 import { ProvenanceChips, SimilarCases } from '../components/Provenance';
 import { Pill, RiskBadge } from '../components/ui';
-import { CAPTURE_LABEL, clock, cn, money } from '../lib/format';
+import { CAPTURE_LABEL, cn, money } from '../lib/format';
+import { formatDateTime } from '../lib/labels';
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
@@ -21,6 +25,7 @@ const provenanceText = (i: Investigation): string =>
   i.provenance ? `signals ${i.provenance.signals} / llm ${i.provenance.llm} / memory ${i.provenance.memory}` : '';
 
 export default function AnalystConsole() {
+  usePageTitle('Analyst');
   const { list, reload } = useInvestigations(2000); const { toast } = useApp();
   const [f, setF] = useState<typeof F[number]>('ALL'); const [q, setQ] = useState(''); const [min, setMin] = useState(0); const [sel, setSel] = useState<string | null>(null);
   const grid = useRef<AgGridReact<Investigation>>(null);
@@ -28,34 +33,24 @@ export default function AnalystConsole() {
   const cur = list.find(i => i.id === (sel ?? rows[0]?.id));
 
   const columns = useMemo<ColDef<Investigation>[]>(() => [
-    { headerName: 'Time', field: 'createdAt', valueFormatter: p => (p.value ? clock(p.value as string) : ''), sort: 'desc', width: 110 },
+    { headerName: 'Time', field: 'createdAt', valueFormatter: p => (p.value ? formatDateTime(p.value as string) : ''), sort: 'desc', width: 170 },
     { headerName: 'Domain', field: 'domain', flex: 2, minWidth: 180, filter: 'agTextColumnFilter' },
     { headerName: 'Claimed brand', field: 'claimedBrand', flex: 1, minWidth: 140, filter: 'agTextColumnFilter' },
     { headerName: 'Verdict', field: 'verdict', width: 130, filter: 'agTextColumnFilter', cellRenderer: (p: ICellRendererParams<Investigation>) => <RiskBadge verdict={p.data?.verdict} /> },
-    { headerName: 'Risk score', field: 'riskScore', width: 120, filter: 'agNumberColumnFilter', valueFormatter: p => (p.data?.status === 'COMPLETE' ? String(p.value) : '…') },
+    { headerName: 'Score', field: 'riskScore', width: 120, filter: 'agNumberColumnFilter', valueFormatter: p => (p.data?.status === 'COMPLETE' ? String(p.value) : '…') },
     { headerName: 'Capture state', field: 'captureState', width: 140, filter: 'agTextColumnFilter', valueFormatter: p => CAPTURE_LABEL[p.value as keyof typeof CAPTURE_LABEL] ?? String(p.value) },
     { headerName: 'Provenance', valueGetter: p => (p.data ? provenanceText(p.data) : ''), flex: 2, minWidth: 220, filter: 'agTextColumnFilter' },
   ], []);
 
-  const reset = async () => {
-    if (!USE_MOCK) {
-      const token = window.prompt('Demo admin token (leave empty if none is set on the API)');
-      if (token === null) return;
-      if (token) setAdminToken(token);
-    }
-    try {
-      await api.resetDemo(); reload(); setSel(null); toast('Demo data reset', 'ok');
-    } catch (e) {
-      toast((e as Error).message, 'bad');
-    }
-  };
+  const [resetting, setResetting] = useState(false);
 
   return <div className="min-h-screen bg-canvas">
     <header className="bg-white border-b border-ink/10"><div className="max-w-[1440px] mx-auto px-8 h-14 flex items-center gap-4">
       <Link to="/" className="btn-secondary !h-9"><ArrowLeft size={14} />App</Link>
       <span className="w-8 h-8 rounded bg-navy text-white grid place-items-center"><ShieldHalf size={18} /></span><h1 className="font-bold">Analyst Console</h1>
       <Pill tone={USE_MOCK ? 'warn' : 'cyan'} pulse>{USE_MOCK ? 'SIMULATED' : 'LIVE'}</Pill>
-      <button className="btn-secondary !h-9 ml-auto" onClick={reset}><RotateCcw size={14} />Reset demo</button></div></header>
+      {SHOW_RESET && <button className="btn-secondary !h-9 ml-auto" onClick={() => setResetting(true)}><RotateCcw size={14} />Reset demo</button>}</div></header>
+    {resetting && <ResetDialog onClose={() => setResetting(false)} onDone={() => { setResetting(false); reload(); setSel(null); toast('Demo data reset', 'ok'); }} />}
     <main className="max-w-[1440px] mx-auto px-4 md:px-8 py-6 grid lg:grid-cols-12 gap-6">
       <section className="lg:col-span-7 space-y-4">
         <div className="card flex flex-wrap items-center gap-2"><span className="mono-label mr-2">Launch demo</span>

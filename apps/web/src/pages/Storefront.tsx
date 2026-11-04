@@ -1,17 +1,19 @@
+import { usePageTitle } from '../hooks/usePageTitle';
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
-import { Headphones, Watch, ShoppingBag, ArrowLeft } from 'lucide-react';
+import { ShoppingBag, ArrowLeft } from 'lucide-react';
 import { storeById } from '../data/stores';
 import { useCart } from '../context/CartContext';
 import { useApp } from '../context/OrderStateContext';
 import { money } from '../lib/format';
-const ICON = { genuine: Headphones, suspicious: Watch, impersonator: ShoppingBag };
+const ICON = { genuine: ShoppingBag, suspicious: ShoppingBag, impersonator: ShoppingBag };
 export default function Storefront() {
+  usePageTitle('Demo store');
   const { id } = useParams(); const s = storeById(id); const nav = useNavigate(); const cart = useCart(); const { toast } = useApp();
   if (!s) return <Navigate to="/stores" replace />;
   const t = s.theme, I = ICON[s.kind], p = s.product, off = Math.round((1 - p.price / p.msrp) * 100);
   const item = { sku: p.sku, name: p.name, price: p.price, qty: 1 };
   return <div className="min-h-screen" style={{ background: t.bg, color: t.fg, fontFamily: t.font }}>
-    <div className="bg-navy text-white text-xs font-sans px-4 py-2 flex justify-between items-center"><Link to="/stores" className="flex items-center gap-1 hover:underline"><ArrowLeft size={12} />Back to Guardian demo</Link><span className="font-mono">{s.domain}</span></div>
+    <div className="bg-navy text-white text-xs font-sans px-4 py-2 flex justify-between items-center"><Link to="/stores" className="flex items-center gap-1 hover:underline"><ArrowLeft size={12} />Back to the TrustOra demo</Link><span className="font-mono">{s.domain}</span></div>
     <div className="text-center text-sm py-2 font-semibold" style={{ background: t.accent, color: t.accentFg }}>{t.banner}</div>
     <header className="max-w-4xl mx-auto px-6 py-6 flex items-center justify-between"><h1 className="text-2xl font-bold tracking-tight">{s.name}</h1>
       <span className="text-sm opacity-70">Cart ({cart.storeId === s.id ? cart.items.length : 0})</span></header>

@@ -1,4 +1,5 @@
-﻿import { FormEvent, useState } from 'react';
+﻿import { usePageTitle } from '../hooks/usePageTitle';
+import { FormEvent, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import type { MerchantRegistration, MerchantResult } from '../types';
 import { api } from '../api/apiClient';
@@ -6,6 +7,7 @@ import { useApp } from '../context/OrderStateContext';
 import { Pill } from '../components/ui';
 import { cn } from '../lib/format';
 export default function Onboarding() {
+  usePageTitle('Register a merchant');
   const { toast } = useApp();
   const [f, setF] = useState<MerchantRegistration>({ legalName: '', domain: '', paypalEmail: '', type: 'REGISTERED', country: 'US' });
   const [busy, setBusy] = useState(false); const [res, setRes] = useState<MerchantResult | null>(null);
