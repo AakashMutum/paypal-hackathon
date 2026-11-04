@@ -1,0 +1,11 @@
+{
+  "records": [
+    {
+      "cin": "TEST-CIN-0001",
+      "company_name": "Test Fixture Company Private Limited",
+      "company_status": "Active",
+      "date_of_registration": "2020-04-15",
+      "registered_address": "Test fixture address"
+    }
+  ]
+}
