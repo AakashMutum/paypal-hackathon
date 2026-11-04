@@ -128,6 +128,11 @@ export interface Provenance {
   embeddings?: string;
   /** The configured SIGNALS_MODE (replay, live or auto). */
   signalsMode: 'replay' | 'live' | 'auto';
+  /**
+   * Set when a model time budget applied. exhausted means remaining model steps were skipped and
+   * deterministic output was used (AGENT_MODEL_BUDGET_MS).
+   */
+  modelBudget?: { limitMs: number; usedMs: number; exhausted: boolean; skippedCalls: number };
 }
 
 export interface PaymentEvent {

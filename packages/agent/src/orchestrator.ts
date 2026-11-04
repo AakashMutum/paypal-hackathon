@@ -12,6 +12,7 @@ import { IDENTITY_TIMEOUT_MS, matchIdentity, type IdentityInput } from './identi
 import { AgentResultSchema, InvestigationRequestSchema } from './types.js';
 import { loadConfig, type DeepPartial, type InvestigatorAgentConfig } from './config.js';
 import { makeClock } from './clock.js';
+import { withModelBudget } from './llm/budget.js';
 import { createIdFactory, type IdFactory } from './evidence/ids.js';
 import { deriveEvidence } from './evidence/derive.js';
 import { runBaseline, type BaselineResult } from './tools/baseline.js';
@@ -112,6 +113,9 @@ export async function runInvestigatorAgentDetailed(
   const clock = makeClock(config.timeoutMs, now);
   const started = now();
   const ids = createIdFactory();
+  const budgeted =
+    deps.llm && config.modelBudgetMs > 0 ? withModelBudget(deps.llm, config.modelBudgetMs, now) : undefined;
+  const llm = budgeted?.client ?? deps.llm;
 
   try {
     const parsed = InvestigationRequestSchema.safeParse(request);
@@ -143,7 +147,7 @@ export async function runInvestigatorAgentDetailed(
     let investigator: InvestigatorOutcome | undefined;
     if (path === 'AMBIGUOUS') {
       investigator = await runInvestigator(state, deps, ids, clock, {
-        llm: deps.llm,
+        llm,
         maxFollowUps: config.maxFollowUps,
         useLoop: config.features.investigatorLoop,
         signal: clock.signal,
@@ -173,7 +177,7 @@ export async function runInvestigatorAgentDetailed(
       const pattern =
         patternBudget > 0
           ? await writePatternSentence(facts, {
-              llm: deps.llm,
+              llm,
               timeoutMs: patternBudget,
               forbiddenTerms,
               signal: clock.signal,
@@ -201,7 +205,7 @@ export async function runInvestigatorAgentDetailed(
     const identityTask =
       path === 'AMBIGUOUS'
         ? matchIdentity(buildIdentityInput(state, parsed.data), ids, {
-            llm: deps.llm,
+            llm,
             useLlm: config.features.identityLlm,
             timeoutMs: IDENTITY_TIMEOUT_MS,
             signal: clock.signal,
@@ -215,7 +219,7 @@ export async function runInvestigatorAgentDetailed(
         ? assessPromotionalLanguage(
             { visibleText: state.safeClaims?.visibleText, existing: state.evidence },
             ids,
-            { llm: deps.llm, timeoutMs: promoBudget, signal: clock.signal },
+            { llm, timeoutMs: promoBudget, signal: clock.signal },
           )
         : Promise.resolve(undefined);
 
@@ -278,7 +282,7 @@ export async function runInvestigatorAgentDetailed(
               }
             : {}),
         },
-        { llm: deps.llm, timeoutMs: writerBudget, signal: clock.signal }
+        { llm, timeoutMs: writerBudget, signal: clock.signal }
       );
 
       const checked = checkExplanation({
@@ -294,18 +298,22 @@ export async function runInvestigatorAgentDetailed(
       explanationFallback = writer.attempted && (!writer.ok || checked.usedTemplate);
     }
 
+    const modelBudget = budgeted?.summary();
     let degraded =
       baseline.failedBaseline > 0 ||
       Boolean(investigator?.degraded) ||
-      Boolean(identityResult?.degraded);
+      Boolean(identityResult?.degraded) ||
+      Boolean(modelBudget?.exhausted);
     let fallbackReason =
       baseline.failedBaseline > 0
         ? 'tool_unavailable'
-        : investigator?.degraded
-          ? 'investigator_failed'
-          : identityResult?.degraded
-            ? 'identity_llm_failed'
-            : undefined;
+        : modelBudget?.exhausted
+          ? 'model_budget'
+          : investigator?.degraded
+            ? 'investigator_failed'
+            : identityResult?.degraded
+              ? 'identity_llm_failed'
+              : undefined;
 
     if (explanationFallback) {
       degraded = true;
@@ -339,6 +347,7 @@ export async function runInvestigatorAgentDetailed(
         llmCalls: state.llmCalls,
         followUps: state.followUps,
         failedBaseline: baseline.failedBaseline,
+        ...(modelBudget ? { modelBudget } : {}),
       },
       degraded,
       ...(fallbackReason ? { fallbackReason } : {}),

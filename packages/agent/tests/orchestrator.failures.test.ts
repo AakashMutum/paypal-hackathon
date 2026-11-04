@@ -78,7 +78,7 @@ test('a slow model still finishes near the deadline and marks it', async () => {
   const result = await runInvestigatorAgentDetailed(
     scenarioB.request,
     depsFor(scenarioB, {}, llm),
-    { timeoutMs: 4600 }
+    { timeoutMs: 4600, modelBudgetMs: 0 }
   );
   const elapsed = Date.now() - started;
 

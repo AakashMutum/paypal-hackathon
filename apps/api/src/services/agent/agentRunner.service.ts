@@ -104,7 +104,11 @@ export interface AgentRun {
 
 const RETRIEVAL_TIMEOUT_MS = 2000;
 
-function provenanceFor(domain: string, memory: MemoryInfo): Provenance {
+function provenanceFor(
+  domain: string,
+  memory: MemoryInfo,
+  modelBudget?: Provenance['modelBudget'],
+): Provenance {
   const configured = signalsMode();
   const signals = configured === 'live' ? 'live' : configured === 'auto' ? (isCanonicalDomain(domain) ? 'replay' : 'live') : 'replay';
   const llm = llmInfo();
@@ -120,6 +124,7 @@ function provenanceFor(domain: string, memory: MemoryInfo): Provenance {
     memoryPersistent: memory.persistent,
     embeddings: memory.embeddings,
     signalsMode: configured,
+    ...(modelBudget ? { modelBudget } : {}),
   };
 }
 
@@ -163,7 +168,7 @@ export async function runAgent(request: InvestigationRequest): Promise<AgentRun>
       `Retrieved as a ${h.matchType.replace(/_/g, ' ')} match with similarity ${Number((h.score ?? 0).toFixed(2))}; historical context only, not used to change the decision.`,
   }));
 
-  return { result, similarCases, provenance: provenanceFor(domain, await memoryInfo()) };
+  return { result, similarCases, provenance: provenanceFor(domain, await memoryInfo(), result.stats.modelBudget) };
 }
 
 // ---------------------------------------------------------------------------------------------
