@@ -23,3 +23,27 @@ export function radarMessage(inv: Pick<Investigation, 'payeeMismatch' | 'signalA
 export function merchantCheckLine(inv: Pick<Investigation, 'verdict' | 'reasons'>): string {
   return inv.reasons[0] ?? (inv.verdict ? 'The merchant check finished.' : 'The merchant check is running.');
 }
+
+export type ClaimMatch = 'MATCH' | 'MISMATCH' | 'NOT_CHECKED';
+
+/**
+ * Whether the account that would be paid matches the merchant the storefront claims, from the
+ * investigation's own data. MISMATCH needs the mismatch flag or a failed payee check; MATCH needs a
+ * passed payee check and a supplied payee; everything else is NOT_CHECKED, never a guess.
+ */
+export function claimMatch(inv: Pick<Investigation, 'status' | 'payeeMismatch' | 'payeeName' | 'evidence' | 'signalAvailability'>): ClaimMatch {
+  if (inv.status !== 'COMPLETE') return 'NOT_CHECKED';
+  if (inv.payeeMismatch) return 'MISMATCH';
+  const payee = inv.evidence.find((e) => e.node === 'PAYEE');
+  const supplied = inv.signalAvailability ? inv.signalAvailability.payee === 'provided' : Boolean(inv.payeeName);
+  if (!supplied || !payee) return 'NOT_CHECKED';
+  if (payee.status === 'FAIL') return 'MISMATCH';
+  if (payee.status === 'PASS') return 'MATCH';
+  return 'NOT_CHECKED';
+}
+
+export const CLAIM_SENTENCE: Record<ClaimMatch, string> = {
+  MATCH: 'The account that would be paid matches the merchant the storefront claims.',
+  MISMATCH: 'The account that would be paid is not the merchant the storefront claims.',
+  NOT_CHECKED: 'The receiving account could not be confirmed against the storefront.',
+};
