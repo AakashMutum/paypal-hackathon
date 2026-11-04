@@ -2,8 +2,8 @@
 import type { Tone } from './labels';
 export type { Tone } from './labels';
 export const TONE: Record<Tone, string> = {
-  ok: 'text-ok bg-ok-bg border-ok/25', warn: 'text-warn bg-warn-bg border-warn/30', bad: 'text-bad bg-bad-bg border-bad/30',
-  info: 'text-electric bg-tint border-electric/25', cyan: 'text-accent bg-accent/10 border-accent/30', neutral: 'text-muted bg-canvas border-ink/10',
+  ok: 'text-success bg-success-bg border-success/40', warn: 'text-warning bg-warning-bg border-warning/40', bad: 'text-danger bg-danger-bg border-danger/40',
+  info: 'text-action bg-surface-2 border-action/40', cyan: 'text-action bg-surface-2 border-action/40', neutral: 'text-muted bg-surface-2 border-line',
 };
 export const cn = (...a: (string | false | null | undefined)[]) => a.filter(Boolean).join(' ');
 export const money = (n: number | null | undefined, c = 'USD') =>

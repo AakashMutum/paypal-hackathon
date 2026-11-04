@@ -76,10 +76,10 @@ export default function Dashboard() {
       {loading ? <Skeleton className="h-24 w-full mt-3" /> : radar ? <>
         <p className="text-sm text-muted my-2">{radarMessage(radar)}</p>
         <div className="rounded-lg bg-tint p-3 space-y-2">
-          <div className="bg-white rounded p-3 flex justify-between items-center"><div><div className="mono-label">Domain</div><div className="font-mono text-sm font-semibold break-all">{radar.domain}</div></div></div>
+          <div className="bg-surface rounded p-3 flex justify-between items-center"><div><div className="mono-label">Domain</div><div className="font-mono text-sm font-semibold break-all">{radar.domain}</div></div></div>
           <div className="text-center"><Pill tone={radar.verdict === 'PAUSE' ? 'bad' : 'warn'}>{scoreText(radar.verdict, radar.riskScore)}</Pill></div>
-          <div className="bg-white rounded p-3"><div className="mono-label">Storefront says</div><div className="font-mono text-sm font-semibold break-words">{displayBrand(radar.claimedBrand, radar.domain)}</div></div>
-          <div className={cn('rounded p-3', radar.payeeMismatch ? 'bg-bad-bg' : 'bg-white')}><div className={cn('mono-label', radar.payeeMismatch && '!text-bad-deep')}>PayPal pays</div><div className={cn('font-mono text-sm font-semibold', radar.payeeMismatch && 'text-bad-deep')}>{radar.payeeName ?? 'Not supplied'}</div></div>
+          <div className="bg-surface rounded p-3"><div className="mono-label">Storefront says</div><div className="font-mono text-sm font-semibold break-words">{displayBrand(radar.claimedBrand, radar.domain)}</div></div>
+          <div className={cn('rounded p-3', radar.payeeMismatch ? 'bg-bad-bg' : 'bg-surface')}><div className={cn('mono-label', radar.payeeMismatch && '!text-bad-deep')}>PayPal pays</div><div className={cn('font-mono text-sm font-semibold', radar.payeeMismatch && 'text-bad-deep')}>{radar.payeeName ?? 'Not supplied'}</div></div>
         </div>
         <div className="flex justify-between text-xs mt-3 text-muted"><span>Funds are not captured without an ALLOW or an acknowledged warning</span><Link className="text-electric font-semibold" to={`/engine/${radar.id}`}>Open check</Link></div>
       </> : <p className="text-sm text-muted mt-2">Nothing has been flagged. Run a scan to see how a check looks.</p>}
