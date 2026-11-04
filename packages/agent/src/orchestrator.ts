@@ -36,6 +36,7 @@ import {
   searchMemory,
   writeMemorySafely,
 } from './memory/store.js';
+import { PROMO_TIMEOUT_MS, assessPromotionalLanguage } from './promo/promo.js';
 import { registrableDomain } from './util/domain.js';
 import { FALLBACK_SUMMARY } from './scoring/summary.js';
 import {
@@ -207,7 +208,27 @@ export async function runInvestigatorAgentDetailed(
           })
         : Promise.resolve(undefined);
 
-    const [patternResult, identityResult] = await Promise.all([patternTask, identityTask]);
+    // Pressure and promotional wording is read in parallel with identity and the pattern sentence.
+    const promoBudget = clock.step(PROMO_TIMEOUT_MS);
+    const promoTask =
+      path === 'AMBIGUOUS' && config.features.promoLanguage && promoBudget > 0
+        ? assessPromotionalLanguage(
+            { visibleText: state.safeClaims?.visibleText, existing: state.evidence },
+            ids,
+            { llm: deps.llm, timeoutMs: promoBudget, signal: clock.signal },
+          )
+        : Promise.resolve(undefined);
+
+    const [patternResult, identityResult, promoResult] = await Promise.all([
+      patternTask,
+      identityTask,
+      promoTask,
+    ]);
+
+    if (promoResult) {
+      if (promoResult.usedLlm) state.llmCalls += 1;
+      if (promoResult.evidence.length > 0) state.evidence.push(...promoResult.evidence);
+    }
 
     if (patternResult) {
       patternSentence = patternResult.sentence;
@@ -221,7 +242,7 @@ export async function runInvestigatorAgentDetailed(
       if (identityResult.result) identityMatch = identityResult.result;
     }
 
-    if (identityResult || patternResult) {
+    if (identityResult || patternResult || promoResult) {
       score = scoreAndDecide(state.evidence, scoreOptions);
     }
 
