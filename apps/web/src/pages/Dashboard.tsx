@@ -17,7 +17,7 @@ export default function Dashboard() {
     { l: 'Suspicious Sites', v: 16 + flagged.length, icon: Flag, sub: <Pill tone="info">Flagged</Pill> },
     { l: 'Prevented Threats', v: 4 + done.filter(i => i.verdict === 'PAUSE').length, icon: ShieldAlert, sub: <span className="mono-label !text-bad">Capture paused</span> },
   ];
-  const defended = 4620.45 + flagged.filter(i => i.captureState !== 'CAPTURED').reduce((s, i) => s + i.price, 0);
+  const defended = 4620.45 + flagged.filter(i => i.captureState !== 'CAPTURED').reduce((s, i) => s + (i.price ?? 0), 0);
   const radar = flagged[0];
   const [whole, cents] = defended.toFixed(2).split('.');
   return <>
@@ -59,7 +59,7 @@ export default function Dashboard() {
           <div className="bg-white rounded p-3 flex justify-between items-center"><div><div className="mono-label">Browsed domain</div><div className="font-mono text-sm font-semibold break-all">{radar.domain}</div></div><span className="pill border-ink/10 font-mono">Site</span></div>
           <div className="text-center"><Pill tone="bad">RISK SCORE {Math.round(radar.riskScore)}</Pill></div>
           <div className="bg-white rounded p-3 flex justify-between items-center"><div><div className="mono-label">Claimed storefront</div><div className="font-mono text-sm font-semibold">{radar.claimedBrand}</div></div><Pill tone="bad">CLAIMED</Pill></div>
-          <div className="bg-bad-bg rounded p-3 flex justify-between items-center"><div><div className="mono-label !text-bad-deep">Actual recipient account</div><div className="font-mono text-sm font-semibold text-bad-deep">{radar.payeeName}</div></div><span className="text-xs font-mono text-bad-deep">Payee</span></div>
+          <div className="bg-bad-bg rounded p-3 flex justify-between items-center"><div><div className="mono-label !text-bad-deep">Actual recipient account</div><div className="font-mono text-sm font-semibold text-bad-deep">{radar.payeeName ?? 'Not supplied'}</div></div><span className="text-xs font-mono text-bad-deep">Payee</span></div>
         </div>
         <div className="flex justify-between text-xs mt-3 text-muted"><span>Funds are not captured without an ALLOW or an acknowledged warning</span><Link className="text-electric font-semibold" to={`/engine/${radar.id}`}>Audit Trail</Link></div>
       </> : <p className="text-sm text-muted mt-2">No mismatches right now. Run a scan to see the radar in action.</p>}
@@ -70,7 +70,7 @@ export default function Dashboard() {
       <div className="space-y-3">{list.slice(0, 3).map(i => <button key={i.id} onClick={() => nav(`/engine/${i.id}`)} className="card !p-4 w-full text-left hover:shadow-l2 hover:border-electric/20 transition">
         <div className="flex justify-between items-start gap-2"><div><div className="font-mono font-semibold text-sm break-all">{i.domain}</div><div className="text-xs text-muted">Claimed: {i.claimedBrand}</div></div><RiskBadge verdict={i.verdict} /></div>
         <div className="mt-3 rounded bg-tint p-2 flex justify-between items-center text-xs font-mono">
-          <span className="flex items-center gap-2 min-w-0">{i.payeeName.includes('@') ? <Mail size={14} /> : <Building2 size={14} />}<span className="truncate">{i.payeeName}</span></span>
+          <span className="flex items-center gap-2 min-w-0">{(i.payeeName ?? '').includes('@') ? <Mail size={14} /> : <Building2 size={14} />}<span className="truncate">{i.payeeName ?? 'Payee not supplied'}</span></span>
           <span className={cn('font-semibold', i.verdict === 'PAUSE' ? 'text-bad' : i.verdict === 'ALLOW' ? 'text-electric' : 'text-warn')}>{i.verdict === 'PAUSE' ? 'CAPTURE PAUSED' : i.verdict === 'ALLOW' ? 'ALLOWED' : i.verdict === 'WARN' ? `${i.riskScore}% Anomaly` : '…'}</span></div></button>)}</div>
     </section>
 

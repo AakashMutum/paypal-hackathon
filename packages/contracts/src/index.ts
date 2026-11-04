@@ -108,7 +108,7 @@ export interface HealthData {
   version: string;
   database: DatabaseHealthInfo;
   /** Which parts run for real and which are simulated or replayed. Additive. */
-  modes?: Record<string, string>;
+  modes?: Record<string, unknown>;
 }
 
 export interface HealthMeta {

@@ -1,4 +1,11 @@
-import type { Decision, Evidence, Explanation, ExplanationBullet, HardRuleTrigger } from '../types.js';
+import type {
+  Decision,
+  Evidence,
+  Explanation,
+  ExplanationBullet,
+  HardRuleTrigger,
+  RetrievedCase,
+} from '../types.js';
 import { containsForbiddenReference } from '../guard/output.js';
 import { sanitizeText } from '../guard/shield.js';
 import { FALLBACK_SUMMARY } from '../scoring/summary.js';
@@ -26,6 +33,8 @@ export interface CheckExplanationInput {
   decision: Decision;
   hardRules: HardRuleTrigger[];
   maxBullets?: number;
+  /** Case ids the writer was allowed to cite from memory. */
+  allowedCaseIds?: string[];
 }
 
 export interface CheckExplanationResult {
@@ -92,6 +101,7 @@ export function checkExplanation(input: CheckExplanationInput): CheckExplanation
   // If none of the model's own bullets survived, the text is template output,
   // even when a hard-rule sentence was appended afterwards.
   const usedTemplate = keptFromCandidate === 0;
+  const retrievedCases = safeRetrievedCases(input.candidate?.retrievedCases, input.allowedCaseIds);
 
   return {
     explanation: {
@@ -99,10 +109,29 @@ export function checkExplanation(input: CheckExplanationInput): CheckExplanation
         ? HEADLINES[input.decision]
         : safeHeadline(input.candidate?.headline, input.decision),
       bullets: kept.slice(0, maxBullets),
+      ...(retrievedCases.length > 0 ? { retrievedCases } : {}),
     },
     dropped,
     usedTemplate,
   };
+}
+
+function safeRetrievedCases(
+  candidate: RetrievedCase[] | undefined,
+  allowedCaseIds: string[] | undefined,
+): RetrievedCase[] {
+  const allowed = new Set(allowedCaseIds ?? []);
+  const seen = new Set<string>();
+  const kept: RetrievedCase[] = [];
+  for (const entry of candidate ?? []) {
+    if (kept.length >= 3) break;
+    if (!entry || !allowed.has(entry.caseId) || seen.has(entry.caseId)) continue;
+    const relevance = typeof entry.relevance === 'string' ? entry.relevance.trim() : '';
+    if (!relevance || !isAcceptableText(relevance)) continue;
+    kept.push({ caseId: entry.caseId, relevance: truncateText(relevance, 160) });
+    seen.add(entry.caseId);
+  }
+  return kept;
 }
 
 function isAcceptableText(text: string): boolean {

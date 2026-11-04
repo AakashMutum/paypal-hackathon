@@ -2,6 +2,7 @@
 import { z } from 'zod';
 
 import type { Decision, Evidence, Explanation, HardRuleTrigger } from '../types.js';
+import { RetrievedCaseSchema } from '../types.js';
 import type { LlmClient } from '../llm/client.js';
 import { EXPLANATION_SYSTEM, wrapUntrusted } from '../llm/prompts.js';
 import { truncate } from '../tools/call.js';
@@ -26,16 +27,25 @@ export const ExplanationResponseSchema = z
       )
       .min(1)
       .max(5),
+    retrievedCases: z.array(RetrievedCaseSchema).max(3).optional(),
   })
   .strict();
 
 export type ExplanationResponse = z.infer<typeof ExplanationResponseSchema>;
 
-export const EXPLANATION_TIMEOUT_MS = 2500;
+export const EXPLANATION_TIMEOUT_MS = 20000;
 export const EXPLANATION_MAX_TOKENS = 500;
 export const MAX_WRITER_EVIDENCE = 8;
 
 const KEY_FACTS = ['ageDays', 'discountPct', 'overall', 'status', 'offerCount', 'matchType'];
+
+export interface RetrievedCaseInput {
+  caseId: string;
+  patternText: string;
+  decision: Decision;
+  score: number;
+  retrieval?: string;
+}
 
 export interface ExplanationWriterInput {
   decision: Decision;
@@ -44,6 +54,8 @@ export interface ExplanationWriterInput {
   evidence: Evidence[];
   hardRules: HardRuleTrigger[];
   identityGaps?: string[];
+  /** Historical cases retrieved from memory. Context only; they never change the decision. */
+  retrievedCases?: RetrievedCaseInput[];
 }
 
 export interface ExplanationWriterOptions {
@@ -110,9 +122,21 @@ export function buildWriterUser(input: ExplanationWriterInput): string {
     lines.push('', 'Identity gaps:', ...input.identityGaps.map((gap) => `- ${gap}`));
   }
 
+  const retrieved = input.retrievedCases ?? [];
   lines.push(
     '',
-    'Write a headline and between 1 and 5 bullets. Every bullet must cite ids from the list above.'
+    'Historical cases retrieved from memory (context only; never evidence for this case and never a reason to change the decision):',
+    ...(retrieved.length > 0
+      ? retrieved
+          .slice(0, 3)
+          .map(
+            (entry) =>
+              `- ${entry.caseId} | ${entry.decision} | score ${entry.score.toFixed(2)} | ${entry.retrieval ?? 'semantic'} | ${truncate(entry.patternText, 160)}`,
+          )
+      : ['- none']),
+    '',
+    'Write a headline and between 1 and 5 bullets. Every bullet must cite ids from the evidence list above.',
+    'If a retrieved case helps explain the decision, add "retrievedCases":[{"caseId":"<one of the ids above>","relevance":"<=160 chars"}]. Use only the ids above. Do not let a past case change the decision.',
   );
 
   return lines.join('\n');

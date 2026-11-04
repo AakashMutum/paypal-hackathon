@@ -5,7 +5,8 @@ export const TONE: Record<Tone, string> = {
   info: 'text-electric bg-tint border-electric/25', cyan: 'text-accent bg-accent/10 border-accent/30', neutral: 'text-muted bg-canvas border-ink/10',
 };
 export const cn = (...a: (string | false | null | undefined)[]) => a.filter(Boolean).join(' ');
-export const money = (n: number, c = 'USD') => new Intl.NumberFormat('en-US', { style: 'currency', currency: c }).format(n);
+export const money = (n: number | null | undefined, c = 'USD') =>
+  n === null || n === undefined ? '—' : new Intl.NumberFormat('en-US', { style: 'currency', currency: c }).format(n);
 export const clock = (iso: string) => new Date(iso).toLocaleTimeString('en-GB', { hour12: false });
 export const VERDICT: Record<Verdict, { risk: string; tone: Tone; state: string; headline: string }> = {
   ALLOW: { risk: 'LOW RISK', tone: 'ok', state: 'ALLOWED', headline: 'No problems found' },
@@ -13,7 +14,10 @@ export const VERDICT: Record<Verdict, { risk: string; tone: Tone; state: string;
   PAUSE: { risk: 'HIGH RISK', tone: 'bad', state: 'CAPTURE PAUSED', headline: 'High-risk mismatch detected' },
 };
 export const CAPTURE_LABEL = { PENDING: 'Pending', AUTHORIZED: 'Authorizing', CAPTURED: 'Captured', HELD: 'Paused', VOIDED: 'Voided', FAILED: 'Failed' } as const;
-export function ageLabel(days: number) { return days >= 365 ? `${Math.round(days / 365)} Years` : `${days} Days`; }
+export function ageLabel(days: number | null | undefined) {
+  if (days === null || days === undefined) return 'Unknown';
+  return days >= 365 ? `${Math.round(days / 365)} Years` : `${days} Days`;
+}
 export function maskEmail(e = '') { const [l, d] = e.split('@'); return l ? `${l.slice(0, 4)}***@${d ?? ''}` : '—'; }
 export function download(name: string, data: unknown) {
   const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }));

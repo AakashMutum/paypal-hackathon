@@ -110,7 +110,7 @@ flowchart LR
 | `packages/contracts` | Shared types and constants |
 | `packages/agent` | Investigator agent: scoring, hard rules, identity matching, explanations, memory use |
 | `packages/signals` | Evidence collectors and an in-process signals port for the agent |
-| `packages/memory` | Anonymous memory of past scam patterns (in memory or Elasticsearch) |
+| `packages/memory` | Anonymous memory of past scam patterns (in process, a persistent JSON file with Gemini embeddings, or Elasticsearch) |
 | `packages/eval` | Benchmark and metrics |
 | `demo-sites`, `tests`, `infra`, `scripts`, `docs` | Fictional demo notes, shared fixtures, deployment, repo checks, documentation |
 
@@ -134,9 +134,9 @@ cp apps/web/.env.example apps/web/.env
 npm run dev:web      # http://localhost:5173
 ```
 
-Without `VITE_API_URL` the web app uses its built-in simulated backend (badge: "Simulated
-backend"). To make it call the API, set `VITE_API_URL=http://localhost:3000` in `apps/web/.env`
-(badge: "Live API").
+With `VITE_USE_MOCK` unset and no `VITE_API_URL`, the web app uses its built-in simulated
+backend (badge: "Simulated backend"). Set `VITE_USE_MOCK=false` to call the API through the dev
+proxy, or set `VITE_API_URL=http://localhost:3000` for a direct API URL (badge: "Live API").
 
 Open `/stores` and buy from each of the three demo storefronts: the genuine one is captured, the
 heavy-discount one is held until you acknowledge the warning, and the impersonator is paused.
@@ -157,10 +157,10 @@ See `docs/agentic-demo.md`.
 | `paypal` | `sandbox`, `simulated` | `sandbox` when `PAYPAL_CLIENT_ID` and `PAYPAL_CLIENT_SECRET` are set, otherwise payments are simulated and marked `simulated: true` |
 | `store` | `database`, `memory` | PostgreSQL when `DATABASE_URL` is set and migrated, otherwise memory (a warning is logged) |
 | `signals` (`SIGNALS_MODE`) | `replay`, `live`, `auto` | Recorded signals for the demo stores; live signals; or replay for the demo stores and live for any other domain |
-| `llm` (`LLM_MODE`) | `live`, `replay`, `none` | A language model (needs `LLM_API_KEY`), recorded answers, or the agent's deterministic fallbacks |
-| `memory` | `elastic`, `memory` | Elasticsearch when `ELASTIC_URL` and `ELASTIC_API_KEY` are set |
+| `llm` (`LLM_MODE`) | `live`, `replay`, `none` | A language model (needs `LLM_API_KEY` or `GEMINI_API_KEY`), recorded answers, or the agent's deterministic fallbacks |
+| `memory` | `elastic`, `file`, `memory` | Elasticsearch when configured; otherwise a persistent JSON file in `.cache/`; in-memory in tests |
 
-Every investigation also carries a `provenance` object with the signals, LLM and memory it used.
+Every investigation also carries a `provenance` object with the signals, LLM provider/model, memory backend and embedding provider it used.
 The API refuses to start if `PAYPAL_MODE` is anything but `sandbox`.
 
 ### With a database
@@ -185,14 +185,14 @@ Names only; values never belong in the repository. See `.env.example` and `apps/
 | `PAYPAL_MODE`, `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`, `PAYPAL_TIMEOUT_MS` | `apps/api/src/config/env.ts` |
 | `DEMO_ADMIN_TOKEN`, `GUARDIAN_API_KEY` | `apps/api/src/config/env.ts` |
 | `STORE_GENUINE_PAYEE_EMAIL`, `STORE_GENUINE_PAYEE_MERCHANT_ID`, and the same for `DISCOUNT` and `IMPERSONATOR` | `apps/api/src/config/storeCatalog.ts` |
-| `SIGNALS_MODE`, `LLM_MODE`, `LLM_API_KEY`, `LLM_BASE_URL`, `LLM_MODEL_FAST`, `LLM_MODEL_STRONG`, `LLM_FIXTURE_DIR`, `KERNEL_API_KEY`, `CHANNEL3_API_KEY`, `ELASTIC_URL`, `ELASTIC_API_KEY`, `ELASTIC_INDEX` | `apps/api/src/services/agent/agentPorts.ts` |
+| `SIGNALS_MODE`, `LLM_MODE`, `LLM_API_KEY`, `GEMINI_API_KEY`, `LLM_BASE_URL`, `LLM_MODEL_FAST`, `LLM_MODEL_STRONG`, `LLM_FIXTURE_DIR`, `KERNEL_API_KEY`, `CHANNEL3_API_KEY`, `ELASTIC_URL`, `ELASTIC_API_KEY`, `ELASTIC_INDEX`, `MEMORY_MODE`, `MEMORY_FILE`, `GEMINI_EMBEDDING_MODEL` | `apps/api/src/services/agent/agentPorts.ts`; `packages/memory/src/patterns/embeddings.ts` |
 | `AGENT_TIMEOUT_MS`, `AGENT_MAX_FOLLOWUPS`, `AGENT_CONF_THRESHOLD`, `FEATURE_*`, `MEMORY_MATCH_MIN` | `packages/agent/src/config.ts` |
 | `LLM_PROVIDER` | `packages/agent/src/config.ts` |
 | `SIGNALS_BASE_URL`, `SIGNALS_FIXTURE_DIR` | `packages/agent/src/config.ts` |
 | `ELASTIC_URL`, `ELASTIC_API_KEY`, `ELASTIC_INDEX`, `ELASTIC_INFERENCE_ID` | `packages/agent/src/config.ts`; `ELASTIC_NODE` also in `packages/memory/src/store/factory.ts` |
 | `MCP_TRANSPORT`, `MCP_PORT`, `MCP_BEARER_TOKEN`, `GUARDIAN_API_URL`, `GUARDIAN_API_KEY`, `GUARDIAN_REQUEST_TIMEOUT_MS`, `GUARDIAN_FINALIZE_TIMEOUT_MS` | `apps/mcp/src/config.ts` |
 | `CHANNEL3_API_KEY`, `CHANNEL3_BASE_URL`, `LLM_*` | `apps/mcp/demo-agent` |
-| `VITE_API_URL`, `VITE_USE_MOCK` | `apps/web/src/api/apiClient.ts` (the API is used when `VITE_API_URL` is set and `VITE_USE_MOCK` is not `true`) |
+| `VITE_API_URL`, `VITE_USE_MOCK` | `apps/web/src/api/apiClient.ts` (`VITE_USE_MOCK=false` forces the API; otherwise an API URL is needed to leave the simulator) |
 | `VITE_PAYPAL_CLIENT_ID` | `apps/web/src/hooks/usePaypalAuth.ts` |
 | `VITE_API_TARGET` | `apps/web/vite.config.ts` (local dev proxy) |
 
@@ -226,10 +226,10 @@ the team, not a claim about real-world accuracy.
 | Signals for the three demo stores | | Recorded (`SIGNALS_MODE=replay` or `auto`) |
 | Signals for any other domain | Live RDAP, TLS and payee-binding checks in `live` or `auto` mode (Kernel and Channel3 with keys) | Not cleared without evidence in `replay` mode |
 | Payments | PayPal sandbox calls when sandbox credentials are set | Simulated otherwise: `SIM-` ids and `simulated: true` |
-| Language model | Used when `LLM_MODE=live` and a key is set | Off by default; `replay` has no committed recordings yet |
-| Memory | In process; Elasticsearch when configured | The demo stores are not written to memory |
+| Language model | Live Gemini 3.5 Flash structured JSON, validated through Zod, with model fallback and a hard timeout | `replay` has no committed recordings yet; deterministic fallbacks remain when the model is unavailable |
+| Memory | Persistent JSON file with Gemini embeddings; Elasticsearch when configured | In-memory in tests; the demo stores are not written to memory |
 | Persistence | PostgreSQL when `DATABASE_URL` is set | Memory otherwise |
-| Web app | Calls the API when `VITE_API_URL` is set | Built-in simulated backend otherwise |
+| Web app | Calls the API when `VITE_USE_MOCK=false` or `VITE_API_URL` is set | Built-in simulated backend otherwise |
 
 Only an ALLOW is captured. A WARN waits for a person to acknowledge it. A PAUSE, and any payee
 mismatch, is never captured. The defects that remain are listed in `docs/e2e-report.md`.
@@ -239,15 +239,18 @@ mismatch, is never captured. The defects that remain are listed in `docs/e2e-rep
 Be clear about what has not been run live. These parts are written and tested against fakes, but
 **have not been run against the real service from this repository**:
 
-- PayPal sandbox authorize, capture and void (tested with a fake `fetch`).
+- PayPal sandbox authorize, capture and void (mock-tested). Real sandbox OAuth, order creation and retrieval were verified; authorize/capture need a buyer approval that is not automated here.
 - Kernel remote browser and Channel3 catalogue (tested with fake clients).
-- A language model (`LLM_MODE=live`), and recorded model answers (none are committed).
-- Elasticsearch scam memory (tested with a fake `fetch`; the live test skips without credentials).
-- The PostgreSQL migration and the database store (the migration test uses a mock pool).
+- Recorded model answers (`LLM_MODE=replay`; none are committed).
+- Elasticsearch scam memory (tested with a fake `fetch`; the live test skips without credentials). The file-backed memory and Gemini embeddings are verified live.
+- A hosted persistent memory disk. The local JSON file survives restarts, but a container filesystem may not; use a mounted disk or Elasticsearch in a hosted deployment.
+- Live Kernel browser and Channel3 catalogue signals (their keys are not configured in this environment). RDAP, TLS, page metadata and structured product data are live.
+- PostgreSQL migrations 001–003 were applied locally and `/health` reports the database store; the automated migration test still uses a mock pool.
 - The web app in a browser (it builds and type-checks; routes verified locally at `http://localhost:5173`).
 
-Other limits: the evaluation is a small synthetic benchmark; retrieved similar cases are shown but
-are not passed to the explanation writer; PayPal webhooks are not handled.
+Other limits: the evaluation is a small synthetic benchmark; retrieved similar cases are passed to
+the explanation writer only as context and can never change the deterministic decision; PayPal
+webhooks are not handled.
 
 ## PayPal capabilities used
 
@@ -296,8 +299,8 @@ services unless it says so.
 
 | Requirement | Where it is met | Status |
 | --- | --- | --- |
-| Meaningfully integrate PayPal (free sandbox) | OAuth, Orders v2 create and authorize, authorization capture and void (see "PayPal capabilities used") | Tested with fakes; not yet run live |
-| Meaningfully incorporate AI | The investigator agent (`packages/agent`); an optional language model; MCP tools for AI shopping agents; optional Elasticsearch semantic memory | Deterministic agent: tested. Language model: tested with fakes, off by default, not yet run live |
+| Meaningfully integrate PayPal (free sandbox) | OAuth, Orders v2 create and authorize, authorization capture and void (see "PayPal capabilities used") | OAuth and order create/retrieve verified live; capture/void need buyer approval and are mock-tested |
+| Meaningfully incorporate AI | The investigator agent (`packages/agent`); live Gemini structured explanations and pattern analysis with validation; MCP tools for AI shopping agents; persistent RAG memory with Gemini embeddings | Deterministic agent and live Gemini verified; file-backed RAG persistence and retrieval verified |
 | Working prototype | The local run in "For judges"; `npm run test:e2e`; `docs/agentic-demo.md` | Runs in simulation. Hosted demo not deployed |
 | Documentation for judges | This README and `docs/` (sandbox, deploy, agentic demo, e2e report, eval results) | Done; placeholders marked |
 | Functional demo (hosted URL or clear run instructions) | "For judges" and "Quick start"; `render.yaml` and `docs/deploy.md` for hosting | Run instructions: done. Hosted URL: TO BE ADDED after deployment |
@@ -312,7 +315,7 @@ The deadline on the Devpost page is 13 Nov 2026, 1:30 am GMT+5:30.
 
 | Tool or service | How it is used | Where | Status |
 | --- | --- | --- | --- |
-| Language model, through an OpenAI-compatible HTTP provider (`LLM_PROVIDER`, `LLM_BASE_URL`, `LLM_MODEL_FAST`, `LLM_MODEL_STRONG`) | Follow-up investigation steps, name comparison, the memory pattern sentence, the plain-language explanation | `packages/agent/src/llm`, `packages/agent/src/config.ts`, `apps/api/src/services/agent/agentPorts.ts` | Optional, off by default (needs `LLM_MODE=live` and a key). Tested with fakes; not yet run live; no recordings committed |
+| Language model, through an OpenAI-compatible HTTP provider (`LLM_PROVIDER`, `LLM_BASE_URL`, `LLM_MODEL_FAST`, `LLM_MODEL_STRONG`) | Follow-up investigation steps, name comparison, the memory pattern sentence, retrieved-case relevance, the plain-language explanation | `packages/agent/src/llm`, `packages/agent/src/config.ts`, `apps/api/src/services/agent/agentPorts.ts` | Live Gemini 3.5 Flash verified with real structured JSON; deterministic fallbacks remain; no recordings committed |
 | Investigator agent (deterministic scoring, hard rules, identity matching, explanation checks) | Decides ALLOW, WARN or PAUSE on every scan, order and agent route | `packages/agent` | Runs in the default mode. It is rule-based; the language model only helps as described above |
 | Elasticsearch (`semantic_text`) | Scam-pattern memory | `packages/agent/src/adapters/memoryElastic.ts`, `packages/memory/src/patterns/elasticPatternStore.ts` | Optional (`ELASTIC_URL`, `ELASTIC_API_KEY`); in-memory store otherwise. Tested with fakes; not yet run live |
 | Kernel remote browser | Loads the checkout page for live signals | `packages/signals/src/agentPort/kernelClient.ts` | Optional (`KERNEL_API_KEY`). Tested with fakes; not yet run live |
@@ -328,7 +331,7 @@ about prize eligibility.
 
 | Technology | How it is used | Run live? |
 | --- | --- | --- |
-| Elastic | Optional semantic scam-pattern memory (`semantic_text`) in `packages/memory` and `packages/agent/src/adapters/memoryElastic.ts`. Without credentials an in-memory store is used | No. Tested with a fake `fetch`; the live test skips without credentials |
+| Elastic | Optional semantic scam-pattern memory (`semantic_text`) in `packages/memory` and `packages/agent/src/adapters/memoryElastic.ts`. Without credentials a persistent JSON file with Gemini embeddings is used | No. Tested with a fake `fetch`; the live test skips without credentials |
 | Kernel | Remote browser that loads the checkout page for live signals (`packages/signals/src/agentPort/kernelClient.ts`), only with `SIGNALS_MODE` set to `live` or `auto` and a key | No. Tested with fake clients |
 | Channel3 | Product catalogue used for price comparison in live signals and for market context in the demo shopper | No. Tested with fake clients |
 | Render | `render.yaml` describes the API and web services; `docs/deploy.md` and `npm run smoke:deploy` cover deployment | No. Nothing has been deployed |

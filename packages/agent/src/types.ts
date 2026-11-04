@@ -88,9 +88,17 @@ export const ExplanationBulletSchema = z.object({
 });
 export type ExplanationBullet = z.infer<typeof ExplanationBulletSchema>;
 
+export const RetrievedCaseSchema = z.object({
+  caseId: z.string().min(1).max(80),
+  relevance: z.string().min(1).max(160),
+});
+export type RetrievedCase = z.infer<typeof RetrievedCaseSchema>;
+
 export const ExplanationSchema = z.object({
   headline: z.string().min(1).max(90),
   bullets: z.array(ExplanationBulletSchema).min(1).max(5),
+  /** Optional relevance notes for historical cases retrieved from memory. Context only. */
+  retrievedCases: z.array(RetrievedCaseSchema).max(3).optional(),
 });
 export type Explanation = z.infer<typeof ExplanationSchema>;
 

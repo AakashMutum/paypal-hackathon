@@ -14,22 +14,47 @@ export interface Evidence {
   /** Where the evidence came from, for example rdap or kernel. */
   sources?: string[];
 }
-export interface SimilarCase { patternSentence: string; matchType: 'exact_payee' | 'exact_domain' | 'semantic'; score: number; decision: Verdict }
-export interface Provenance { signals: 'replay' | 'live'; llm: 'live' | 'replay' | 'record' | 'none'; memory: 'elastic' | 'memory'; signalsMode: 'replay' | 'live' | 'auto' }
+export interface SimilarCase {
+  caseId?: string; patternSentence: string; matchType: 'exact_payee' | 'exact_domain' | 'semantic';
+  score: number; decision: Verdict; retrieval?: string; relevance?: string;
+}
+export interface Provenance {
+  signals: 'replay' | 'live';
+  llm: 'live' | 'replay' | 'record' | 'none';
+  llmProvider?: string; llmModel?: string; llmModels?: { fast: string[]; strong: string[] };
+  llmKeySource?: 'LLM_API_KEY' | 'GEMINI_API_KEY' | 'none'; llmError?: string;
+  memory: 'elastic' | 'file' | 'memory'; memoryPersistent?: boolean; embeddings?: string;
+  signalsMode: 'replay' | 'live' | 'auto';
+}
+export interface SignalAvailability {
+  page: 'ok' | 'blocked' | 'empty' | 'unavailable' | 'not_checked';
+  domainAge: 'known' | 'unavailable' | 'not_checked';
+  registry: 'found' | 'empty' | 'unavailable' | 'not_checked';
+  price: 'known' | 'unavailable' | 'not_checked';
+  tls: 'valid' | 'invalid' | 'unavailable' | 'not_checked';
+  payee: 'provided' | 'not_provided';
+}
 export interface TraceStep { step: number; tool: string; why: string; input: string; result: string; ok: boolean; ms: number }
 export interface Investigation {
   id: string; orderId?: string; storeId?: string;
   domain: string; claimedBrand: string; productName: string;
-  price: number; benchmark: number; currency: string;
-  payeeName: string; payeeId: string; payeeTier: string; domainAgeDays: number; registryRecords: number;
-  riskScore: number; confidence: number;
+  price: number | null; benchmark: number | null; currency: string;
+  payeeName: string | null; payeeId: string | null; payeeTier: string | null;
+  domainAgeDays: number | null; registryRecords: number | null;
+  riskScore: number; confidence: number; confidenceReason?: string;
+  signalAvailability?: SignalAvailability;
   status: InvestigationStatus; verdict?: Verdict; captureState: CaptureState;
   reasons: string[]; evidence: Evidence[];
   buyerEmail?: string; reviewRequested?: boolean; createdAt: string;
   captureReason?: string; simulated?: boolean; mode?: string; acknowledged?: boolean; payeeMismatch?: boolean; hardRules?: string[];
   trace?: TraceStep[]; provenance?: Provenance; similarCases?: SimilarCase[]; patternSentence?: string;
 }
-export interface HealthModes { paypal: string; store: string; signals: string; llm: string; memory: string }
+export interface HealthModes {
+  paypal: string; store: string; signals: string; llm: string; memory: string;
+  llmProvider?: string; llmModel?: string; llmModels?: { fast: string[]; strong: string[] };
+  llmKeySource?: string; llmError?: string; memoryPersistent?: boolean; embeddings?: string;
+  memorySize?: number; memoryLocation?: string;
+}
 export interface Health { status: string; database: { status: string }; modes?: HealthModes }
 export interface CartItem { sku: string; name: string; price: number; qty: number }
 export interface CreateOrderRequest { storeId: string; items: CartItem[]; buyerEmail: string }

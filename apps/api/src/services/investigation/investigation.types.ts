@@ -22,6 +22,15 @@ export interface FrontendEvidence {
   sources?: string[];
 }
 
+export interface SignalAvailability {
+  page: 'ok' | 'blocked' | 'empty' | 'unavailable' | 'not_checked';
+  domainAge: 'known' | 'unavailable' | 'not_checked';
+  registry: 'found' | 'empty' | 'unavailable' | 'not_checked';
+  price: 'known' | 'unavailable' | 'not_checked';
+  tls: 'valid' | 'invalid' | 'unavailable' | 'not_checked';
+  payee: 'provided' | 'not_provided';
+}
+
 export interface FrontendInvestigation {
   id: string;
   orderId?: string;
@@ -30,16 +39,24 @@ export interface FrontendInvestigation {
   domain: string;
   claimedBrand: string;
   productName: string;
-  price: number;
-  benchmark: number;
+  /** null means no checkout amount was supplied or found; it is not zero. */
+  price: number | null;
+  /** null means no comparable price was available. */
+  benchmark: number | null;
   currency: string;
-  payeeName: string;
-  payeeId: string;
-  payeeTier: string;
-  domainAgeDays: number;
-  registryRecords: number;
+  payeeName: string | null;
+  payeeId: string | null;
+  payeeTier: string | null;
+  /** null means domain age could not be established; it is not zero days. */
+  domainAgeDays: number | null;
+  /** null means the registry was not checked; 0 means checked with no records. */
+  registryRecords: number | null;
   riskScore: number;
   confidence: number;
+  /** Why confidence was capped or reduced, when that happened. */
+  confidenceReason?: string;
+  /** Which signals were available, unavailable, or not applicable. */
+  signalAvailability?: SignalAvailability;
   status: 'QUEUED' | 'RUNNING' | 'COMPLETE' | 'FAILED';
   verdict?: UiVerdict;
   captureState: CaptureState;
@@ -72,17 +89,35 @@ export interface FrontendInvestigation {
 }
 
 export interface SimilarCase {
+  /** Stable id of the retrieved memory case. */
+  caseId?: string;
   patternSentence: string;
   matchType: 'exact_payee' | 'exact_domain' | 'semantic';
   score: number;
   decision: UiVerdict;
+  /** How the case was retrieved, for example embedding or lexical. */
+  retrieval?: string;
+  /** Optional model-written explanation of why this case is relevant. */
+  relevance?: string;
 }
 
 export interface Provenance {
   /** What actually produced the signals for this investigation. */
   signals: 'replay' | 'live';
   llm: 'live' | 'replay' | 'record' | 'none';
-  memory: 'elastic' | 'memory';
+  /** The configured model provider, for example gemini. */
+  llmProvider?: string;
+  /** The first model configured for the fast tier. */
+  llmModel?: string;
+  /** The ordered model fallback lists. */
+  llmModels?: { fast: string[]; strong: string[] };
+  llmKeySource?: 'LLM_API_KEY' | 'GEMINI_API_KEY' | 'none';
+  llmError?: string;
+  memory: 'elastic' | 'file' | 'memory';
+  /** True when memory survives a restart. */
+  memoryPersistent?: boolean;
+  /** Embedding provider used for retrieval, for example gemini:text-embedding-004. */
+  embeddings?: string;
   /** The configured SIGNALS_MODE (replay, live or auto). */
   signalsMode: 'replay' | 'live' | 'auto';
 }

@@ -51,7 +51,7 @@ export const IdentityResponseSchema = z
 
 export type IdentityResponse = z.infer<typeof IdentityResponseSchema>;
 
-export const IDENTITY_TIMEOUT_MS = 2500;
+export const IDENTITY_TIMEOUT_MS = 8000;
 export const IDENTITY_MAX_TOKENS = 500;
 
 const RELATION_SCORE: Record<IdentityRelation, number> = {

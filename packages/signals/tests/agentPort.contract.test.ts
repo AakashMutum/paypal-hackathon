@@ -10,7 +10,7 @@ const scenarios = Object.values(SCENARIOS);
 const allScenarioTypes = new Set(scenarios.flatMap((s) => s.signalsEvidence.map((e) => e.type)));
 // Named by the agent (packages/agent/src/adapters/signalsAdapter.ts and scoring/pointsFor.ts) but not
 // present in any recorded scenario.
-const UNRECORDED_BUT_KNOWN = ['TLS_INVALID', 'PRICE_UNKNOWN', 'TOOL_UNAVAILABLE'];
+const UNRECORDED_BUT_KNOWN = ['TLS_INVALID', 'TLS_VALID', 'PRICE_UNKNOWN', 'TOOL_UNAVAILABLE'];
 const SEVERITIES = new Set(['info', 'low', 'medium', 'high']);
 const SOURCES = new Set(['rdap', 'tls', 'kernel', 'channel3', 'registry', 'paypal', 'elastic', 'llm', 'rule']);
 
@@ -62,7 +62,10 @@ for (const scenario of scenarios) {
     const scenarioTypes = new Set(scenario.signalsEvidence.map((e) => e.type));
     for (const e of out) {
       checkShape(e);
-      assert.ok(scenarioTypes.has(e.type), `${e.type} is not used by scenario ${scenario.name}`);
+      assert.ok(
+        scenarioTypes.has(e.type) || e.type === 'TLS_VALID',
+        `${e.type} is not used by scenario ${scenario.name}`,
+      );
     }
     // The signals the scenario recorded are all reproduced.
     const outTypes = new Set(out.map((e) => e.type));

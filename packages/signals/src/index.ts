@@ -65,13 +65,26 @@ export async function gatherAllSignals(
   return evidence;
 }
 
-export { createLocalSignalsPort, detectLookalike } from './agentPort/index.js';
+export {
+  createLocalSignalsPort,
+  detectLookalike,
+  isAmazonHostname,
+  marketplaceBrandDomains,
+  recognizeMarketplace,
+  safeHostname,
+} from './agentPort/index.js';
 export type {
   AgentEvidence,
   AgentSignalsPort,
   Channel3Client,
   KernelClient,
   LocalSignalsPortOptions,
+  MarketplaceIdentity,
+  PageAccess,
+  PageAccessState,
+  PageClaims,
+  PageMarketplace,
+  PageProduct,
 } from './agentPort/index.js';
 export {
   KernelBrowserClient,

@@ -1,6 +1,13 @@
 export { createLocalSignalsPort, ageSeverity, discountSeverity } from './port.js';
 export { detectLookalike, editDistance, normalizedDistance } from './lookalike.js';
-export { extractPage, extractPageClaims, extractSection } from './html.js';
+export { extractPage, extractPageClaims, extractSection, classifyPageAccess, parsePrice } from './html.js';
+export {
+  isAmazonHostname,
+  marketplaceBrandDomains,
+  recognizeMarketplace,
+  safeHostname,
+} from './marketplace.js';
+export type { MarketplaceIdentity } from './marketplace.js';
 export type {
   AgentEvidence,
   AgentSeverity,
@@ -10,7 +17,11 @@ export type {
   KernelClient,
   LocalSignalsPortOptions,
   OfferSummary,
+  PageAccess,
+  PageAccessState,
   PageClaims,
+  PageMarketplace,
+  PageProduct,
   SectionHint,
   SectionResult,
 } from './types.js';

@@ -1,4 +1,5 @@
 import { registrableDomain } from '../util.js';
+import { recognizeMarketplace } from './marketplace.js';
 
 export function editDistance(a: string, b: string): number {
   if (a === b) return 0;
@@ -35,6 +36,15 @@ export function brandSlug(brand: string): string {
   return compact(brand);
 }
 
+function brandCandidates(brand: string): string[] {
+  const full = brandSlug(brand);
+  const parts = brand
+    .split(/[.\s]+/)
+    .map(compact)
+    .filter((part) => part.length >= 3);
+  return [...new Set([full, ...parts])].filter((candidate) => candidate.length >= 4);
+}
+
 export interface LookalikeMatch {
   matchesKnownBrand: true;
   brandId: string;
@@ -64,37 +74,58 @@ export function detectLookalike(
   const label = labelOf(domain);
   const compactLabel = compact(label);
   const known = knownBrandDomains.map((d) => registrableDomain(d));
-  if (known.includes(domain)) return null;
+  // An official marketplace host is never a lookalike of itself or of the brand it serves.
+  if (recognizeMarketplace(merchantDomain) || known.includes(domain)) return null;
 
   for (const knownDomain of known) {
     const knownLabel = labelOf(knownDomain);
+    const compactKnown = compact(knownLabel);
     const brandToken = knownLabel.split('-')[0] ?? knownLabel;
-    const dist = normalizedDistance(compactLabel, compact(knownLabel));
+    const dist = normalizedDistance(compactLabel, compactKnown);
+    const labelTokens = label.split('-').map(compact).filter(Boolean);
+    const tokenDistances = labelTokens.map((token) => normalizedDistance(token, compactKnown));
+    const tokenDist = tokenDistances.length > 0 ? Math.min(...tokenDistances) : 1;
     const containsBrand = brandToken.length >= 4 && label.split('-').includes(brandToken.toLowerCase());
-    if (dist <= NEAR_MISS_THRESHOLD || containsBrand) {
+    if (dist <= NEAR_MISS_THRESHOLD || tokenDist <= NEAR_MISS_THRESHOLD || containsBrand) {
+      const tokenDistance = tokenDistances.length > 0 ? Math.min(...labelTokens.map((token) => editDistance(token, compactKnown))) : 0;
       return {
         matchesKnownBrand: true,
         brandId: `BRAND-${brandToken.toUpperCase()}`,
         brandName: brandToken,
         knownDomain,
-        distance: editDistance(compactLabel, compact(knownLabel)),
-        normalizedDistance: Number(dist.toFixed(3)),
-        reason: dist <= NEAR_MISS_THRESHOLD ? 'near_miss' : 'contains_brand',
+        distance: Math.min(editDistance(compactLabel, compactKnown), tokenDistance),
+        normalizedDistance: Number(Math.min(dist, tokenDist).toFixed(3)),
+        reason: containsBrand ? 'contains_brand' : 'near_miss',
       };
     }
   }
 
   if (claimedBrand) {
-    const slug = brandSlug(claimedBrand);
-    if (slug.length >= 4 && compactLabel !== slug) {
-      const dist = normalizedDistance(compactLabel, slug);
-      if (dist <= NEAR_MISS_THRESHOLD) {
+    const candidates = brandCandidates(claimedBrand);
+    const labelTokens = label.split('-').map(compact).filter(Boolean);
+    // A store that uses its own brand name in the domain is not imitating itself. Comparing
+    // tokens also stops a brand name with a TLD suffix from being treated as a misspelling of
+    // its own domain label.
+    const ownsLabel = candidates.some(
+      (candidate) => candidate === compactLabel || labelTokens.includes(candidate),
+    );
+
+    if (!ownsLabel) {
+      let best: { candidate: string; dist: number; distance: number } | undefined;
+      for (const candidate of candidates) {
+        for (const part of [compactLabel, ...labelTokens]) {
+          const dist = normalizedDistance(part, candidate);
+          if (!best || dist < best.dist) best = { candidate, dist, distance: editDistance(part, candidate) };
+        }
+      }
+
+      if (best && best.dist <= NEAR_MISS_THRESHOLD) {
         return {
           matchesKnownBrand: true,
-          brandId: `BRAND-${slug.toUpperCase()}`,
+          brandId: `BRAND-${best.candidate.toUpperCase()}`,
           brandName: claimedBrand,
-          distance: editDistance(compactLabel, slug),
-          normalizedDistance: Number(dist.toFixed(3)),
+          distance: best.distance,
+          normalizedDistance: Number(best.dist.toFixed(3)),
           reason: 'near_miss',
         };
       }

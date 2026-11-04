@@ -7,6 +7,7 @@ import type {
   PatternQuery,
   PatternStore,
   PatternStoreOptions,
+  ResolvedPatternOptions,
 } from './types.js';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -70,7 +71,7 @@ export class ElasticPatternStore implements PatternStore {
   private readonly index: string;
   private readonly fetchImpl: typeof fetch;
   private readonly timeoutMs: number;
-  private readonly options: Required<PatternStoreOptions>;
+  private readonly options: ResolvedPatternOptions;
 
   constructor(private readonly config: ElasticPatternStoreConfig) {
     this.base = config.url.replace(/\/+$/, '');

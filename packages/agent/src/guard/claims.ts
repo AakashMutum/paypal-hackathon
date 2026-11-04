@@ -1,4 +1,10 @@
-import type { PageClaims, SectionHint } from '../ports.js';
+import type {
+  PageAccess,
+  PageClaims,
+  PageMarketplace,
+  PageProduct,
+  SectionHint,
+} from '../ports.js';
 import { sanitizeText, type SanitizationLocation, type ShieldFinding } from './shield.js';
 
 /**
@@ -21,6 +27,9 @@ export interface SafeClaims {
   sectionLinks: Partial<Record<SectionHint, string>>;
   hasContactPage: boolean;
   hasLegalPage: boolean;
+  pageAccess?: PageAccess;
+  product?: PageProduct;
+  marketplace?: PageMarketplace;
 }
 
 export interface SanitizedClaims {
@@ -68,9 +77,77 @@ export function sanitizeClaims(claims: PageClaims | undefined | null): Sanitized
     sectionLinks: isRecord(claims.sectionLinks) ? (claims.sectionLinks as Partial<Record<SectionHint, string>>) : {},
     hasContactPage: claims.hasContactPage === true,
     hasLegalPage: claims.hasLegalPage === true,
+    pageAccess: sanitizePageAccess(claims.pageAccess),
+    product: sanitizeProduct(claims.product, clean),
+    marketplace: sanitizeMarketplace(claims.marketplace, clean),
   };
 
   return { safe, findings };
+}
+
+type CleanFn = (value: unknown, location: SanitizationLocation, maxLen: number) => string;
+
+const ACCESS_STATES = new Set<PageAccess['state']>(['ok', 'blocked', 'empty', 'unreachable', 'unsupported']);
+const PRODUCT_SOURCES = new Set<PageProduct['source']>(['json-ld', 'opengraph', 'microdata', 'metadata', 'title']);
+
+function sanitizePageAccess(value: unknown): PageAccess | undefined {
+  if (!isRecord(value)) return undefined;
+  const state = typeof value.state === 'string' ? (value.state as PageAccess['state']) : undefined;
+  if (!state || !ACCESS_STATES.has(state)) return undefined;
+  return {
+    state,
+    ...(typeof value.httpStatus === 'number' && Number.isFinite(value.httpStatus)
+      ? { httpStatus: value.httpStatus }
+      : {}),
+    ...(typeof value.reason === 'string' ? { reason: value.reason.slice(0, 120) } : {}),
+  };
+}
+
+function sanitizeProduct(value: unknown, clean: CleanFn): PageProduct | undefined {
+  if (!isRecord(value)) return undefined;
+  const name = clean(value.name, 'visible', 160) || undefined;
+  const brand = clean(value.brand, 'visible', 80) || undefined;
+  const seller = clean(value.seller, 'visible', 160) || undefined;
+  const availability = clean(value.availability, 'visible', 40) || undefined;
+  const currency =
+    typeof value.currency === 'string' && /^[A-Za-z]{3}$/.test(value.currency)
+      ? value.currency.toUpperCase()
+      : undefined;
+  const price =
+    typeof value.price === 'number' && Number.isFinite(value.price) && value.price > 0
+      ? value.price
+      : undefined;
+  const source = PRODUCT_SOURCES.has(value.source as PageProduct['source'])
+    ? (value.source as PageProduct['source'])
+    : 'metadata';
+
+  if (!name && price === undefined && !brand && !seller && !availability) return undefined;
+  return {
+    ...(name ? { name } : {}),
+    ...(price !== undefined ? { price } : {}),
+    ...(currency ? { currency } : {}),
+    ...(brand ? { brand } : {}),
+    ...(availability ? { availability } : {}),
+    ...(seller ? { seller } : {}),
+    source,
+  };
+}
+
+function sanitizeMarketplace(value: unknown, clean: CleanFn): PageMarketplace | undefined {
+  if (!isRecord(value)) return undefined;
+  const id = typeof value.id === 'string' ? value.id.slice(0, 40) : undefined;
+  const displayName = clean(value.displayName, 'visible', 80) || undefined;
+  const officialDomain =
+    typeof value.officialDomain === 'string' && /^[a-z0-9.-]{3,253}$/i.test(value.officialDomain)
+      ? value.officialDomain.toLowerCase()
+      : undefined;
+  const region =
+    typeof value.region === 'string' && /^[A-Za-z]{2}$/.test(value.region)
+      ? value.region.toUpperCase()
+      : undefined;
+
+  if (!id || !displayName || !officialDomain) return undefined;
+  return { id, displayName, officialDomain, ...(region ? { region } : {}) };
 }
 
 function cleanList(value: unknown): string[] {
@@ -81,6 +158,6 @@ function cleanList(value: unknown): string[] {
     .map((entry) => entry.trim().slice(0, 200));
 }
 
-function isRecord(value: unknown): boolean {
-  return Boolean(value) && typeof value === 'object';
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 }
