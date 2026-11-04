@@ -10,7 +10,7 @@ import {
 const baseUrl = 'https://api.trychannel3.com';
 const env = {
   CHANNEL3_BASE_URL: baseUrl,
-  CHANNEL3_API_KEY: 'unit-test-placeholder-key',
+  CHANNEL3_API_KEY: 'unit-test-placeholder',
   CHANNEL3_TIMEOUT_MS: '1000',
 };
 
