@@ -14,6 +14,16 @@ for (const f of files) {
     errors.push(`${f}: invalid JSON (${e.message})`);
     continue;
   }
+  if (Array.isArray(data.records)) {
+    if (!data.records.every((record) =>
+      record && typeof record === 'object' &&
+      typeof record.cin === 'string' && record.cin.length > 0 &&
+      typeof record.company_name === 'string' && record.company_name.length > 0
+    )) {
+      errors.push(`${f}: provider records must include company_name and CIN`);
+    }
+    continue;
+  }
   for (const key of ['request', 'evidence', 'verdict']) {
     if (!(key in data)) errors.push(`${f}: missing "${key}"`);
   }
