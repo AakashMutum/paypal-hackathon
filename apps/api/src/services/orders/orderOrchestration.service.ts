@@ -25,6 +25,7 @@ import {
   type VerificationResult,
 } from '../verification/merchantVerification.service.js';
 import { evaluateRisk, type RiskEvaluationResult } from '../risk/riskEngine.service.js';
+import { lookupCorporateRegistry, type CorporateRegistryLookup } from '../registry/corporateRegistry.js';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // In-memory session & merchant store (fallback when no database is configured).
@@ -298,6 +299,40 @@ export async function evaluateOrderRisk(orderOrSessionId: string): Promise<Order
     };
   }
 
+  let corporateRegistryEvidence: Record<string, unknown> | undefined;
+  if (expectedMerchant) {
+    const lookupInput: CorporateRegistryLookup = expectedMerchant.merchant_id
+      ? { by: 'cin', query: String(expectedMerchant.merchant_id) }
+      : { by: 'name', query: expectedMerchant.claimed_name };
+    try {
+      const registryResult = await lookupCorporateRegistry(lookupInput);
+      corporateRegistryEvidence = {
+        provider: registryResult.provider,
+        configured: registryResult.configured,
+        status: registryResult.status,
+        lookedUpAt: registryResult.lookedUpAt,
+        records: registryResult.records.map((record) => ({
+          cin: record.cin,
+          legalName: record.legalName,
+          status: record.status,
+          companyStatus: record.companyStatus,
+          source: record.source,
+          fetchedAt: record.fetchedAt,
+        })),
+        ...(registryResult.error ? { error: registryResult.error } : {}),
+      };
+    } catch {
+      corporateRegistryEvidence = {
+        provider: 'data.gov.in',
+        configured: false,
+        status: 'UNKNOWN',
+        lookedUpAt: new Date().toISOString(),
+        records: [],
+        error: 'data.gov.in lookup failed',
+      };
+    }
+  }
+
   // Step 1: Merchant Identity Verification
   const verification: VerificationResult = verifyMerchantIdentity(paypalOrder, expectedMerchant);
 
@@ -312,6 +347,7 @@ export async function evaluateOrderRisk(orderOrSessionId: string): Promise<Order
   // Step 2: Risk Scoring & Decision
   const riskResult: RiskEvaluationResult = evaluateRisk(verification, {
     domainReputation: domainRiskScore,
+    ...(corporateRegistryEvidence ? { evidence: { corporateRegistry: corporateRegistryEvidence } } : {}),
   });
 
   const sessionId = session?.id || `cs_${Date.now()}`;
