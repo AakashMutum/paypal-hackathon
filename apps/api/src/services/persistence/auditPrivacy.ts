@@ -11,9 +11,13 @@ import type { FrontendInvestigation } from '../investigation/investigation.types
  *  2. Encryption runs when AUDIT_ENCRYPTION_KEY is configured. The investigation JSON and the
  *     payment-event detail are sealed with AES-256-GCM before they reach PostgreSQL. Existing
  *     plaintext rows still read correctly, so the change is backwards compatible.
+ *
+ * AUDIT_ENCRYPTION_KEY_PREVIOUS supports key rotation. It is tried for decryption only, and only
+ * when the current key cannot open a record. It is never used to encrypt. See docs/key-rotation.md.
  */
 
 const ENCRYPTION_KEY_ENV = 'AUDIT_ENCRYPTION_KEY';
+const PREVIOUS_KEY_ENV = 'AUDIT_ENCRYPTION_KEY_PREVIOUS';
 const HMAC_KEY_ENV = 'AUDIT_HMAC_KEY';
 const ENVELOPE_MARKER = '__trustoraAudit';
 const ALGORITHM = 'aes-256-gcm';
@@ -28,16 +32,24 @@ export interface SealedAuditPayload {
   ciphertext: string;
 }
 
-function encryptionKey(): Buffer | null {
-  const raw = process.env[ENCRYPTION_KEY_ENV]?.trim();
-  if (!raw) return null;
-  if (/^[0-9a-f]{64}$/i.test(raw)) return Buffer.from(raw, 'hex');
+function parseKey(raw: string | undefined): Buffer | null {
+  const value = raw?.trim();
+  if (!value) return null;
+  if (/^[0-9a-f]{64}$/i.test(value)) return Buffer.from(value, 'hex');
   try {
-    const decoded = Buffer.from(raw, 'base64');
+    const decoded = Buffer.from(value, 'base64');
     return decoded.length === 32 ? decoded : null;
   } catch {
     return null;
   }
+}
+
+function encryptionKey(): Buffer | null {
+  return parseKey(process.env[ENCRYPTION_KEY_ENV]);
+}
+
+function previousKey(): Buffer | null {
+  return parseKey(process.env[PREVIOUS_KEY_ENV]);
 }
 
 function hmacKey(): Buffer | null {
@@ -47,10 +59,19 @@ function hmacKey(): Buffer | null {
   return Buffer.from(raw, 'utf8');
 }
 
+/**
+ * enabled: a valid current key, and the previous key (if any) is valid too.
+ * disabled: no key at all.
+ * invalid: a key is set but unusable, or a previous key is set without a valid current one.
+ * Nothing about the key values is ever reported.
+ */
 export function auditEncryptionStatus(): AuditEncryptionStatus {
-  const raw = process.env[ENCRYPTION_KEY_ENV]?.trim();
-  if (!raw) return 'disabled';
-  return encryptionKey() ? 'enabled' : 'invalid';
+  const current = process.env[ENCRYPTION_KEY_ENV]?.trim();
+  const previous = process.env[PREVIOUS_KEY_ENV]?.trim();
+  if (!current) return previous ? 'invalid' : 'disabled';
+  if (!encryptionKey()) return 'invalid';
+  if (previous && !previousKey()) return 'invalid';
+  return 'enabled';
 }
 
 export function auditEncryptionEnabled(): boolean {
@@ -93,15 +114,7 @@ export function sealAuditPayload(value: unknown): unknown {
   } satisfies SealedAuditPayload;
 }
 
-/** Decrypts a sealed value. Plaintext rows from before encryption are returned unchanged. */
-export function openAuditPayload(value: unknown): unknown {
-  if (!isSealedAuditPayload(value)) return value;
-
-  const key = encryptionKey();
-  if (!key) {
-    throw new Error(`An encrypted audit record cannot be read without ${ENCRYPTION_KEY_ENV}.`);
-  }
-
+function decryptWith(key: Buffer, value: SealedAuditPayload): unknown {
   const decipher = createDecipheriv(ALGORITHM, key, Buffer.from(value.iv, 'base64'));
   decipher.setAuthTag(Buffer.from(value.tag, 'base64'));
   const plaintext = Buffer.concat([
@@ -109,6 +122,56 @@ export function openAuditPayload(value: unknown): unknown {
     decipher.final(),
   ]).toString('utf8');
   return JSON.parse(plaintext) as unknown;
+}
+
+/** Which key opens a stored value. 'plaintext' rows predate encryption and need no key. */
+export type AuditPayloadKey = 'plaintext' | 'current' | 'previous' | 'unreadable';
+
+export function classifyAuditPayload(value: unknown): AuditPayloadKey {
+  if (!isSealedAuditPayload(value)) return 'plaintext';
+  const current = encryptionKey();
+  if (current) {
+    try {
+      decryptWith(current, value);
+      return 'current';
+    } catch {
+      // Fall through to the previous key.
+    }
+  }
+  const previous = previousKey();
+  if (previous) {
+    try {
+      decryptWith(previous, value);
+      return 'previous';
+    } catch {
+      // Neither key opens it.
+    }
+  }
+  return 'unreadable';
+}
+
+/**
+ * Decrypts a sealed value. The current key is tried first; the previous key only when the current
+ * one cannot open the record. Plaintext rows from before encryption are returned unchanged.
+ */
+export function openAuditPayload(value: unknown): unknown {
+  if (!isSealedAuditPayload(value)) return value;
+
+  const current = encryptionKey();
+  const previous = previousKey();
+  if (!current && !previous) {
+    throw new Error(`An encrypted audit record cannot be read without ${ENCRYPTION_KEY_ENV}.`);
+  }
+
+  if (current) {
+    try {
+      return decryptWith(current, value);
+    } catch (error) {
+      if (!previous) throw error;
+    }
+  }
+  if (previous) return decryptWith(previous, value);
+  throw new Error(`An encrypted audit record cannot be read without ${ENCRYPTION_KEY_ENV}.`);
 }
 
 const EMAIL_PATTERN = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi;

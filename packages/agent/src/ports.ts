@@ -51,6 +51,25 @@ export interface PageMarketplace {
   region?: string;
 }
 
+export type FaviconCheckState =
+  | 'no_reference'
+  | 'reference_domain'
+  | 'no_favicon'
+  | 'fetch_failed'
+  | 'too_large'
+  | 'invalid'
+  | 'match'
+  | 'differs';
+
+export interface FaviconCheck {
+  state: FaviconCheckState;
+  observedHash?: string;
+  referenceDomain?: string;
+  referenceHash?: string;
+  referenceSource?: string;
+  referenceRetrievedOn?: string;
+}
+
 export interface PageClaims {
   finalUrl: string;
   domain: string;
@@ -66,6 +85,8 @@ export interface PageClaims {
   faviconUrl?: string;
   faviconSameOrigin?: boolean;
   faviconHash?: string;
+  /** Outcome of comparing the favicon with a trusted reference. Absent when no check ran. */
+  faviconCheck?: FaviconCheck;
   hasContactPage: boolean;
   hasLegalPage: boolean;
   contactValidation?: SectionValidation;

@@ -35,22 +35,31 @@ Names only. Values come from the places listed here.
 | `CORS_ORIGIN` | API | The public URL of `trustora-web` (after the first deploy) |
 | `DEMO_ADMIN_TOKEN` | API | A long random string you make up. Guards `POST /api/demo/reset` (refused in production when unset) |
 | `GUARDIAN_API_KEY` | API | A long random string you make up. When set, agent routes need it as a bearer token |
+| `AUDIT_ENCRYPTION_KEY` | API | A secret you generate locally: 64 hex characters (see [key-rotation.md](key-rotation.md)). Encrypts the stored investigation and payment-event JSON. Without it nothing is encrypted and `/health` says `auditEncryption: "disabled"` |
+| `AUDIT_HMAC_KEY` | API | A secret you generate locally. Keeps the payee-email fingerprint stable across encryption-key changes. Set it to the current encryption key value before the first rotation |
+| `AUDIT_ENCRYPTION_KEY_PREVIOUS` | API | Only while rotating: the old encryption key (see [key-rotation.md](key-rotation.md)) |
 | `STORE_GENUINE_PAYEE_EMAIL`, `STORE_GENUINE_PAYEE_MERCHANT_ID` | API | A PayPal sandbox business account (see `docs/paypal-sandbox.md`) |
 | `STORE_DISCOUNT_PAYEE_EMAIL`, `STORE_DISCOUNT_PAYEE_MERCHANT_ID` | API | A second sandbox business account |
 | `STORE_IMPERSONATOR_PAYEE_EMAIL`, `STORE_IMPERSONATOR_PAYEE_MERCHANT_ID` | API | A third sandbox business account |
-| `LLM_API_KEY`, `LLM_BASE_URL`, `LLM_MODEL_FAST`, `LLM_MODEL_STRONG` | API | Your language-model provider. Only needed for `LLM_MODE=live` |
+| `LLM_PROVIDER`, `LLM_API_KEY` (or `GEMINI_API_KEY`), `LLM_BASE_URL`, `LLM_MODEL_FAST`, `LLM_MODEL_STRONG` | API | Your language-model provider. Only needed for `LLM_MODE=live`; also change `LLM_MODE` in the dashboard |
 | `KERNEL_API_KEY`, `CHANNEL3_API_KEY`, `CHANNEL3_BASE_URL` | API | Kernel and Channel3 dashboards. Channel3 base URL is optional for a compatible endpoint |
 | `CORPORATE_REGISTRY_URL`, `CORPORATE_REGISTRY_API_KEY`, `CORPORATE_REGISTRY_TIMEOUT_MS` | API | Optional corporate-registry provider. The local `merchant_records` table is used when absent |
-| `AUDIT_ENCRYPTION_KEY` | API | A 32-byte key (64 hex characters) generated locally. Enables AES-256-GCM audit storage; never commit it |
-| `AGENT_MODEL_BUDGET_MS`, `VALIDATE_SECTION_PAGES` | API | Optional. Defaults `1200` and `true`; set `0` to disable the model budget or `false` to skip section validation |
+| `VALIDATE_SECTION_PAGES` | API | Optional, default `true`. Set `false` to skip the contact, privacy and terms page checks |
 | `ELASTIC_URL`, `ELASTIC_API_KEY` | API | Your Elasticsearch deployment. Without them the memory runs in the API |
 | `VITE_API_URL` | Web | The public URL of `trustora-api` (after the first deploy) |
 | `VITE_PAYPAL_CLIENT_ID` | Web | The sandbox client id again (public). Leave empty to use the simulated button |
 
 Set automatically by the blueprint: `DATABASE_URL` (from the database), `NODE_ENV=production`,
 `PAYPAL_MODE=sandbox`, `SIGNALS_MODE=auto` (recorded signals for the demo stores, live for any other
-domain), `LLM_MODE=live` (deterministic fallbacks when no key is supplied), `AGENT_MODEL_BUDGET_MS=1200`,
-`VALIDATE_SECTION_PAGES=true`, `VITE_USE_MOCK=false`, `NODE_VERSION=22`. Render provides `PORT`; the API reads it.
+domain), `LLM_MODE=replay`, `AGENT_MODEL_BUDGET_MS=1200`, `MEMORY_MODE=memory`, `VITE_USE_MOCK=false`,
+`VALIDATE_SECTION_PAGES=true`, `NODE_VERSION=22`. Render provides `PORT`; the API reads it.
+
+**Scam memory is not persistent on a free Render instance.** The default file-backed memory
+(`MEMORY_MODE=file`, `MEMORY_FILE`) writes to the instance's disk, which a free instance does not
+keep across restarts, sleeps and deploys (per Render's documentation; confirm on the plans page), and `/health` would still say `memoryPersistent: true` for a
+file. The blueprint therefore sets `MEMORY_MODE=memory` (kept in the process, reported as not
+persistent). For memory that survives restarts, mount a persistent disk (not part of the free plan),
+set `MEMORY_MODE=file` and point `MEMORY_FILE` at the disk, or set `ELASTIC_URL` and `ELASTIC_API_KEY`.
 
 Everything the API and web app read, and where:
 
@@ -59,10 +68,12 @@ Everything the API and web app read, and where:
 | `NODE_ENV`, `HOST`, `PORT`, `CORS_ORIGIN`, `RATE_LIMIT_WINDOW_MS`, `RATE_LIMIT_MAX` | `apps/api/src/config/env.ts` |
 | `DATABASE_URL`, `DATABASE_SSL`, `DATABASE_TIMEOUT_MS`, `DATABASE_MAX_CONNECTIONS` | `apps/api/src/config/env.ts` |
 | `PAYPAL_MODE`, `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`, `PAYPAL_TIMEOUT_MS` | `apps/api/src/config/env.ts` |
-| `AGENT_*`, `FEATURE_*`, `LLM_*`, `SIGNALS_*`, `ELASTIC_*`, `MEMORY_MATCH_MIN`, `VALIDATE_SECTION_PAGES` | `packages/agent/src/config.ts` / `apps/api/src/services/agent/agentPorts.ts`, read when the agent runs |
+| `AGENT_*` (including `AGENT_MODEL_BUDGET_MS`), `FEATURE_*` (including `FEATURE_PROMO_LANGUAGE`), `LLM_*`, `SIGNALS_*`, `ELASTIC_*`, `MEMORY_MATCH_MIN` | `packages/agent/src/config.ts`, read when the agent runs; all optional |
+| `AUDIT_ENCRYPTION_KEY`, `AUDIT_ENCRYPTION_KEY_PREVIOUS`, `AUDIT_HMAC_KEY` | `apps/api/src/services/persistence/auditPrivacy.ts` |
+| `MEMORY_MODE`, `MEMORY_FILE`, `GEMINI_API_KEY`, `EMBEDDING_API_KEY`, `GEMINI_EMBEDDING_MODEL` | `apps/api/src/services/agent/agentPorts.ts` and `packages/memory/src/patterns` |
+| `WARMUP` | `apps/api/src/services/warmup.service.ts` (off with `WARMUP=off`; optional) |
 | `KERNEL_API_KEY`, `CHANNEL3_API_KEY`, `CHANNEL3_BASE_URL` | `packages/signals/src/agentPort/liveClients.ts` (`createLiveClientsFromEnv`); the live clients are chosen in `apps/api/src/services/agent/agentPorts.ts` |
 | `CORPORATE_REGISTRY_URL`, `CORPORATE_REGISTRY_API_KEY`, `CORPORATE_REGISTRY_TIMEOUT_MS` | `apps/api/src/services/registry/corporateRegistry.ts` |
-| `AUDIT_ENCRYPTION_KEY`, `AUDIT_HMAC_KEY` | `apps/api/src/services/persistence/auditPrivacy.ts` |
 | `DEMO_ADMIN_TOKEN`, `GUARDIAN_API_KEY` | `apps/api/src/config/env.ts` |
 | `SIGNALS_MODE`, `LLM_MODE`, `LLM_API_KEY`, `LLM_BASE_URL`, `LLM_MODEL_FAST`, `LLM_MODEL_STRONG`, `LLM_FIXTURE_DIR`, `KERNEL_API_KEY`, `CHANNEL3_API_KEY`, `ELASTIC_URL`, `ELASTIC_API_KEY`, `ELASTIC_INDEX` | `apps/api/src/services/agent/agentPorts.ts` |
 | `STORE_GENUINE_PAYEE_EMAIL`, `STORE_GENUINE_PAYEE_MERCHANT_ID`, and the same for `DISCOUNT` and `IMPERSONATOR` | `apps/api/src/config/storeCatalog.ts` |
@@ -91,8 +102,12 @@ BASE_URL=https://your-api.onrender.com REQUIRE_DB=true npm run smoke:deploy
 BASE_URL=https://your-api.onrender.com npm run smoke:deploy -- --flow
 ```
 
-- It calls `GET /health` and prints the result and the modes (PayPal, store, signals, LLM, memory). With `REQUIRE_DB=true` it fails unless
-  `database.status` is `healthy`. Without it, it only warns that the API may be running in memory.
+- It calls `GET /health` and prints the result and the modes (PayPal, store, signals, LLM, memory, audit
+  encryption). It fails if `/health` does not report those modes. With `REQUIRE_DB=true` it fails
+  unless `database.status` is `healthy`. Without it, it only warns that the API may be running in memory.
+- With `REQUIRE_AUDIT_ENCRYPTION=true` it fails unless `/health` reports `auditEncryption: "enabled"`.
+- For an `https` URL it also prints the TLS protocol that was negotiated and the certificate expiry
+  date. This is a report only; it asserts no version.
 - With `--flow` it also posts one fictional store to `POST /api/scan` and checks for a verdict of
   ALLOW, WARN or PAUSE.
 - A sleeping free service can take about a minute to answer the first request; the script waits
@@ -116,7 +131,15 @@ Checked against Render's free plan page on 2026-11-03; confirm before relying on
   run past 30 days, upgrade the plan or create a new database.
 - Static sites are free but count against included bandwidth and pipeline minutes.
 
-Wake the API a minute before a live demo, and run the smoke test to confirm it is up.
+Wake the API a minute before a live demo, and run the smoke test to confirm it is up. The first request
+after a sleep is cold; see [latency.md](latency.md) for what that means for a visitor.
+
+## Not measured
+
+No hosted instance exists yet, so none of this has been measured: uptime, the TLS version a visitor
+gets (Render terminates TLS; run the smoke test against the real URL and read its TLS line), response
+time on the hosted instance, or how long a sleeping instance takes to wake. Do not quote a number for
+any of them until it has been measured.
 
 ## Demo mode: run everything locally with no accounts
 
@@ -150,9 +173,10 @@ routes need `Authorization: Bearer <GUARDIAN_API_KEY>` when that variable is set
 
 See [docs/e2e-report.md](e2e-report.md) for the defects that remain. For a deployed demo:
 
-- Nothing has been run against the real PayPal sandbox (authorize, capture and void), Kernel,
-  Channel3, a language model or Elasticsearch from this repository. See the "Known limitations"
-  section of the README.
+- The PayPal capture and void path, Kernel, Channel3, the optional corporate registry and
+  Elasticsearch have not been run live from this repository, and nothing is deployed. The README
+  reports that sandbox OAuth and order creation and a live Gemini model were exercised by the team;
+  that was not re-run for this pass. See the "Known limitations" section of the README.
 - `LLM_MODE=replay` has no committed recordings yet, so the agent uses its deterministic
   fallbacks until you record some (`packages/agent/fixtures/llm/README.md`).
 - `/api/demo/reset` needs `DEMO_ADMIN_TOKEN` in production.

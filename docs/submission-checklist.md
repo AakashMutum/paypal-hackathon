@@ -11,7 +11,7 @@ verified from the code; someone must check or do it). Last reviewed 2026-11-03.
 | Requirement | Status | Note |
 | --- | --- | --- |
 | Meaningfully integrates a PayPal technology using the free sandbox | Done in code | OAuth, Orders v2 create and authorize, authorization capture and void (`apps/api/src/services/paypal`). Tested with a fake `fetch` only. Missing: one run against the real sandbox (`npm run test:sandbox`, needs credentials) |
-| Meaningfully incorporates AI | Done in code | The investigator agent, an optional language model, MCP tools for AI agents, optional Elasticsearch memory. The language model has not been run live and no recordings are committed. Missing: a model key and `npm run record:llm` |
+| Meaningfully incorporates AI | Done in code | The investigator agent, an optional language model, MCP tools for AI agents, optional Elasticsearch memory. The README reports a live Gemini run by the team (not re-verified); no recordings are committed. Missing: a model key and `npm run record:llm` |
 | Working prototype or proof of concept | Done | Runs locally in simulation with no accounts (`README.md`, "For judges"). Not a hosted build |
 | Sufficient documentation for judges | Done | `README.md` and `docs/`. The placeholders in the README must be filled before submitting |
 | Complies with the Official Rules | Needs the team | Read the rules and confirm eligibility and team members |

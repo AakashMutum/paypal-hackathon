@@ -40,6 +40,8 @@ export interface GuardianConfig {
 export interface FeatureConfig {
   investigatorLoop: boolean;
   identityLlm: boolean;
+  /** Model-assisted promotional and pressure language evidence. */
+  promoLanguage: boolean;
   memory: boolean;
 }
 
@@ -48,7 +50,10 @@ export interface InvestigatorAgentConfig {
   maxToolCalls: number;
   maxFollowUps: number;
   timeoutMs: number;
-  /** Total time allowed for model calls; 0 disables the separate budget. */
+  /**
+   * Total time all model calls of one investigation may use (AGENT_MODEL_BUDGET_MS). After it,
+   * remaining model steps are skipped and deterministic output is used. 0 means no limit.
+   */
   modelBudgetMs: number;
   confidenceThreshold: number;
   memoryMatchMin: number;
@@ -75,6 +80,7 @@ const ConfigSchema = z.object({
   features: z.object({
     investigatorLoop: z.boolean(),
     identityLlm: z.boolean(),
+    promoLanguage: z.boolean(),
     memory: z.boolean(),
   }),
   llm: z.object({
@@ -135,13 +141,14 @@ export function loadConfig(overrides: DeepPartial<InvestigatorAgentConfig> = {})
     maxToolCalls: maxFollowUps,
     maxFollowUps,
     timeoutMs: readNumber('AGENT_TIMEOUT_MS', 12000),
-    modelBudgetMs: readNumber('AGENT_MODEL_BUDGET_MS', 1200),
+    modelBudgetMs: Math.round(readNumber('AGENT_MODEL_BUDGET_MS', 1200)),
     confidenceThreshold: readNumber('AGENT_CONF_THRESHOLD', 0.7),
     memoryMatchMin: readNumber('MEMORY_MATCH_MIN', 0.75),
     baselineCountsTowardCap: readFlag('BASELINE_COUNTS_TOWARD_CAP', false),
     features: {
       investigatorLoop: readFlag('FEATURE_INVESTIGATOR_LOOP', true),
       identityLlm: readFlag('FEATURE_IDENTITY_LLM', true),
+      promoLanguage: readFlag('FEATURE_PROMO_LANGUAGE', true),
       memory: readFlag('FEATURE_SCAM_MEMORY', true),
     },
     llm: {

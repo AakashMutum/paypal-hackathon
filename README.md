@@ -192,8 +192,13 @@ the key locally; never commit it:
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```
 
-Existing plaintext rows remain readable. Encrypted rows require the same key. An optional
+Existing plaintext rows remain readable. Encrypted rows require the key that sealed them. An optional
 `AUDIT_HMAC_KEY` separates the payee-email fingerprint from the encryption key.
+
+To replace the key, set the new one as `AUDIT_ENCRYPTION_KEY` and the old one as
+`AUDIT_ENCRYPTION_KEY_PREVIOUS` (used to decrypt only), then run `npm run audit:rotate` (a dry run that
+prints counts) and `npm run audit:rotate -- --apply`. See `docs/key-rotation.md`. The rotation is
+tested with an in-memory store and a mock pool; it has not been run against a real PostgreSQL.
 
 ### External data sources and exact configuration
 
@@ -232,7 +237,7 @@ Names only; values never belong in the repository. See `.env.example` and `apps/
 | --- | --- |
 | `NODE_ENV`, `HOST`, `PORT`, `CORS_ORIGIN`, `RATE_LIMIT_WINDOW_MS`, `RATE_LIMIT_MAX` | `apps/api/src/config/env.ts` |
 | `DATABASE_URL`, `DATABASE_SSL`, `DATABASE_TIMEOUT_MS`, `DATABASE_MAX_CONNECTIONS` | `apps/api/src/config/env.ts` |
-| `AUDIT_ENCRYPTION_KEY`, `AUDIT_HMAC_KEY` | `apps/api/src/services/persistence/auditPrivacy.ts` |
+| `AUDIT_ENCRYPTION_KEY`, `AUDIT_ENCRYPTION_KEY_PREVIOUS`, `AUDIT_HMAC_KEY` | `apps/api/src/services/persistence/auditPrivacy.ts` |
 | `PAYPAL_MODE`, `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`, `PAYPAL_TIMEOUT_MS` | `apps/api/src/config/env.ts` |
 | `DEMO_ADMIN_TOKEN`, `GUARDIAN_API_KEY` | `apps/api/src/config/env.ts` |
 | `STORE_GENUINE_PAYEE_EMAIL`, `STORE_GENUINE_PAYEE_MERCHANT_ID`, and the same for `DISCOUNT` and `IMPERSONATOR` | `apps/api/src/config/storeCatalog.ts` |
@@ -267,8 +272,9 @@ Names only; values never belong in the repository. See `.env.example` and `apps/
 ## Evaluation
 
 `npm run eval -w @checkout-guardian/eval` compares two baselines with the full agent on a
-labelled benchmark and writes `docs/eval-results.md`. It is a small synthetic benchmark written by
-the team, not a claim about real-world accuracy.
+labelled benchmark and writes `docs/eval-results.md`. It is a small, synthetic, author-labelled
+benchmark written by the team, not a claim about real-world accuracy or about false positives on
+real merchants. See `docs/benchmark-roadmap.md` for what a real benchmark would need; none exists.
 
 ## What is real and what is simulated
 
@@ -293,28 +299,35 @@ Be clear about what has not been run live. These parts are written and tested ag
 **have not been run against the real service from this repository**:
 
 - PayPal sandbox authorize, capture and void (mock-tested). Real sandbox OAuth, order creation and retrieval were verified; authorize/capture need a buyer approval that is not automated here.
-- Kernel remote browser and Channel3 catalogue (tested with fake clients).
+- Kernel remote browser, Channel3 catalogue and the optional corporate-registry provider (tested with fake clients; no keys or provider exist here).
+- Any hosted deployment (nothing is deployed).
 - Recorded model answers (`LLM_MODE=replay`; none are committed).
 - Elasticsearch scam memory (tested with a fake `fetch`; the live test skips without credentials). The file-backed memory and Gemini embeddings are verified live.
 - A hosted persistent memory disk. The local JSON file survives restarts, but a container filesystem may not; use a mounted disk or Elasticsearch in a hosted deployment.
-- Live Kernel browser and Channel3 catalogue signals (their keys are not configured in this environment). RDAP, TLS, page metadata and structured product data are live.
+- Live Kernel, Channel3 and corporate-registry signals (no keys or provider are configured in this environment). RDAP, TLS, page metadata and structured product data are fetched live in `live` and `auto` signals modes, as reported by the team; not re-run for this pass.
 - PostgreSQL migrations 001–003 were applied locally and `/health` reports the database store; the automated migration test still uses a mock pool.
 - The web app in a browser (it builds and type-checks; routes verified locally at `http://localhost:5173`).
-- Consistent full live latency under 2 seconds. With `AGENT_MODEL_BUDGET_MS=1200`, five live
-  ambiguous scans measured 1733, 1848, 1887, 2055 and 3740 ms; the warm median is 1887 ms and 4 of
-  5 were under 2 s. The first cold request exceeded 2 s. Slow model calls fall back to template
-  explanations; the deterministic decision is unchanged.
-- A reference-backed favicon mismatch. The page collector records the declared favicon URL and
-  whether it is same-origin, but no trusted reference favicon exists in the pipeline, so
-  `FAVICON_MISMATCH` is never invented. A third-party CDN is not treated as fraud.
-- Registrar reputation history. The RDAP collector extracts the registrar name and registration
-  date, not a historical reputation score.
+- Latency under 2 seconds for a live scan. Not shown. Measured on one machine (`docs/latency.md`): with
+  recorded signals and no model, every request to the three demo stores took under 150 ms. An
+  earlier local run of live scans took 1.7 to 3.7 seconds (not reproduced by the committed script),
+  and one live ambiguous scan took 7.08 seconds. `AGENT_MODEL_BUDGET_MS` (default 1200) now caps the
+  total model time per scan and falls back to deterministic output when it runs out; with a
+  simulated 700 ms model it kept warm scans under 2 seconds. A real model and the hosted instance
+  were not measured. The free Render instance sleeps after about 15 minutes, so the first request
+  to the hosted demo is cold and slow.
+- A populated favicon reference corpus. The comparison code exists (`docs/favicon-references.md`)
+  and is tested with fakes, but `packages/signals/data/favicon-references.json` is empty because
+  the invented demo stores have no favicon asset. Without a reference, `FAVICON_MISMATCH` is never
+  emitted. A third-party CDN is not treated as fraud.
+- Registrar reputation. The RDAP collector extracts the registrar name and registration date.
+  No reputation source exists, so registrar reputation is reported as `not_assessed`
+  (`signalAvailability.registrarReputation`) and the registrar name never changes the score.
 - Historical product-price norms. The current evidence reports `history: unavailable` unless a
   genuine persisted/provider history source is added.
 - A configured corporate registry. The adapter exists, but no provider URL/key is set here, so
   identity remains local-only and explicit.
 
-Other limits: the evaluation is a small synthetic benchmark; retrieved similar cases are passed to
+Other limits: the evaluation is a small, synthetic, author-labelled benchmark; retrieved similar cases are passed to
 the explanation writer only as context and can never change the deterministic decision; PayPal
 webhooks are not handled.
 
@@ -381,7 +394,7 @@ The deadline on the Devpost page is 13 Nov 2026, 1:30 am GMT+5:30.
 
 | Tool or service | How it is used | Where | Status |
 | --- | --- | --- | --- |
-| Language model, through an OpenAI-compatible HTTP provider (`LLM_PROVIDER`, `LLM_BASE_URL`, `LLM_MODEL_FAST`, `LLM_MODEL_STRONG`) | Follow-up investigation steps, name comparison, the memory pattern sentence, retrieved-case relevance, the plain-language explanation | `packages/agent/src/llm`, `packages/agent/src/config.ts`, `apps/api/src/services/agent/agentPorts.ts` | Live Gemini 3.5 Flash verified with real structured JSON; deterministic fallbacks remain; no recordings committed |
+| Language model, through an OpenAI-compatible HTTP provider (`LLM_PROVIDER`, `LLM_BASE_URL`, `LLM_MODEL_FAST`, `LLM_MODEL_STRONG`) | Follow-up investigation steps, name comparison, a read of promotional and pressure wording (`docs/promotional-language.md`), the memory pattern sentence, retrieved-case relevance, the plain-language explanation | `packages/agent/src/llm`, `packages/agent/src/config.ts`, `apps/api/src/services/agent/agentPorts.ts` | Live Gemini 3.5 Flash verified with real structured JSON; deterministic fallbacks remain; no recordings committed |
 | Investigator agent (deterministic scoring, hard rules, identity matching, explanation checks) | Decides ALLOW, WARN or PAUSE on every scan, order and agent route | `packages/agent` | Runs in the default mode. It is rule-based; the language model only helps as described above |
 | Elasticsearch (`semantic_text`) | Scam-pattern memory | `packages/agent/src/adapters/memoryElastic.ts`, `packages/memory/src/patterns/elasticPatternStore.ts` | Optional (`ELASTIC_URL`, `ELASTIC_API_KEY`); in-memory store otherwise. Tested with fakes; not yet run live |
 | Kernel remote browser | Loads the checkout page for live signals | `packages/signals/src/agentPort/kernelClient.ts` | Optional (`KERNEL_API_KEY`). Tested with fakes; not yet run live |

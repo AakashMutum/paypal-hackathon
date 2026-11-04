@@ -3,8 +3,9 @@
 Benchmark for the investigation agent: a labelled synthetic dataset, four systems to compare,
 metrics with confidence intervals, and a runner that writes a report.
 
-Results are in [`docs/eval-results.md`](../../docs/eval-results.md). They come from a small
-synthetic benchmark and are not a claim about real-world accuracy.
+Results are in [`docs/eval-results.md`](../../docs/eval-results.md). They come from a small,
+synthetic, author-labelled benchmark and are not a claim about real-world accuracy or about false
+positives on real merchants (`docs/benchmark-roadmap.md`).
 
 ## Run it
 

@@ -1,3 +1,5 @@
+import type { FaviconReference } from './favicon.js';
+
 // Local mirrors of the investigation agent's shapes. They mirror packages/agent/src/ports.ts
 // and packages/agent/src/types.ts. Keep them structurally identical to those files; a test
 // loads the agent's scenario fixtures to catch drift.
@@ -40,6 +42,25 @@ export interface PageProduct {
   source: 'json-ld' | 'opengraph' | 'microdata' | 'metadata' | 'title';
 }
 
+export type FaviconCheckState =
+  | 'no_reference'
+  | 'reference_domain'
+  | 'no_favicon'
+  | 'fetch_failed'
+  | 'too_large'
+  | 'invalid'
+  | 'match'
+  | 'differs';
+
+export interface FaviconCheck {
+  state: FaviconCheckState;
+  observedHash?: string;
+  referenceDomain?: string;
+  referenceHash?: string;
+  referenceSource?: string;
+  referenceRetrievedOn?: string;
+}
+
 export interface PageMarketplace {
   id: string;
   displayName: string;
@@ -62,6 +83,8 @@ export interface PageClaims {
   faviconUrl?: string;
   faviconSameOrigin?: boolean;
   faviconHash?: string;
+  /** Outcome of comparing the favicon with a trusted reference. Absent when no check ran. */
+  faviconCheck?: FaviconCheck;
   hasContactPage: boolean;
   hasLegalPage: boolean;
   /** Present only when live section validation is enabled. Mere link presence is not verification. */
@@ -181,6 +204,8 @@ export interface LocalSignalsPortOptions {
   now?: () => number;
   /** Inject the TLS probe (tests). Defaults to a real TLS handshake. */
   tlsProbe?: (hostname: string, address: string, timeoutMs: number) => Promise<CertificateProbe>;
+  /** Trusted reference favicons. Defaults to packages/signals/data/favicon-references.json. */
+  faviconReferences?: FaviconReference[];
   /** Directory of fixture JSON files for mock mode. Defaults to tests/fixtures at the repo root. */
   fixturesDir?: string;
   /** Validate linked contact/privacy/terms pages with bounded, SSRF-safe fetches. */

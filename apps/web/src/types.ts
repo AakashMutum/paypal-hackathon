@@ -25,6 +25,7 @@ export interface Provenance {
   llmKeySource?: 'LLM_API_KEY' | 'GEMINI_API_KEY' | 'none'; llmError?: string;
   memory: 'elastic' | 'file' | 'memory'; memoryPersistent?: boolean; embeddings?: string;
   signalsMode: 'replay' | 'live' | 'auto';
+  modelBudget?: { limitMs: number; usedMs: number; exhausted: boolean; skippedCalls: number };
 }
 export interface SignalAvailability {
   page: 'ok' | 'blocked' | 'empty' | 'unavailable' | 'not_checked';
@@ -33,6 +34,7 @@ export interface SignalAvailability {
   price: 'known' | 'unavailable' | 'not_checked';
   tls: 'valid' | 'invalid' | 'unavailable' | 'not_checked';
   payee: 'provided' | 'not_provided';
+  registrarReputation: 'not_assessed';
 }
 export interface TraceStep { step: number; tool: string; why: string; input: string; result: string; ok: boolean; ms: number }
 export interface Investigation {

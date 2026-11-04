@@ -61,3 +61,21 @@ export async function readLimitedText(res: Response, maxBytes = 64 * 1024): Prom
   await reader.cancel().catch(() => undefined);
   return Buffer.concat(chunks).subarray(0, maxBytes).toString('utf8');
 }
+
+/** Reads at most maxBytes of the body as raw bytes. Website content is untrusted and may be huge. */
+export async function readLimitedBytes(res: Response, maxBytes: number): Promise<Uint8Array> {
+  if (!res.body) {
+    return new Uint8Array(await res.arrayBuffer()).subarray(0, maxBytes);
+  }
+  const reader = res.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  while (total < maxBytes) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    chunks.push(value);
+    total += value.byteLength;
+  }
+  await reader.cancel().catch(() => undefined);
+  return new Uint8Array(Buffer.concat(chunks).subarray(0, maxBytes));
+}

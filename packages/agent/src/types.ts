@@ -172,6 +172,15 @@ export const AgentStatsSchema = z.object({
   llmCalls: z.number().int().min(0),
   followUps: z.number().int().min(0),
   failedBaseline: z.number().int().min(0),
+  /** Present when a model time budget applied to this investigation. */
+  modelBudget: z
+    .object({
+      limitMs: z.number().int().min(0),
+      usedMs: z.number().min(0),
+      exhausted: z.boolean(),
+      skippedCalls: z.number().int().min(0),
+    })
+    .optional(),
 });
 export type AgentStats = z.infer<typeof AgentStatsSchema>;
 

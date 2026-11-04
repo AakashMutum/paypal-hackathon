@@ -147,9 +147,12 @@ use the API instead of the web app's built-in simulated backend. In a third term
 - Payments are simulated (`SIM-` ids, `simulated: true`) unless PayPal sandbox credentials are set.
   The sandbox calls have been tested with a fake `fetch` and not yet run live.
 - The signals for the three stores are recorded, not fetched live.
-- The language model is off by default, so the agent uses its deterministic logic. A live model
-  has not been run.
+- The language model is off by default, so the agent uses its deterministic logic. The README
+  reports a live Gemini run by the team; no recordings are committed and it was not re-run for
+  this draft.
 - Data is kept in memory unless `DATABASE_URL` is set.
-- The repository includes a small synthetic benchmark (62 cases written by the team, see
-  `docs/eval-results.md`). It shows the rules behave as designed on those cases. It is not a
-  measure of real-world accuracy and is not quoted as one.
+- The repository includes a small, synthetic, author-labelled benchmark (62 cases written and
+  labelled by the team, see `docs/eval-results.md`). It shows the rules behave as designed on
+  those cases. It is not a measure of real-world accuracy, says nothing about false positives on
+  real merchants, and is not quoted as one. No benchmark on real merchants exists yet
+  (`docs/benchmark-roadmap.md`).

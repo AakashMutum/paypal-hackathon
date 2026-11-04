@@ -48,13 +48,25 @@ services:
         sync: false
       - key: GUARDIAN_API_KEY
         sync: false
+      # Audit encryption (docs/key-rotation.md). Secrets: generate 64 hex characters locally and paste
+      # them only into the dashboard. No value belongs in this file. The PREVIOUS key is set only
+      # while rotating. Set AUDIT_HMAC_KEY to the current key value before the first rotation.
+      - key: AUDIT_ENCRYPTION_KEY
+        sync: false
+      - key: AUDIT_ENCRYPTION_KEY_PREVIOUS
+        sync: false
+      - key: AUDIT_HMAC_KEY
+        sync: false
       # How the agent gets its signals and answers.
       # SIGNALS_MODE: replay (recorded signals for the demo stores), live, or auto (replay for the
       # demo stores, live for any other domain). LLM_MODE: replay, live or none.
       - key: SIGNALS_MODE
         value: auto
       - key: LLM_MODE
-        value: live
+        value: replay
+      # LLM_PROVIDER is gemini or openai-compatible. The key may also be given as GEMINI_API_KEY.
+      - key: LLM_PROVIDER
+        sync: false
       - key: LLM_API_KEY
         sync: false
       - key: LLM_BASE_URL
@@ -76,15 +88,18 @@ services:
         sync: false
       - key: CORPORATE_REGISTRY_TIMEOUT_MS
         value: "2500"
-      # Bound slow model calls; template explanations remain available.
-      - key: AGENT_MODEL_BUDGET_MS
-        value: "1200"
+      # Check contact, privacy and terms links with bounded, safe fetches. Set "false" to skip.
       - key: VALIDATE_SECTION_PAGES
         value: "true"
-      # 64 hex characters. Generate locally; never commit it.
-      - key: AUDIT_ENCRYPTION_KEY
-        sync: false
-      # Scam memory in Elasticsearch. Without these the memory runs in the API process.
+      # Total model time per scan (ms); after it the deterministic output is used. 0 means no limit.
+      - key: AGENT_MODEL_BUDGET_MS
+        value: "1200"
+      # Scam memory. A free Render instance has no persistent disk, so a memory file would be lost on
+      # every restart and sleep; keep it in the process. To keep a file, mount a disk (a paid
+      # feature), set MEMORY_MODE=file and MEMORY_FILE to a path on the disk. Or use Elasticsearch:
+      # with ELASTIC_URL and ELASTIC_API_KEY set, the memory is stored there.
+      - key: MEMORY_MODE
+        value: memory
       - key: ELASTIC_URL
         sync: false
       - key: ELASTIC_API_KEY
