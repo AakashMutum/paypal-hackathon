@@ -4,21 +4,20 @@ import { Download, Loader2, Printer } from 'lucide-react';
 import { useApp } from '../context/OrderStateContext';
 import { useInvestigations, useOrderPolling } from '../hooks/useOrderPolling';
 import { usePageTitle } from '../hooks/usePageTitle';
-import { usePanel } from '../hooks/usePanel';
 import { api } from '../api/apiClient';
-import { Disclosure, Empty, Icon, Modal, Skeleton, Stepper } from '../components/ui';
-import { CaseVerdict } from '../components/CaseVerdict';
-import { CheckList, REVEAL_STEP_MS } from '../components/CheckList';
+import { Disclosure, Empty, Icon, Modal, Skeleton, VerdictMark } from '../components/ui';
+import { CheckList } from '../components/CheckList';
 import { ClaimedVsActual } from '../components/ClaimedVsActual';
-import { StatusRows } from '../components/StatusRows';
 import { SimilarCases } from '../components/Provenance';
 import { HowChecked, SignalChecklist } from '../components/HowChecked';
-import { decisionSentence } from '../lib/checks';
-import { cn, download, softBreak } from '../lib/format';
-import { formatDateTime, scoreText } from '../lib/labels';
-import { paymentSteps } from '../lib/payment';
+import { decisionSentence, outcome, topReasons } from '../lib/checks';
+import { download, softBreak } from '../lib/format';
+import { formatDateTime, VERDICT_WORDS } from '../lib/labels';
+import { CAPTURE_WORDS, fundsStatement } from '../lib/payment';
 
-/** The case file: who the storefront says it is, who PayPal would pay, and what was checked. */
+const MARK_COLOR = { ALLOW: 'text-success', WARN: 'text-warning', PAUSE: 'text-danger' } as const;
+
+/** One case, top to bottom: the decision, who the store says it is against who PayPal pays, why, the payment, then one Details section. */
 export default function Engine() {
   const { id } = useParams();
   const fresh = Boolean((useLocation().state as { fresh?: boolean } | null)?.fresh);
@@ -26,14 +25,13 @@ export default function Engine() {
   const { list, loading } = useInvestigations();
   const target = id ?? latestId ?? list[0]?.id;
   const { inv, error, refresh } = useOrderPolling(target);
-  const side = usePanel('case');
   const [busy, setBusy] = useState(''); const [exp, setExp] = useState(false);
   usePageTitle(inv ? `Case ${inv.id}` : 'Case');
   useEffect(() => { if (id) setLatestId(id); }, [id, setLatestId]);
 
-  if (!target) return loading ? <Skeleton className="h-40 w-full" /> : <Empty title="No cases yet">Check a website or buy from a demo store to open the first case.<div className="mt-4 flex gap-4"><Link className="link" to="/">Check a website</Link><Link className="link" to="/stores">Demo stores</Link></div></Empty>;
+  if (!target) return loading ? <Skeleton className="h-40 w-full" /> : <Empty title="No cases yet">Check a website or buy from a demo store to open the first case.<div className="mt-4 flex gap-4"><Link className="link" to="/check">Check a website</Link><Link className="link" to="/stores">Demo stores</Link></div></Empty>;
   if (error && !inv) return <Empty title="Cannot reach the checker"><p>{error}</p><button className="btn-primary mt-4" onClick={refresh}>Retry</button></Empty>;
-  if (!inv) return <div className="space-y-3" aria-busy="true"><Skeleton className="h-10 w-1/2" /><Skeleton className="h-40 w-full" /><Skeleton className="h-64 w-full" /></div>;
+  if (!inv) return <div className="space-y-3" aria-busy="true"><Skeleton className="h-10 w-1/2" /><Skeleton className="h-32 w-full" /><Skeleton className="h-40 w-full" /></div>;
 
   const done = inv.status === 'COMPLETE';
   const voided = inv.captureState === 'VOIDED';
@@ -42,53 +40,56 @@ export default function Engine() {
     setBusy(key);
     try { await fn(); toast(ok, 'ok'); refresh(); } catch (e) { toast((e as Error).message, 'bad'); } finally { setBusy(''); }
   };
-  const later = fresh && done ? { className: 'reveal', style: { animationDelay: `${4 * REVEAL_STEP_MS}ms` } } : {};
+  const reasons = done ? topReasons(inv.reasons) : [];
+  const headline = done && inv.verdict ? (inv.verdict === 'ALLOW' ? outcome(inv).headline : VERDICT_WORDS[inv.verdict].label) : 'Checking';
 
-  return <div className="space-y-8">
+  return <div className="space-y-10 max-w-4xl">
     <header>
       <p className="label"><span className="font-mono">Case {inv.id}</span> · {formatDateTime(inv.createdAt)}</p>
       <div className="flex flex-wrap items-start justify-between gap-x-8 gap-y-3 mt-1">
-        <div className="min-w-0">
-          <h1 className="font-mono text-xl sm:text-2xl lg:text-[28px] break-words">{softBreak(inv.domain)}</h1>
-          <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1"><CaseVerdict inv={inv} />{!done && <span className="inline-flex items-center gap-1.5 text-muted"><Loader2 size={14} className="animate-spin" aria-hidden="true" />{inv.evidence.length} of 4 checks done</span>}</div>
-        </div>
+        <h1 className="font-mono text-xl sm:text-2xl lg:text-[28px] break-words min-w-0">{softBreak(inv.domain)}</h1>
         <div className="flex flex-wrap items-center gap-x-5 gap-y-1">
           <button type="button" className="tbtn" onClick={() => setExp(true)} disabled={!done}><Icon icon={Download} size={16} />Export this record</button>
           {done && inv.orderId && inv.verdict !== 'ALLOW' && <button type="button" className="tbtn" disabled={busy !== '' || voided} onClick={() => run('cancel', () => api.cancelOrder(inv.id), 'Purchase cancelled. The PayPal authorization was voided.')}>{voided ? 'Purchase cancelled' : 'Cancel purchase'}</button>}
-          {evidenceOfFraud && <button type="button" className="tbtn" disabled={busy !== ''} onClick={() => run('report', () => api.reportMerchant({ domain: inv.domain, reason: 'Reported from the case file', investigationId: inv.id }), `${inv.domain} reported`)}>Report seller</button>}
-          <button type="button" className="tbtn hidden lg:inline-flex" aria-expanded={side.open} aria-controls="case-side" onClick={side.toggle}>{side.open ? 'Hide' : 'Show'} decision panel <kbd className="font-mono text-[11px] border border-line rounded px-1">[</kbd></button>
+          {evidenceOfFraud && <button type="button" className="tbtn" disabled={busy !== ''} onClick={() => run('report', () => api.reportMerchant({ domain: inv.domain, reason: 'Reported from the case page', investigationId: inv.id }), `${inv.domain} reported`)}>Report seller</button>}
         </div>
       </div>
     </header>
 
-    <div className="band py-6"><ClaimedVsActual inv={inv} /></div>
-    <p {...later} className={cn('text-lg max-w-3xl', later.className)}>{decisionSentence(inv)}</p>
-
-    <div className="grid lg:grid-cols-12 gap-x-10 gap-y-10">
-      <div className={cn('min-w-0 space-y-8', side.open ? 'lg:col-span-8' : 'lg:col-span-12')}>
-        <section aria-labelledby="checked-h">
-          <h2 id="checked-h" className="text-lg font-semibold mb-2">What was checked</h2>
-          <CheckList evidence={inv.evidence} availability={inv.signalAvailability} reveal={fresh && done} />
-        </section>
-        {done && <SimilarCases cases={inv.similarCases} />}
-        {done && inv.signalAvailability && <Disclosure title="Signals the checker could and could not use"><SignalChecklist availability={inv.signalAvailability} reason={inv.confidenceReason} /></Disclosure>}
+    <section aria-label="Decision" className="band py-6">
+      <div className="flex items-center gap-3">
+        {done && inv.verdict ? <VerdictMark verdict={inv.verdict} size={24} className={MARK_COLOR[inv.verdict]} /> : <Loader2 size={24} className="animate-spin text-muted" aria-hidden="true" />}
+        <p className="text-2xl font-semibold tracking-tight">{headline}</p>
       </div>
+      <p className="mt-2 text-lg max-w-2xl">{decisionSentence(inv)}</p>
+      {!done && <p className="mt-1 text-muted" aria-live="polite">{inv.evidence.length} of 4 checks done. No funds are captured until the check ends.</p>}
+    </section>
 
-      <aside id="case-side" aria-label="Decision and payment" className={cn('min-w-0 lg:col-span-4 lg:sticky lg:top-[72px] self-start', side.open ? 'block' : 'lg:hidden')}>
-        <h2 className="text-lg font-semibold mb-1">Decision and payment</h2>
-        {done ? <div>
-          <div className="py-3 space-y-1 border-t border-line">
-            <div className="text-base"><CaseVerdict inv={inv} /></div>
-            <p className="text-sm text-muted num">{scoreText(inv.verdict, inv.riskScore)} · confidence {inv.confidence}%</p>
-            {inv.confidenceReason && <p className="text-sm text-muted">{inv.confidenceReason}</p>}
-          </div>
-          {inv.orderId && <div className="py-3 border-t border-line"><Stepper vertical label="Payment progress" steps={paymentSteps(inv)} /></div>}
-          <div className="border-t border-line"><StatusRows inv={inv} level={3} /></div>
-          {inv.orderId && <div className="py-3 border-t border-line"><Link to={`/pay/${inv.id}`} className="link text-sm">Open the payment</Link></div>}
-          <HowChecked inv={inv} />
-        </div> : <div className="border-t border-line py-3 text-sm text-muted" aria-busy="true">Collecting signals from {inv.domain}. No funds are captured until the check ends.</div>}
-      </aside>
-    </div>
+    <ClaimedVsActual inv={inv} />
+
+    {reasons.length > 0 && <section aria-labelledby="why-h">
+      <h2 id="why-h" className="text-xl font-semibold">Why</h2>
+      <ul className="mt-2 space-y-2 list-disc pl-5">{reasons.map(r => <li key={r}>{r}</li>)}</ul>
+    </section>}
+
+    <section aria-labelledby="pay-h">
+      <h2 id="pay-h" className="text-xl font-semibold">Payment</h2>
+      <p className="mt-2">{inv.orderId
+        ? <>{CAPTURE_WORDS[inv.captureState]}. {fundsStatement(inv.captureState).text} <Link to={`/pay/${inv.id}`} className="link">Open the payment</Link></>
+        : 'No payment was started. No funds were captured.'}</p>
+    </section>
+
+    <Disclosure title={<span className="text-xl font-semibold">Details</span>}>
+      <div className="space-y-8 pt-2">
+        <section aria-labelledby="ran-h"><h3 id="ran-h" className="font-semibold mb-2">All checks run</h3>
+          <CheckList evidence={inv.evidence} availability={inv.signalAvailability} reveal={fresh && done} /></section>
+        {inv.signalAvailability && <section aria-labelledby="could-h"><h3 id="could-h" className="font-semibold mb-2">What we could and could not check</h3>
+          <SignalChecklist availability={inv.signalAvailability} /></section>}
+        {inv.provenance && <section aria-labelledby="how-h"><h3 id="how-h" className="font-semibold mb-2">How it was checked</h3><HowChecked inv={inv} /></section>}
+        {done && <SimilarCases cases={inv.similarCases} />}
+        {done && <p className="text-sm"><span className="font-semibold">Confidence {inv.confidence}%.</span> <span className="text-muted">{inv.confidenceReason ?? 'Based on the checks that ran.'}</span></p>}
+      </div>
+    </Disclosure>
 
     <Modal open={exp} onClose={() => setExp(false)} title="Export this record">
       <p className="text-sm text-muted mb-4">Includes every check, the confidence scores and the final decision.</p>
