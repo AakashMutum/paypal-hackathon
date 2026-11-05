@@ -25,9 +25,9 @@ export default function App() {
       <Route path="stores" element={<Stores />} />
       <Route path="checkout/:id" element={<Checkout />} />
       <Route path="profile" element={<Profile />} />
+      <Route path="analyst" element={<AnalystConsole />} />
     </Route>
     <Route path="/store/:id" element={<Storefront />} />
-    <Route path="/analyst" element={<AnalystConsole />} />
     <Route path="*" element={<Navigate to="/" replace />} />
   </Routes>;
 }
