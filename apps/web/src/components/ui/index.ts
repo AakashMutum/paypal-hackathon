@@ -18,6 +18,8 @@ export {
   Switch,
   Toast,
   VerdictBadge,
+  VerdictText,
+  StatusMark,
   WakeNote,
 } from './primitives';
 export type { Step, StepState } from './primitives';

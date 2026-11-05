@@ -1,5 +1,6 @@
 import { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode, TextareaHTMLAttributes, useEffect, useId, useState } from 'react';
-import { AlertTriangle, CheckCircle2, Info, X, XCircle } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Dot, Info, MinusCircle, X, XCircle, type LucideIcon } from 'lucide-react';
+import { MARK_WORD, type MarkState } from '../../lib/checks';
 import type { Verdict } from '../../types';
 import { cn, Tone, TONE } from '../../lib/format';
 import { VERDICT_WORDS } from '../../lib/labels';
@@ -29,16 +30,38 @@ export function Badge({ tone = 'neutral', children, className }: { tone?: Tone; 
   return <span className={cn('pill', TONE[tone], className)}>{children}</span>;
 }
 
-/** The decision: a mark, the word and its plain subtitle. Never colour alone. */
-export function VerdictBadge({ verdict, className }: { verdict?: Verdict; className?: string }) {
-  if (!verdict) return <Badge tone="info" className={className}>Checking</Badge>;
+const VERDICT_COLOR: Record<Verdict, string> = { ALLOW: 'text-success', WARN: 'text-warning', PAUSE: 'text-danger' };
+
+/** The decision: a coloured mark, then the word and its plain subtitle in normal text. Never colour alone. */
+export function VerdictText({ verdict, subtitle = true, className }: { verdict?: Verdict; subtitle?: boolean; className?: string }) {
+  if (!verdict) return <span className={cn('inline-flex items-center gap-1.5 text-muted', className)}>Checking…</span>;
   const w = VERDICT_WORDS[verdict];
-  return <Badge tone={w.tone} className={className}><VerdictMark verdict={verdict} size={16} />{w.word}<span className="font-normal">· {w.subtitle}</span></Badge>;
+  return <span className={cn('inline-flex items-center gap-1.5 font-medium whitespace-nowrap', className)}>
+    <VerdictMark verdict={verdict} size={16} className={VERDICT_COLOR[verdict]} />{w.word}{subtitle && <span className="font-normal text-muted">· {w.subtitle}</span>}</span>;
+}
+
+/** Kept under its older name so every screen shows the decision the same way. */
+export function VerdictBadge({ verdict, className }: { verdict?: Verdict; className?: string }) {
+  return <VerdictText verdict={verdict} className={className} />;
+}
+
+const MARKS: Record<MarkState, { glyph: LucideIcon; color: string }> = {
+  pass: { glyph: CheckCircle2, color: 'text-success' },
+  warn: { glyph: AlertTriangle, color: 'text-warning' },
+  fail: { glyph: XCircle, color: 'text-danger' },
+  none: { glyph: MinusCircle, color: 'text-muted' },
+  info: { glyph: Dot, color: 'text-muted' },
+};
+
+/** The status of one check as an icon with a text label for screen readers. */
+export function StatusMark({ state, size = 16 }: { state: MarkState; size?: 16 | 20 }) {
+  const m = MARKS[state];
+  return <span className={cn('inline-flex shrink-0', m.color)}><Icon icon={m.glyph} size={size} label={MARK_WORD[state]} /></span>;
 }
 
 export function Stat({ label, value, hint, loading }: { label: string; value: ReactNode; hint?: ReactNode; loading?: boolean }) {
   return <div className="card !p-4">
-    <div className="text-sm text-muted">{label}</div>
+    <div className="label">{label}</div>
     {loading ? <Skeleton className="h-8 w-14 my-2" /> : <div className="text-xl font-semibold num my-1">{value}</div>}
     {hint && <div className="text-xs text-muted">{hint}</div>}
   </div>;
@@ -73,20 +96,19 @@ export function WakeNote({ show }: { show: boolean }) {
   return <p role="status" className="card text-sm text-muted">Waking up the server. A free host sleeps when it is idle, so the first request can take up to a minute.</p>;
 }
 
-export function EmptyState({ icon, title, children }: { icon?: ReactNode; title: string; children?: ReactNode }) {
-  return <div className="card text-center py-10">
-    {icon && <div className="mx-auto mb-3 text-muted flex justify-center" aria-hidden="true">{icon}</div>}
-    <h2 className="font-semibold text-lg">{title}</h2><div className="text-sm text-muted mt-1">{children}</div></div>;
+export function EmptyState({ title, children }: { icon?: ReactNode; title: string; children?: ReactNode }) {
+  return <div className="border-y border-line py-10 max-w-xl">
+    <h2 className="font-semibold text-base">{title}</h2><div className="text-sm text-muted mt-1">{children}</div></div>;
 }
 
 /** A button that shows or hides a region. No tooltips: everything it hides is reachable by keyboard. */
 export function Disclosure({ title, children, defaultOpen = false, className }: { title: ReactNode; children: ReactNode; defaultOpen?: boolean; className?: string }) {
   const [open, setOpen] = useState(defaultOpen);
   const id = useId();
-  return <div className={cn('card !p-0', className)}>
-    <button type="button" className="w-full p-4 flex justify-between items-center gap-3 font-semibold text-left" aria-expanded={open} aria-controls={id} onClick={() => setOpen(o => !o)}>
-      <span>{title}</span><span aria-hidden="true" className="text-muted text-sm">{open ? 'Hide' : 'Show'}</span></button>
-    <div id={id} hidden={!open} className="px-4 pb-4">{open && children}</div></div>;
+  return <div className={cn('border-t border-line', className)}>
+    <button type="button" className="w-full py-3 flex justify-between items-center gap-3 text-sm font-medium text-left" aria-expanded={open} aria-controls={id} onClick={() => setOpen(o => !o)}>
+      <span>{title}</span><span aria-hidden="true" className="text-muted text-xs">{open ? 'Hide' : 'Show'}</span></button>
+    <div id={id} hidden={!open} className="pb-3">{open && children}</div></div>;
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -98,13 +120,13 @@ export interface Step { label: string; detail?: string; state: StepState }
 
 const STEP_WORD: Record<StepState, string> = { done: 'Done', current: 'Now', todo: 'Not yet', failed: 'Failed', held: 'Held' };
 
-/** A horizontal or vertical list of steps. State is always written out, not only coloured. */
-export function Stepper({ steps, label }: { steps: Step[]; label: string }) {
-  return <ol aria-label={label} className="grid gap-3 sm:grid-cols-4">{steps.map((s, n) => <li key={s.label} aria-current={s.state === 'current' ? 'step' : undefined} className={cn('rounded-md border p-3', s.state === 'failed' ? 'border-danger bg-danger-bg' : s.state === 'held' ? 'border-warning bg-warning-bg' : s.state === 'done' ? 'border-success bg-success-bg' : 'border-line bg-surface')}>
-    <div className="flex items-center gap-2 text-sm font-semibold">
-      <Icon size={16} icon={s.state === 'failed' ? XCircle : s.state === 'held' ? AlertTriangle : s.state === 'done' ? CheckCircle2 : Info} />
-      <span>{n + 1}. {s.label}</span></div>
-    <div className="text-xs text-muted mt-1">{STEP_WORD[s.state]}{s.detail ? ` · ${s.detail}` : ''}</div></li>)}</ol>;
+const STEP_EDGE: Record<StepState, string> = { done: 'border-success', current: 'border-action', todo: 'border-line', failed: 'border-danger', held: 'border-warning' };
+
+/** The steps as a ruled row: a coloured top rule, the label, and the state written out (never colour alone). */
+export function Stepper({ steps, label, vertical }: { steps: Step[]; label: string; vertical?: boolean }) {
+  return <ol aria-label={label} className={cn("grid gap-x-4 gap-y-3", !vertical && "sm:grid-cols-4")}>{steps.map((s, n) => <li key={s.label} aria-current={s.state === 'current' ? 'step' : undefined} className={cn('border-t-2 pt-2', STEP_EDGE[s.state])}>
+    <div className="text-sm font-medium">{n + 1}. {s.label}</div>
+    <div className="text-xs text-muted mt-0.5">{STEP_WORD[s.state]}{s.detail ? ' · ' + s.detail : ''}</div></li>)}</ol>;
 }
 
 // ---------------------------------------------------------------------------------------------
