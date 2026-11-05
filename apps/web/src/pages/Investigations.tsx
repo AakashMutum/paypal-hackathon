@@ -1,81 +1,104 @@
 import { useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { ArrowDown, ArrowUp, Download, Search } from 'lucide-react';
-import type { Investigation } from '../types';
-import { useInvestigations } from '../hooks/useOrderPolling';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import { ArrowLeft, ArrowRight, Download, ListChecks, Search, RotateCcw } from 'lucide-react';
+import { useInvestigations, useOrderPolling } from '../hooks/useOrderPolling';
 import { usePageTitle } from '../hooks/usePageTitle';
 import { useSlowLoading } from '../hooks/useSlowLoading';
-import { CaseVerdict } from '../components/CaseVerdict';
-import { EmptyState, Icon, Skeleton, WakeNote } from '../components/ui';
-import { cn, download, softBreak } from '../lib/format';
-import { displayBrand, formatDateTime } from '../lib/labels';
+import { InvestigationView } from '../components/InvestigationView';
+import { Icon, Skeleton, VerdictBadge } from '../components/ui';
+import { cn, download } from '../lib/format';
+import { displayBrand, formatDateTime, VERDICT_WORDS } from '../lib/labels';
 
+const FILTERS = ['ALL', 'ALLOW', 'WARN', 'PAUSE'] as const;
 export const PAGE_SIZE = 25;
-const SEGMENTS = [
-  { value: 'ALL', label: 'All' }, { value: 'ALLOW', label: 'Allowed' }, { value: 'WARN', label: 'Needs review' }, { value: 'PAUSE', label: 'Held' },
-] as const;
-type SortKey = 'domain' | 'brand' | 'payee' | 'verdict' | 'time';
-const VERDICT_RANK = { PAUSE: 3, WARN: 2, ALLOW: 1 } as const;
 
-const sortValue = (i: Investigation, k: SortKey): string | number => {
-  switch (k) {
-    case 'domain': return i.domain;
-    case 'brand': return displayBrand(i.claimedBrand, i.domain).toLowerCase();
-    case 'payee': return (i.payeeName ?? '').toLowerCase();
-    case 'verdict': return i.verdict ? VERDICT_RANK[i.verdict] : 0;
-    default: return Date.parse(i.createdAt) || 0;
-  }
-};
+function Detail({ id }: { id: string }) {
+  const { inv, error, refresh } = useOrderPolling(id);
+  if (error && !inv) return <InvestigationError error={error} onRetry={refresh} />;
+  if (!inv) return <div className="space-y-3" aria-busy="true"><Skeleton className="h-8 w-2/3" /><Skeleton className="h-40 w-full" /></div>;
+  return <div className="space-y-4">
+    <div className="card xl flex flex-wrap items-center justify-between gap-4 p-6">
+      <div className="min-w-0"><h2 className="font-bold break-all font-mono text-base">{inv.domain}</h2>
+        <p className="text-sm text-muted">{formatDateTime(inv.createdAt)}{inv.verdict ? ` · ${VERDICT_WORDS[inv.verdict].meaning}` : ''}</p></div>
+      {inv.status === 'COMPLETE' && <VerdictBadge verdict={inv.verdict} />}</div>
+    <InvestigationView inv={inv} />
+  </div>;
+}
 
-/** Every case in one plain table, with filters and sortable columns. A row opens the case page. */
+function InvestigationError({ error, onRetry }: { error: string; onRetry: () => void }) {
+  const [busy, setBusy] = useState(false);
+  const retry = async () => { setBusy(true); try { await onRetry(); } catch { /* handled by useOrderPolling */ } finally { setBusy(false); } };
+  return (
+    <div className="card xl text-center p-12 border-danger border">
+      <div className="flex flex-col items-center gap-3">
+        <RotateCcw className="h-16 w-16 text-danger animate-spin" aria-hidden="true" />
+        <h3 className="font-semibold">Could not load this investigation</h3>
+        <p className="text-sm text-muted">{error}</p>
+        <button className="btn-primary" disabled={busy} onClick={retry}>
+          {busy ? <span>Retry</span> : <span>Retry</span>}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function Investigations() {
-  usePageTitle('Cases');
+  usePageTitle('Investigations');
+  const { id } = useParams();
   const nav = useNavigate();
   const { list, loading, error } = useInvestigations(3000);
   const slow = useSlowLoading(loading);
-  const [seg, setSeg] = useState<typeof SEGMENTS[number]['value']>('ALL');
+  const [f, setF] = useState<typeof FILTERS[number]>('ALL');
   const [q, setQ] = useState('');
   const [shown, setShown] = useState(PAGE_SIZE);
-  const [sort, setSort] = useState<{ key: SortKey; dir: 1 | -1 }>({ key: 'time', dir: -1 });
-
-  const rows = useMemo(() => {
-    const needle = q.trim().toLowerCase();
-    const kept = list.filter(i => (seg === 'ALL' || i.verdict === seg) && (!needle || (i.domain + ' ' + i.claimedBrand + ' ' + (i.payeeName ?? '') + ' ' + i.id).toLowerCase().includes(needle)));
-    return [...kept].sort((a, b) => { const x = sortValue(a, sort.key), y = sortValue(b, sort.key); return (x < y ? -1 : x > y ? 1 : 0) * sort.dir; });
-  }, [list, seg, q, sort]);
+  const rows = useMemo(() => list.filter(i => (f === 'ALL' || i.verdict === f) && (i.domain + i.claimedBrand + (i.payeeName ?? '')).toLowerCase().includes(q.toLowerCase())), [list, f, q]);
   const visible = rows.slice(0, shown);
+  const selected = id ?? (typeof window !== 'undefined' && window.matchMedia?.('(min-width: 1024px)').matches ? rows[0]?.id : undefined);
 
-  const th = (key: SortKey, label: string, right?: boolean) => <th scope="col" aria-sort={sort.key === key ? (sort.dir === 1 ? 'ascending' : 'descending') : 'none'} className={cn('py-2 pr-4 font-normal', right && 'text-right')}>
-    <button type="button" className="inline-flex items-center gap-1 hover:text-content" onClick={() => setSort(s => ({ key, dir: s.key === key ? (s.dir === 1 ? -1 : 1) : key === 'time' || key === 'verdict' ? -1 : 1 }))}>
-      {label}{sort.key === key && <Icon icon={sort.dir === 1 ? ArrowUp : ArrowDown} size={16} />}</button></th>;
-
-  return <div className="space-y-6">
-    <div className="flex flex-wrap items-end justify-between gap-3"><div><h1>Cases</h1><p className="text-muted mt-1">Every check and every checkout, newest first.</p></div>
-      <button type="button" className="tbtn" onClick={() => download('trustora-cases.json', rows)} disabled={!rows.length}><Icon icon={Download} size={16} />Export</button></div>
-
-    <div className="flex flex-wrap items-center gap-3">
-      <div className="inline-flex rounded-full border border-line-strong p-0.5" role="group" aria-label="Filter by result">{SEGMENTS.map(s =>
-        <button key={s.value} type="button" aria-pressed={seg === s.value} onClick={() => { setSeg(s.value); setShown(PAGE_SIZE); }}
-          className={cn('px-4 h-9 rounded-full text-sm font-medium', seg === s.value ? 'bg-action text-action-on' : 'text-muted hover:text-content')}>{s.label}</button>)}</div>
-      <div className="relative flex-1 min-w-[200px] max-w-md"><Icon icon={Search} size={16} className="absolute left-3.5 top-3.5 text-muted" />
-        <input className="input pl-10" placeholder="Search domain, brand or payee" value={q} onChange={e => { setQ(e.target.value); setShown(PAGE_SIZE); }} aria-label="Search cases" /></div>
-      <span className="label num" aria-live="polite">{loading ? '' : `${rows.length} ${rows.length === 1 ? 'case' : 'cases'}`}</span>
+  return <div className="space-y-6"><h1 className="sr-only">Investigations</h1>
+  <div className="grid gap-6 lg:grid-cols-[minmax(320px,420px)_1fr] items-start">
+    {/* List pane */}
+    <div className={cn('space-y-4 min-w-0', id && 'hidden lg:block')}>
+      <div className="flex items-baseline justify-between gap-2">
+        <h2 className="text-xl font-bold">All investigations</h2>
+        <button className="btn-secondary !h-9" onClick={() => download('trustora-investigations.json', rows)}><Icon icon={Download} size={16} className="mr-2" />Export</button>
+      </div>
+      <div className="relative"><Icon icon={Search} size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
+        <input className="input pl-9" placeholder="Search domain, brand or recipient" value={q} onChange={e => { setQ(e.target.value); setShown(PAGE_SIZE); }} aria-label="Search investigations" />
+      </div>
+      <div className="inline-flex rounded-md border border-line-strong p-0.5 bg-surface" role="group" aria-label="Filter by decision">{FILTERS.map(x =>
+        <button key={x} aria-pressed={f === x} onClick={() => { setF(x); setShown(PAGE_SIZE); }} className={cn('px-3 py-1.5 rounded text-xs font-semibold', f === x ? 'bg-action text-action-on' : 'text-muted hover:text-content')}>{x}</button>)}</div>
+      <WakeNoteInline show={slow} />
+      {error && !loading && <p role="alert" className="card text-sm text-danger border-danger border p-4">Could not load investigations: {error}</p>}
+      <div className="card !p-0 divide-y divide-line">
+        {loading && <div className="p-4 space-y-3" aria-busy="true"><Skeleton className="h-12 w-full" /><Skeleton className="h-12 w-full" /><Skeleton className="h-12 w-full" /></div>}
+        {!loading && !rows.length && <div className="p-8 text-center"><ListChecks className="h-10 w-10 text-muted mb-3" aria-hidden="true" /><h3 className="font-semibold">No investigations match</h3><p className="text-sm text-muted">Try another filter, or scan a site.</p><Link className="mt-3 inline-flex items-center gap-1 text-sm text-action font-semibold" to="/scanner">Scan a site<Icon icon={ArrowRight} size={16} /></Link></div>}
+        {visible.map(i => <button key={i.id} aria-current={selected === i.id ? 'true' : undefined} onClick={() => nav(`/engine/${i.id}`)}
+          className={cn('w-full text-left p-4 flex justify-between items-center gap-3 hover:bg-surface-2', selected === i.id && 'bg-surface-2')}>
+          <div className="min-w-0"><div className="font-mono text-sm font-semibold truncate">{i.domain}</div>
+            <div className="text-xs text-muted truncate">{displayBrand(i.claimedBrand, i.domain)} → {i.payeeName ?? 'Not supplied'}</div>
+            <time dateTime={i.createdAt} className="text-xs text-muted font-mono">{formatDateTime(i.createdAt)}</time></div>
+          <VerdictBadge verdict={i.verdict} /></button>)}</div>
+      {rows.length > visible.length && <button className="btn-secondary w-full mt-3" onClick={() => setShown(n => n + PAGE_SIZE)}>Load more ({rows.length - visible.length} more)</button>}
     </div>
 
-    <WakeNote show={slow} />
-    {error && !loading && <p role="alert" className="text-sm text-danger">Could not load cases: {error}</p>}
-    {loading ? <div className="space-y-3" aria-busy="true"><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /></div>
-      : !rows.length ? <EmptyState title="No cases match">Try another filter, or <Link className="link" to="/check">check a website</Link>.</EmptyState>
-        : <div className="overflow-x-auto"><table className="w-full text-[15px] min-w-[760px]">
-          <caption className="sr-only">Cases. Choose a domain to open the case.</caption>
-          <thead><tr className="text-left label border-b border-line">{th('domain', 'Domain')}{th('brand', 'Claimed brand')}{th('payee', 'Who gets paid')}{th('verdict', 'Result')}{th('time', 'Time', true)}</tr></thead>
-          <tbody>{visible.map(i => <tr key={i.id} onClick={() => nav(`/engine/${i.id}`)} className="border-b border-line align-top cursor-pointer hover:bg-surface-2">
-            <td className="py-3 pr-4 font-mono break-words"><Link to={`/engine/${i.id}`} onClick={e => e.stopPropagation()} className="link">{softBreak(i.domain)}</Link></td>
-            <td className="py-3 pr-4">{displayBrand(i.claimedBrand, i.domain)}</td>
-            <td className="py-3 pr-4">{i.payeeName ?? <span className="text-muted">Not supplied</span>}</td>
-            <td className="py-3 pr-4"><CaseVerdict inv={i} /></td>
-            <td className="py-3 text-right text-muted num whitespace-nowrap"><time dateTime={i.createdAt}>{formatDateTime(i.createdAt)}</time></td>
-          </tr>)}</tbody></table></div>}
-    {rows.length > visible.length && <button type="button" className="btn-secondary" onClick={() => setShown(n => n + PAGE_SIZE)}>Load more ({rows.length - visible.length} more)</button>}
+    {/* Detail pane */}
+    <div className={cn('min-w-0', !id && 'hidden lg:block')}>
+      {id && <Link to="/investigations" className="lg:hidden inline-flex items-center gap-1 text-sm text-action mb-4"><Icon icon={ArrowLeft} size={16} />All investigations</Link>}
+      {selected ? <Detail key={selected} id={selected} /> : <EmptyInvestigations />}
+    </div>
+  </div></div>;
+}
+
+function WakeNoteInline({ show }: { show: boolean }) {
+  return show ? <div className="card text-sm text-muted p-4" role="status">The server may be waking up after being asleep. Please wait a moment.</div> : null;
+}
+
+function EmptyInvestigations() {
+  return <div className="card xl flex flex-col items-center justify-center p-12 text-center" role="status">
+    <ListChecks className="h-12 w-12 text-muted mb-3" aria-hidden="true" />
+    <h3 className="font-semibold">No investigations yet</h3>
+    <p className="text-sm text-muted">Choose one from the list to see its decision and evidence. Run a scan or check out from a demo store to create one.</p>
+    <Link className="mt-4 inline-flex items-center gap-1 text-sm text-action font-semibold" to="/scanner">Scan a site<Icon icon={ArrowRight} size={16} /></Link>
   </div>;
 }

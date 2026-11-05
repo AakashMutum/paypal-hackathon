@@ -17,7 +17,6 @@ import { CAPTURE_WORDS, fundsStatement } from '../lib/payment';
 
 const MARK_COLOR = { ALLOW: 'text-success', WARN: 'text-warning', PAUSE: 'text-danger' } as const;
 
-/** One case, top to bottom: the decision, who the store says it is against who PayPal pays, why, the payment, then one Details section. */
 export default function Engine() {
   const { id } = useParams();
   const fresh = Boolean((useLocation().state as { fresh?: boolean } | null)?.fresh);

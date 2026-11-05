@@ -10,33 +10,51 @@
 :root {
   color-scheme: light;
 
-  --bg: #F5F7FA;
-  --surface: #FFFFFF;
-  --surface-2: #EDF1F7;
+  /* Backgrounds */
+  --bg: #F5F7FA;            /* page background: cool light gray-blue */
+  --surface: #FFFFFF;        /* cards, modals, elevated surfaces */
+  --surface-2: #F1F5FA;      /* subtle section backgrounds, hover states */
+
+  /* Borders */
   --border: #E3E8F0;          /* decoration: dividers and card edges */
   --border-strong: #75849B;   /* controls: input and button edges, at least 3:1 on surface */
-  --text: #0B1B33;
-  --muted: #4B5B73;
-  --navy: #003087;
-  --on-navy: #FFFFFF;
-  --brand: #003087;           /* the wordmark and heading accents: navy in light, near-white in dark */
-  --action: #0070E0;          /* fills: the primary button, the focus ring, active marks */
-  --action-hover: #005AC4;
-  --link: #0062C8;            /* text links: #0070E0 is below 4.5:1 on the page background */
-  --on-action: #FFFFFF;
-  --success: #067647;
+  --border-focus: #006DDA;    /* focus ring: matches primary action */
+
+  /* Text */
+  --text: #0B1B33;            /* primary text: deep navy */
+  --text-weak: #3A4A5F;       /* secondary text */
+  --muted: #4B5B73;           /* tertiary text, placeholders */
+
+  /* Brand */
+--navy: #003087;            /* deep brand blue */
+  --brand: #005AC4;         /* brand link colour */
+  --on-navy: #FFFFFF;       /* text on navy */
+  --action: #0070E0;          /* primary action: PayPal-inspired blue */
+  --action-hover: #005AC4;    /* primary action hover */
+  --on-action: #FFFFFF;       /* text on action */
+
+  /* Status */
+  --success: #067647;         /* green: ALLOW */
   --success-bg: #ECFDF3;
-  --warn: #B54708;
+  --success-border: #86D9A8;
+  --warn: #B54708;            /* amber: WARN */
   --warn-bg: #FEF0C7;
-  --danger: #B42318;
+  --warn-border: #F3C98A;
+  --danger: #B42318;          /* red: BLOCK / PAUSE */
   --danger-bg: #FEE4E2;
+  --danger-border: #F0A39A;
+
   --focus: #0070E0;
+  --link: #005AC4;
   --overlay: rgba(10, 26, 51, 0.45);
 
-  --radius-sm: 10px;
-  --radius-md: 14px;
+  /* Radii */
+  --radius-sm: 6px;
+  --radius-md: 10px;
   --radius-lg: 14px;
+  --radius-xl: 20px;
 
+  /* Spacing */
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
@@ -44,50 +62,73 @@
   --space-5: 24px;
   --space-6: 32px;
   --space-7: 48px;
+  --space-8: 64px;
 
+  /* Shadows */
   --shadow-1: 0 1px 2px rgba(10, 26, 51, 0.06), 0 1px 3px rgba(10, 26, 51, 0.04);
-  --shadow-2: 0 8px 24px rgba(10, 26, 51, 0.1), 0 2px 6px rgba(10, 26, 51, 0.06);
+  --shadow-2: 0 8px 24px rgba(10, 26, 51, 0.08), 0 2px 6px rgba(10, 26, 51, 0.06);
+  --shadow-3: 0 20px 40px rgba(10, 26, 51, 0.12);
 
+  /* Typography */
   --text-xs: 12px;
   --text-sm: 14px;
   --text-base: 16px;
   --text-lg: 20px;
   --text-xl: 28px;
-  --text-2xl: 32px;
+  --text-2xl: 40px;
+  --text-3xl: 56px;
 
+  /* Motion */
   --motion-fast: 120ms;
   --motion-base: 180ms;
+  --motion-slow: 280ms;
   --ease: cubic-bezier(0.2, 0, 0, 1);
 }
 
 :root[data-theme='dark'] {
   color-scheme: dark;
 
+  /* Backgrounds */
   --bg: #0A0F1C;
   --surface: #101828;
   --surface-2: #162033;
+
+  /* Borders */
   --border: #1F2A44;
   --border-strong: #6B7F9E;
+  --border-focus: #4C9AFF;
+
+  /* Text */
   --text: #EAF0FA;
+  --text-weak: #B9C4D6;
   --muted: #8EA0BC;
+
+  /* Brand */
   --navy: #123A8F;
+  --brand: #4C9AFF;
   --on-navy: #FFFFFF;
-  --brand: #EAF0FA;
   --action: #4C9AFF;
   --action-hover: #7DB5FF;
-  --link: #6FAEFF;
   --on-action: #0A0F1C;
+
+  /* Status */
   --success: #32D583;
   --success-bg: #0B2E1F;
+  --success-border: #32D583;
   --warn: #FDB022;
   --warn-bg: #3A2A07;
+  --warn-border: #FDB022;
   --danger: #F97066;
   --danger-bg: #3A1512;
+  --danger-border: #F97066;
+
   --focus: #4C9AFF;
+  --link: #4C9AFF;
   --overlay: rgba(2, 6, 14, 0.65);
 
   --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
   --shadow-2: 0 8px 24px rgba(0, 0, 0, 0.5);
+  --shadow-3: 0 20px 40px rgba(0, 0, 0, 0.6);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -99,25 +140,30 @@
     --surface-2: #162033;
     --border: #1F2A44;
     --border-strong: #6B7F9E;
+    --border-focus: #4C9AFF;
     --text: #EAF0FA;
+    --text-weak: #B9C4D6;
     --muted: #8EA0BC;
     --navy: #123A8F;
+    --brand: #4C9AFF;
     --on-navy: #FFFFFF;
-    --brand: #EAF0FA;
     --action: #4C9AFF;
     --action-hover: #7DB5FF;
-    --link: #6FAEFF;
     --on-action: #0A0F1C;
     --success: #32D583;
     --success-bg: #0B2E1F;
+    --success-border: #32D583;
     --warn: #FDB022;
     --warn-bg: #3A2A07;
+    --warn-border: #FDB022;
     --danger: #F97066;
     --danger-bg: #3A1512;
+    --danger-border: #F97066;
     --focus: #4C9AFF;
+    --link: #4C9AFF;
     --overlay: rgba(2, 6, 14, 0.65);
-
     --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
     --shadow-2: 0 8px 24px rgba(0, 0, 0, 0.5);
+    --shadow-3: 0 20px 40px rgba(0, 0, 0, 0.6);
   }
 }
