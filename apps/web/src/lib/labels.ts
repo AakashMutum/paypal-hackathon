@@ -63,11 +63,11 @@ const EVIDENCE_LABEL: Record<string, string> = {
   PRODUCT_DATA_UNAVAILABLE: 'No product details on the page',
 };
 
-const keyOf = (raw: string): string => raw.trim().toUpperCase().replace(/[\s-]+/g, '_');
+export const evidenceKey = (raw: string): string => raw.trim().toUpperCase().replace(/[\s-]+/g, '_');
 
 /** A human label for an evidence type or for the title-cased label the API sends. */
 export function evidenceLabel(raw: string): string {
-  return EVIDENCE_LABEL[keyOf(raw)] ?? raw;
+  return EVIDENCE_LABEL[evidenceKey(raw)] ?? raw;
 }
 
 /** What a similar-case search really used, in words that do not over-claim. */

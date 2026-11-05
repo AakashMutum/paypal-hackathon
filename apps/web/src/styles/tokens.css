@@ -31,9 +31,9 @@
   --focus: #006DDA;
   --overlay: rgba(10, 26, 51, 0.45);
 
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 12px;
 
   --space-1: 4px;
   --space-2: 8px;
@@ -51,7 +51,7 @@
   --text-base: 16px;
   --text-lg: 20px;
   --text-xl: 28px;
-  --text-2xl: 40px;
+  --text-2xl: 32px;
 
   --motion-fast: 120ms;
   --motion-base: 180ms;

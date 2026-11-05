@@ -18,10 +18,10 @@ export default function Storefront() {
     <div className="text-center text-sm py-2 font-semibold" style={{ background: t.accent, color: t.accentFg }}>{t.banner}</div>
     <header className="max-w-4xl mx-auto px-6 py-6 flex items-center justify-between"><h1 className="text-2xl font-bold tracking-tight">{s.name}</h1>
       <span className="text-sm opacity-70">Cart ({cart.storeId === s.id ? cart.items.length : 0})</span></header>
-    <main className="max-w-4xl mx-auto px-6 pb-16 grid md:grid-cols-2 gap-10 items-center">
-      <div className="max-w-[280px] w-full mx-auto aspect-square rounded-2xl grid place-items-center" style={{ background: t.accent + '22' }}><StoreArt kind={s.kind} accent={t.accent} size={170} /></div>
-      <div><p className="opacity-70 mb-2">{s.tagline}</p><h2 className="text-4xl font-bold leading-tight">{p.name}</h2><p className="mt-3 opacity-80">{p.blurb}</p>
-        <div className="mt-6 flex items-baseline gap-3"><span className="text-4xl font-bold" style={{ color: t.accent }}>{money(p.price)}</span>
+    <main className="max-w-4xl mx-auto px-6 pb-16 grid md:grid-cols-[200px_1fr] gap-10 items-start">
+      <div className="max-w-[200px] w-full mx-auto aspect-square rounded-xl grid place-items-center" style={{ background: t.accent + '22' }}><StoreArt kind={s.kind} accent={t.accent} size={120} /></div>
+      <div><p className="opacity-70 mb-2">{s.tagline}</p><h2 className="text-3xl font-bold leading-tight">{p.name}</h2><p className="mt-3 opacity-80">{p.blurb}</p>
+        <div className="mt-6 flex items-baseline gap-3"><span className="text-3xl font-bold" style={{ color: t.accent }}>{money(p.price)}</span>
           {p.msrp > p.price && <><span className="line-through opacity-60">{money(p.msrp)}</span><span className="px-2 py-0.5 text-sm font-bold rounded" style={{ background: t.accent, color: t.accentFg }}>-{off}%</span></>}</div>
         <div className="mt-8 flex gap-3">
           <button className="px-6 h-12 rounded font-semibold border" style={{ borderColor: t.accent, color: t.accent }} onClick={() => { cart.add(s.id, item); toast('Added to cart', 'ok'); }}>Add to cart</button>

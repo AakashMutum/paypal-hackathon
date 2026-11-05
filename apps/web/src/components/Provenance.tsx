@@ -72,17 +72,17 @@ const MATCH_LABEL: Record<SimilarCase['matchType'], string> = {
 /** The closest past cases retrieved from memory. Shown for context; they never change a decision. */
 export function SimilarCases({ cases }: { cases?: SimilarCase[] }) {
   const close = closeCases(cases);
-  return <section className="card space-y-3" aria-label="Similar past cases">
-    <div className="flex justify-between items-center"><h2 className="font-semibold">Similar past cases</h2><span className="mono-label bg-tint px-2 py-1 rounded">{close.length} close</span></div>
+  return <section aria-label="Similar past cases">
+    <h2 className="text-base font-semibold">Similar past cases <span className="font-normal text-muted num">({close.length})</span></h2>
     {!close.length
-      ? <p className="text-sm text-muted">No close past cases.</p>
-      : <ul className="space-y-2">{close.map((c, n) => <li key={c.caseId ?? n} className="rounded-lg bg-tint p-3 text-sm">
-        <div className="flex flex-wrap gap-2 items-center mb-1">
-          <Pill tone={c.decision === 'PAUSE' ? 'bad' : c.decision === 'WARN' ? 'warn' : 'ok'}>{c.decision}</Pill>
-          <span className="text-xs font-semibold">{MATCH_LABEL[c.matchType]}</span>
-          <span className="font-mono text-xs text-muted">similarity {c.score.toFixed(2)}</span></div>
-        <p className="text-ink/80">{c.patternSentence}</p>
-        <p className="text-xs text-muted mt-1">Found by: {retrievalLabel(c.retrieval)}</p></li>)}</ul>}
-    <p className="text-[11px] text-muted">For context only. A past case never overrides a decision. Only matches with similarity {MIN_CASE_SIMILARITY} or higher are shown.</p>
+      ? <p className="text-sm text-muted mt-1">No close past cases.</p>
+      : <ul className="ruled border-y border-line mt-2">{close.map((c, n) => <li key={c.caseId ?? n} className="py-3 text-sm">
+        <div className="flex flex-wrap gap-x-3 items-center mb-1">
+          <span className="font-medium">{c.decision}</span>
+          <span>{MATCH_LABEL[c.matchType]}</span>
+          <span className="text-muted num">similarity {c.score.toFixed(2)}</span></div>
+        <p>{c.patternSentence}</p>
+        <p className="label mt-1">Found by: {retrievalLabel(c.retrieval)}</p></li>)}</ul>}
+    <p className="label mt-2">For context only. A past case never overrides a decision. Only matches with similarity {MIN_CASE_SIMILARITY} or higher are shown.</p>
   </section>;
 }

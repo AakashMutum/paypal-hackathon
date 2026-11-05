@@ -1,4 +1,4 @@
-/* global document, getComputedStyle, NodeFilter, localStorage, window */
+/* global document, getComputedStyle, NodeFilter, localStorage */
 // Visual and accessibility QA for the web app, run against a built copy using the built-in
 // simulated backend (no API, no accounts).
 //
@@ -8,7 +8,7 @@
 //
 // It uses playwright-core, which the repository already depends on, and a browser that is already
 // installed (Chrome or Edge). Nothing is added to the repository. For each theme (light, dark) and
-// width (360, 768, 1280) it opens every screen, saves a screenshot to .cache/screenshots and checks:
+// width (360, 768, 1024, 1280, 1920) it opens every screen, saves a screenshot to .cache/screenshots and checks:
 // horizontal overflow, clipped text, text contrast against the real background, controls without
 // an accessible name, heading order, and a visible focus indicator while tabbing.
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
@@ -16,7 +16,7 @@ import { chromium } from 'playwright-core';
 
 const BASE = (process.env.BASE_URL ?? 'http://127.0.0.1:4173').replace(/\/+$/, '');
 const OUT = new URL('../.cache/screenshots/', import.meta.url);
-const WIDTHS = (process.env.WIDTHS ?? '360,768,1280').split(',').map(Number);
+const WIDTHS = (process.env.WIDTHS ?? '360,768,1024,1280,1920').split(',').map(Number);
 const THEMES = (process.env.THEMES ?? 'light,dark').split(',');
 const CANDIDATES = [
   process.env.CHROME_PATH,
@@ -134,6 +134,8 @@ async function focusAudit(page) {
   return problems;
 }
 
+const shot = (page, theme, width, name) => page.screenshot({ path: new URL(`${theme}-${width}-${name}.png`, OUT).pathname.replace(/^\/([A-Za-z]:)/, '$1'), fullPage: true });
+
 async function seed(page) {
   // Create three orders through the real UI so the payment screens have data.
   const ids = {};
@@ -162,8 +164,8 @@ for (const theme of THEMES) {
     const ids = await seed(page);
     const inv = ids['harborlyne-outfitters-sale'];
     const screens = [
-      ['overview', '/'], ['scan', '/scanner'], ['investigations', '/investigations'], ['investigation', `/investigations/${inv}`],
-      ['check', `/engine/${inv}`], ['payment', `/pay/${inv}`], ['payment-allow', `/pay/${ids['harborline-outfitters']}`], ['payment-warn', `/pay/${ids['bargainbarn-outlet']}`],
+      ['check-home', '/'], ['scan', '/scanner'], ['cases', '/investigations'], ['cases-drawer', `/investigations/${inv}`],
+      ['case-file', `/engine/${inv}`], ['case-file-allow', `/engine/${ids['harborline-outfitters']}`], ['payment', `/pay/${inv}`], ['payment-allow', `/pay/${ids['harborline-outfitters']}`], ['payment-warn', `/pay/${ids['bargainbarn-outlet']}`],
       ['stores', '/stores'], ['storefront', '/store/harborline-outfitters'], ['checkout', '/checkout/bargainbarn-outlet'],
       ['analyst', '/analyst'], ['onboarding', '/onboarding'], ['profile', '/profile'],
     ];
@@ -171,18 +173,39 @@ for (const theme of THEMES) {
       await page.goto(BASE + path, { waitUntil: 'networkidle' });
       await page.waitForTimeout(900);
       const findings = [...(await page.evaluate(audit)), ...(await focusAudit(page))];
-      await page.screenshot({ path: new URL(`${theme}-${width}-${name}.png`, OUT).pathname.replace(/^\/([A-Za-z]:)/, '$1'), fullPage: true });
+      await shot(page, theme, width, name);
       report.push({ theme, width, screen: name, findings });
       total += findings.length;
     }
-    // The scan result, after a scan.
-    await page.goto(`${BASE}/scanner`, { waitUntil: 'networkidle' });
-    await page.click('text=harborlyne-outfitters-sale.example');
-    await page.waitForSelector('[aria-label="The four checks"]', { timeout: 15000 });
+    // The case file with its side panel collapsed (the [ key), where there is room for one.
+    if (width >= 1024) {
+      await page.goto(`${BASE}/engine/${inv}`, { waitUntil: 'networkidle' });
+      await page.keyboard.press('[');
+      await page.waitForTimeout(300);
+      const f = await page.evaluate(audit);
+      await shot(page, theme, width, 'case-file-panel-toggled');
+      report.push({ theme, width, screen: 'case-file-panel-toggled', findings: f });
+      total += f.length;
+    }
+    // The command palette, opened with the keyboard and given a pasted address.
+    await page.goto(`${BASE}/`, { waitUntil: 'networkidle' });
+    await page.keyboard.press('Control+k');
+    await page.keyboard.type('shop.example');
+    await page.waitForSelector('dialog[open] [role="option"]');
+    const palette = await page.evaluate(audit);
+    await shot(page, theme, width, 'palette');
+    report.push({ theme, width, screen: 'palette', findings: palette });
+    total += palette.length;
+    await page.keyboard.press('Escape');
+    // A new check from the home page: the case file reveals its checks one after another.
+    await page.goto(`${BASE}/`, { waitUntil: 'networkidle' });
+    await page.click('a:has-text("Run a check on www.harborlyne")');
+    await page.waitForURL(/\/engine\/INV-/, { timeout: 15000 });
+    await page.waitForSelector('[aria-label="What was checked"]');
     await page.waitForTimeout(1200);
     const scanFindings = await page.evaluate(audit);
-    await page.screenshot({ path: new URL(`${theme}-${width}-scan-result.png`, OUT).pathname.replace(/^\/([A-Za-z]:)/, '$1'), fullPage: true });
-    report.push({ theme, width, screen: 'scan-result', findings: scanFindings });
+    await shot(page, theme, width, 'case-file-new');
+    report.push({ theme, width, screen: 'case-file-new', findings: scanFindings });
     total += scanFindings.length;
     if (errors.length) report.push({ theme, width, screen: 'console', findings: errors.slice(0, 5).map((e) => ({ kind: 'console-error', detail: e })) });
     await context.close();
