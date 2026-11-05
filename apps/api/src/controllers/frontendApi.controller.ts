@@ -60,9 +60,11 @@ export async function scanUrl(req: Request, res: Response, next: NextFunction): 
       return;
     }
 
+    const scanStart = Date.now();
     const investigation = await executeMerchantInvestigation({ url });
     investigation.simulated = isSimulated();
     investigation.mode = paymentMode();
+    investigation.latencyMs = Date.now() - scanStart;
     await investigationStore.add(investigation);
     res.status(200).json(publicView(investigation));
   } catch (err) {

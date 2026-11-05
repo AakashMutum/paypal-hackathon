@@ -25,7 +25,8 @@ export function groupRan(node: NodeId, av?: SignalAvailability): boolean {
 }
 
 export function groupState(e: Evidence, av?: SignalAvailability): MarkState {
-  if (!groupRan(e.node, av) || /^not checked$/i.test(e.badge.trim())) return 'none';
+  if (!groupRan(e.node, av) || /^(not checked|unknown|error)$/i.test(e.badge.trim())) return 'none';
+  if (e.status === 'UNKNOWN' || e.status === 'NOT_CHECKED' || e.status === 'ERROR') return 'none';
   return e.status === 'PASS' ? 'pass' : e.status === 'WARN' ? 'warn' : 'fail';
 }
 

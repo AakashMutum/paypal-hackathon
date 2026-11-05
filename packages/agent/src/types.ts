@@ -9,13 +9,13 @@ import { z } from 'zod';
  * contract response objects.
  */
 
-export const DecisionSchema = z.enum(['ALLOW', 'WARN', 'PAUSE']);
+export const DecisionSchema = z.enum(['ALLOW', 'WARN', 'PAUSE'] as const);
 export type Decision = z.infer<typeof DecisionSchema>;
 
-export const RecommendedActionSchema = z.enum(['PROCEED', 'WARN_DISPLAYED', 'CAPTURE_PAUSED']);
+export const RecommendedActionSchema = z.enum(['PROCEED', 'WARN_DISPLAYED', 'CAPTURE_PAUSED'] as const);
 export type RecommendedAction = z.infer<typeof RecommendedActionSchema>;
 
-export const SeveritySchema = z.enum(['info', 'low', 'medium', 'high']);
+export const SeveritySchema = z.enum(['info', 'low', 'medium', 'high'] as const);
 export type Severity = z.infer<typeof SeveritySchema>;
 
 export const EvidenceSourceSchema = z.enum([
@@ -28,7 +28,7 @@ export const EvidenceSourceSchema = z.enum([
   'elastic',
   'llm',
   'rule',
-]);
+] as const);
 export type EvidenceSource = z.infer<typeof EvidenceSourceSchema>;
 
 export const EvidenceSchema = z.object({
@@ -108,11 +108,11 @@ export const IdentityRelationSchema = z.enum([
   'related_entity',
   'unknown',
   'different',
-]);
+] as const);
 export type IdentityRelation = z.infer<typeof IdentityRelationSchema>;
 
 export const IdentityPairSchema = z.object({
-  id: z.enum(['P1', 'P2']),
+  id: z.enum(['P1', 'P2'] as const),
   a: z.string().max(200),
   b: z.string().max(200),
   relation: IdentityRelationSchema,
@@ -154,7 +154,7 @@ export const RiskBucketsSchema = z.object({
 });
 export type RiskBuckets = z.infer<typeof RiskBucketsSchema>;
 
-export const HardRuleIdSchema = z.enum(['HF1', 'HF2', 'HF3', 'R4', 'R5']);
+export const HardRuleIdSchema = z.enum(['HF1', 'HF2', 'HF3', 'R4', 'R5'] as const);
 export type HardRuleId = z.infer<typeof HardRuleIdSchema>;
 
 export const HardRuleTriggerSchema = z.object({
@@ -164,7 +164,7 @@ export const HardRuleTriggerSchema = z.object({
 });
 export type HardRuleTrigger = z.infer<typeof HardRuleTriggerSchema>;
 
-export const AgentPathSchema = z.enum(['FAST_ALLOW', 'FAST_PAUSE', 'AMBIGUOUS']);
+export const AgentPathSchema = z.enum(['FAST_ALLOW', 'FAST_PAUSE', 'AMBIGUOUS'] as const);
 export type AgentPath = z.infer<typeof AgentPathSchema>;
 
 export const AgentStatsSchema = z.object({

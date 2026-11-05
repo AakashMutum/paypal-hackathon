@@ -4,7 +4,7 @@
 export type Verdict = 'ALLOW' | 'WARN' | 'PAUSE';
 export type InvestigationStatus = 'QUEUED' | 'RUNNING' | 'COMPLETE' | 'FAILED';
 export type NodeId = 'SURFACE' | 'MERCHANT' | 'PRICE' | 'PAYEE';
-export type EvidenceStatus = 'PASS' | 'WARN' | 'FAIL';
+export type EvidenceStatus = 'PASS' | 'WARN' | 'FAIL' | 'UNKNOWN' | 'NOT_CHECKED' | 'ERROR';
 export type CaptureState = 'PENDING' | 'AUTHORIZED' | 'CAPTURED' | 'HELD' | 'VOIDED' | 'FAILED';
 
 export interface EvidenceField { label: string; value: string; flag?: boolean; strike?: boolean; meter?: number }
@@ -44,6 +44,8 @@ export interface Investigation {
   payeeName: string | null; payeeId: string | null; payeeTier: string | null;
   domainAgeDays: number | null; registryRecords: number | null;
   riskScore: number; confidence: number; confidenceReason?: string;
+  /** Elapsed milliseconds for the live scan, when available. */
+  latencyMs?: number;
   signalAvailability?: SignalAvailability;
   status: InvestigationStatus; verdict?: Verdict; captureState: CaptureState;
   reasons: string[]; evidence: Evidence[];

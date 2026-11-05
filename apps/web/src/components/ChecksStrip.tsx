@@ -1,5 +1,5 @@
 ﻿import { AlertTriangle, CheckCircle2, Circle, XCircle } from 'lucide-react';
-import type { Evidence, NodeId } from '../types';
+import type { Evidence, EvidenceStatus, NodeId } from '../types';
 import { cn } from '../lib/format';
 import { NODE_TITLE } from '../lib/labels';
 import { Icon } from './ui';
@@ -8,7 +8,7 @@ const ORDER: NodeId[] = ['SURFACE', 'MERCHANT', 'PRICE', 'PAYEE'];
 /** Each check appears this long after the one before it: four checks, 600 ms in all with the first one's own fade. */
 export const REVEAL_STEP_MS = 150;
 
-const WORD = { PASS: 'Passed', WARN: 'Needs attention', FAIL: 'Failed' } as const;
+const WORD: Record<EvidenceStatus, string> = { PASS: 'Passed', WARN: 'Needs attention', FAIL: 'Failed', UNKNOWN: 'Unknown', 'NOT_CHECKED': 'Not checked', ERROR: 'Error' };
 
 /**
  * The four checks as a short list. With reveal they appear one after another. The data is already

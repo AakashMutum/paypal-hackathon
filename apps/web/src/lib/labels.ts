@@ -93,7 +93,7 @@ export const closeCases = <T extends { score: number }>(cases: readonly T[] | un
 /** Where scam memory lives, without promising durability a free host cannot give. */
 export function memoryLabel(mode: string, persistent?: boolean): string {
   if (mode === 'elastic') return 'Elasticsearch';
-  if (mode === 'file') return persistent === false ? 'file (not persistent)' : 'file (may reset on redeploy)';
+  if (mode === 'file') return persistent === true ? 'file (persistent on disk)' : 'file (not persistent)';
   return 'in the server process (resets on restart)';
 }
 
@@ -101,7 +101,7 @@ export function memoryLabel(mode: string, persistent?: boolean): string {
 export function embeddingSettingLabel(embeddings?: string): string | null {
   if (!embeddings) return null;
   if (embeddings.startsWith('local-hash')) return 'local text hashing';
-  if (embeddings.startsWith('gemini')) return `${embeddings} (configured)`;
+  if (embeddings.startsWith('gemini')) return embeddings;
   if (embeddings === 'lexical-overlap') return 'word overlap';
   if (embeddings === 'elastic-inference') return 'Elasticsearch inference';
   return embeddings;
