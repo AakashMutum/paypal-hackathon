@@ -5,9 +5,9 @@ import { cn } from '../lib/format';
 import { Icon } from './ui';
 
 const OPTIONS: Array<{ value: ThemeChoice; label: string; glyph: typeof Sun }> = [
-  { value: 'system', label: 'System', glyph: Monitor },
   { value: 'light', label: 'Light', glyph: Sun },
   { value: 'dark', label: 'Dark', glyph: Moon },
+  { value: 'system', label: 'System', glyph: Monitor },
 ];
 
 /** One icon button with a small menu: system, light or dark. The choice is read fresh each time the menu opens. */

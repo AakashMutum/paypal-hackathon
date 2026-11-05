@@ -9,12 +9,11 @@ export type Command =
   | { id: string; label: string; hint?: string; kind: 'check'; url: string };
 
 export const PAGES: Array<{ label: string; to: string }> = [
-  { label: 'Check a website', to: '/' },
+  { label: 'Check a website', to: '/check' },
   { label: 'Cases', to: '/investigations' },
   { label: 'Demo stores', to: '/stores' },
   { label: 'Analyst console', to: '/analyst' },
   { label: 'Register a merchant', to: '/onboarding' },
-  { label: 'Sample profile', to: '/profile' },
 ];
 
 /** A host name with a dot, with or without a scheme and path. Spaces mean it is a search, not an address. */
@@ -30,7 +29,7 @@ export function buildCommands(input: string): Command[] {
   if (looksLikeUrl(q)) all.push({ id: 'check', kind: 'check', label: `Check ${q}`, hint: 'Run a check', url: q });
   for (const p of PAGES) all.push({ id: `go:${p.to}`, kind: 'go', label: p.label, hint: 'Page', to: p.to });
   for (const s of STORES) all.push({ id: `store:${s.id}`, kind: 'go', label: `${s.name}`, hint: 'Demo store', to: `/store/${s.id}` });
-  for (const [theme, label] of [['system', 'System'], ['light', 'Light'], ['dark', 'Dark']] as const) {
+  for (const [theme, label] of [['light', 'Light'], ['dark', 'Dark'], ['system', 'System']] as const) {
     all.push({ id: `theme:${theme}`, kind: 'theme', label: `Theme: ${label}`, hint: 'Appearance', theme });
   }
   if (!q || looksLikeUrl(q)) return all;
