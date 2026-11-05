@@ -14,7 +14,7 @@ function toRow(inv: FrontendInvestigation): StoredRow {
     captureState: inv.captureState,
     ...(inv.price !== null ? { amount: inv.price } : {}),
     currency: inv.currency,
-    simulated: inv.simulated ?? true,
+    simulated: inv.simulated ?? false,
     data: redactInvestigationForStorage(inv) as unknown as Record<string, unknown>,
     createdAt: inv.createdAt,
   };

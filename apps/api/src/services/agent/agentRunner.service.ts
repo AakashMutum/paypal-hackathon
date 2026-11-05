@@ -103,6 +103,7 @@ export interface AgentRun {
 }
 
 const RETRIEVAL_TIMEOUT_MS = 2000;
+const MIN_CASE_SIMILARITY = 0.5;
 
 function provenanceFor(
   domain: string,
@@ -152,10 +153,11 @@ export async function runAgent(request: InvestigationRequest): Promise<AgentRun>
     );
   }
 
+  const relevantHits = hits.filter((h) => (h.score ?? 0) >= MIN_CASE_SIMILARITY);
   const relevance = new Map(
     (result.explanation?.retrievedCases ?? []).map((entry) => [entry.caseId, entry.relevance]),
   );
-  const similarCases: SimilarCase[] = hits.slice(0, 3).map((h) => ({
+  const similarCases: SimilarCase[] = relevantHits.slice(0, 3).map((h) => ({
     caseId: h.id,
     patternSentence: h.patternText,
     matchType: h.matchType,
@@ -245,14 +247,14 @@ interface EmptyCard {
 
 function cardFor(node: NodeId, items: Evidence[], empty: EmptyCard): FrontendEvidence {
   const worst = items.reduce((m, e) => Math.max(m, SEVERITY_RANK[e.severity]), -1);
-  const status: FrontendEvidence['status'] = items.length === 0 ? 'WARN' : worst >= 3 ? 'FAIL' : worst >= 1 ? 'WARN' : 'PASS';
+  const status: FrontendEvidence['status'] = items.length === 0 ? 'NOT_CHECKED' : worst >= 3 ? 'FAIL' : worst >= 1 ? 'WARN' : 'PASS';
   const confidence = items.length ? Math.round((items.reduce((s, e) => s + e.confidence, 0) / items.length) * 100) : 0;
   return {
     id: `e-${node.toLowerCase()}`,
     node,
     title: NODE_TITLE[node],
     status,
-    badge: items.length === 0 ? empty.badge : status === 'PASS' ? 'CHECKED' : status === 'FAIL' ? 'FLAGGED' : 'REVIEW',
+    badge: items.length === 0 ? 'Not checked' : status === 'PASS' ? 'Checked' : status === 'FAIL' ? 'Failed' : 'Review',
     confidence,
     fields: items.length
       ? items.map((e) => ({ label: humanize(e.type), value: e.summary, flag: e.severity === 'high' || e.severity === 'medium' }))

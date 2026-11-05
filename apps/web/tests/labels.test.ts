@@ -37,8 +37,10 @@ test('retrieval labels say what was really used and do not claim Gemini for loca
   assert.match(retrievalLabel('lexical'), /Word overlap/);
 });
 
-test('file memory is labelled as possibly resetting; Elasticsearch is not', () => {
-  assert.equal(memoryLabel('file'), 'file (may reset on redeploy)');
+test('file memory label reflects persistence', () => {
+  assert.equal(memoryLabel('file', true), 'file (persistent on disk)');
+  assert.equal(memoryLabel('file', false), 'file (not persistent)');
+  assert.equal(memoryLabel('file'), 'file (not persistent)');
   assert.equal(memoryLabel('elastic'), 'Elasticsearch');
   assert.match(memoryLabel('memory'), /resets on restart/);
 });

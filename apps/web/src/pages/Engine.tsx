@@ -44,7 +44,7 @@ export default function Engine() {
 
   return <div className="space-y-10 max-w-4xl">
     <header>
-      <p className="label"><span className="font-mono">Case {inv.id}</span> · {formatDateTime(inv.createdAt)}</p>
+      <p className="label"><span className="font-mono">Case {inv.id}</span> · {formatDateTime(inv.createdAt)}{inv.latencyMs !== undefined ? ` · ${inv.latencyMs}ms` : ''}</p>
       <div className="flex flex-wrap items-start justify-between gap-x-8 gap-y-3 mt-1">
         <h1 className="font-mono text-xl sm:text-2xl lg:text-[28px] break-words min-w-0">{softBreak(inv.domain)}</h1>
         <div className="flex flex-wrap items-center gap-x-5 gap-y-1">
@@ -87,6 +87,7 @@ export default function Engine() {
         {inv.provenance && <section aria-labelledby="how-h"><h3 id="how-h" className="font-semibold mb-2">How it was checked</h3><HowChecked inv={inv} /></section>}
         {done && <SimilarCases cases={inv.similarCases} />}
         {done && <p className="text-sm"><span className="font-semibold">Confidence {inv.confidence}%.</span> <span className="text-muted">{inv.confidenceReason ?? 'Based on the checks that ran.'}</span></p>}
+        {inv.latencyMs !== undefined && <p className="text-sm"><span className="font-semibold">Scan time {inv.latencyMs}ms.</span> {inv.latencyMs <= 2000 ? <span className="text-muted">Within the under-2s target.</span> : <span className="text-muted">Exceeded the under-2s target.</span>}</p>}
       </div>
     </Disclosure>
 

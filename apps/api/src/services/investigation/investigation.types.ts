@@ -14,7 +14,7 @@ export interface FrontendEvidence {
   id: string;
   node: 'SURFACE' | 'MERCHANT' | 'PRICE' | 'PAYEE';
   title: string;
-  status: 'PASS' | 'WARN' | 'FAIL';
+  status: 'PASS' | 'WARN' | 'FAIL' | 'UNKNOWN' | 'NOT_CHECKED' | 'ERROR';
   badge: string;
   confidence: number;
   fields: FrontendEvidenceField[];
@@ -58,6 +58,8 @@ export interface FrontendInvestigation {
   registryRecords: number | null;
   riskScore: number;
   confidence: number;
+  /** Elapsed milliseconds for the live scan, when available. */
+  latencyMs?: number;
   /** Why confidence was capped or reduced, when that happened. */
   confidenceReason?: string;
   /** Which signals were available, unavailable, or not applicable. */
