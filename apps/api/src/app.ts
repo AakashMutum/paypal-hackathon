@@ -16,7 +16,17 @@ export function createApp(): Application {
 
   app.disable('x-powered-by');
   app.use(helmet());
-  app.use(cors({ origin: env.corsOrigin }));
+  const corsOrigins = env.corsOrigin
+  .split(',')
+  .map((o) => o.trim())
+  .filter(Boolean);
+
+app.use(cors({
+  origin: corsOrigins.length === 1 ? corsOrigins[0] : corsOrigins,
+  allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'x-order-token', 'x-demo-token', 'authorization'],
+  exposedHeaders: ['Content-Type'],
+  optionsSuccessStatus: 204,
+}));
   app.use(express.json({ limit: '100kb' }));
   app.use(rateLimit({
     windowMs: env.rateLimitWindowMs,

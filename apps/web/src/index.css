@@ -13,40 +13,73 @@
 }
 
 @layer components {
+  /* Cards */
   .card { @apply bg-surface rounded-md border border-line shadow-l1 p-5; }
+  .card-xl { @apply bg-surface rounded-xl border border-line shadow-2 p-6; }
+
+  /* Labels */
   .mono-label { @apply text-[12px] font-medium text-muted; }
+
+  /* Pills and badges */
   .pill { @apply inline-flex items-center gap-1.5 min-h-[22px] px-2 rounded-full border text-[12px] font-medium whitespace-nowrap; }
-  .btn { @apply inline-flex items-center justify-center gap-2 rounded px-4 h-11 text-sm font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed; }
+
+  /* Buttons */
+  .btn { @apply inline-flex items-center justify-center gap-2 rounded-md px-4 h-11 text-sm font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed; }
   .btn-primary { @apply btn bg-action text-action-on hover:bg-action-hover; }
-  .btn-secondary { @apply btn bg-surface text-content border border-line-strong hover:bg-surface-2; }
+  .btn-secondary { @apply btn bg-surface text-content hover:bg-surface-2; border-color: var(--border-strong); }
   .btn-ghost { @apply btn bg-transparent text-content hover:bg-surface-2; }
   .btn-direct { @apply btn-primary; }
   .btn-danger { @apply btn bg-danger text-bg hover:opacity-90; }
-  .input { @apply w-full h-10 px-3 rounded bg-surface border border-line-strong text-sm text-content placeholder:text-muted; }
+  .btn-xl { @apply btn px-6 h-12 text-base; }
+
+  /* Inputs */
+  .input { @apply w-full h-11 px-4 rounded-md bg-surface text-sm text-content placeholder:text-muted; border-color: var(--border-strong); }
   .input:focus { outline: 2px solid var(--focus); outline-offset: 0; border-color: var(--focus); }
+
   .inset { box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.08); }
+
+  /* Status accents */
+  .bg-success-bg { background-color: var(--success-bg); }
+  .text-success { color: var(--success); }
+  .border-success { border-color: var(--success-border); }
+  .bg-warn-bg { background-color: var(--warn-bg); }
+  .text-warning { color: var(--warn); }
+  .border-warning { border-color: var(--warn-border); }
+  .bg-bad-bg { background-color: var(--danger-bg); }
+  .text-bad { color: var(--danger); }
+  .border-danger { border-color: var(--danger-border); }
+  .bg-action { background-color: var(--action); }
+  .text-action { color: var(--action); }
+  .text-action-on { color: var(--on-action); }
+  .bg-action-hover { background-color: var(--action-hover); }
+  .bg-navy { background-color: var(--navy); }
+  .text-navy { color: var(--navy); }
+  .text-navy-on { color: var(--on-navy); }
+  .text-electric { color: var(--action); }
+  .text-bad-deep { color: var(--danger); }
+  .bg-tint { background-color: var(--surface-2); }
+
+  /* Dark-on-light and light-on-dark overlays. */
+  :root[data-theme='dark'] .bg-white\/5, :root[data-theme='dark'] .bg-white\/20 { background-color: color-mix(in srgb, var(--text) 10%, transparent); }
+
+  /* ClaimedVsActual: stacked in a narrow container, side by side in a wide one. */
+  .cva { container-type: inline-size; }
+  .cva-grid { display: grid; gap: 12px; align-items: stretch; }
+  .cva-grid > * { min-width: 0; }
+  .cva-mid { display: flex; align-items: center; justify-content: center; gap: 8px; text-align: center; }
+  .cva-line { display: none; width: 1px; flex: 1; background: var(--border-strong); }
+  @container (min-width: 640px) {
+    .cva-grid { grid-template-columns: 1fr minmax(150px, 190px) 1fr; }
+    .cva-mid { flex-direction: column; }
+    .cva-line { display: block; }
+  }
+
+  /* Staged appearance of data that is already complete. Skipped under reduced motion. */
+  .reveal { animation: reveal var(--motion-base) var(--ease) both; }
+  @keyframes reveal { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+  }
+  @media print { header, nav, .no-print { display: none !important; } body { background: #fff; color: #000; } }
 }
-
-/* Dark-on-light and light-on-dark overlays for the few old translucent white surfaces. */
-:root[data-theme='dark'] .bg-white\/5, :root[data-theme='dark'] .bg-white\/20 { background-color: color-mix(in srgb, var(--text) 10%, transparent); }
-
-/* ClaimedVsActual: stacked in a narrow container, side by side in a wide one. */
-.cva { container-type: inline-size; }
-.cva-grid { display: grid; gap: 12px; align-items: stretch; }
-.cva-grid > * { min-width: 0; }
-.cva-mid { display: flex; align-items: center; justify-content: center; gap: 8px; text-align: center; }
-.cva-line { display: none; width: 1px; flex: 1; background: var(--border-strong); }
-@container (min-width: 640px) {
-  .cva-grid { grid-template-columns: 1fr minmax(150px, 190px) 1fr; }
-  .cva-mid { flex-direction: column; }
-  .cva-line { display: block; }
-}
-
-/* Staged appearance of data that is already complete. Skipped under reduced motion (below). */
-.reveal { animation: reveal var(--motion-base) var(--ease) both; }
-@keyframes reveal { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
-
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
-}
-@media print { header, nav, .no-print { display: none !important; } body { background: #fff; color: #000; } }
