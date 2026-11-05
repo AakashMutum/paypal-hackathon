@@ -152,8 +152,8 @@ In a second terminal, with `CHROME_PATH` pointing at Chrome or Edge:
 npm run qa:screens
 ```
 
-It visits every page at 360, 768, 1024, 1280 and 1920 px in light and dark, plus the inspector drawer, the
-collapsed case panel, the command palette and a fresh check. It saves screenshots to `.cache/screenshots` (not committed), writes `report.json` and prints each
+It visits every page at 360, 768, 1024, 1280 and 1920 px in light and dark, plus a case with its Details open,
+the command palette and the front page button that runs a prepared check. It saves screenshots to `.cache/screenshots` (not committed), writes `report.json` and prints each
 finding: horizontal overflow, clipped text, text contrast against the real background, controls
 without an accessible name, heading order and a missing focus indicator. It checks the simulated
 backend only; run it with `BASE_URL=<url>` to point it at another build.

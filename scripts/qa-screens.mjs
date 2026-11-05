@@ -164,7 +164,7 @@ for (const theme of THEMES) {
     const ids = await seed(page);
     const inv = ids['harborlyne-outfitters-sale'];
     const screens = [
-      ['check-home', '/'], ['scan', '/scanner'], ['cases', '/investigations'], ['cases-drawer', `/investigations/${inv}`],
+      ['home', '/'], ['check', '/check'], ['scanner-redirect', '/scanner'], ['cases', '/investigations'],
       ['case-file', `/engine/${inv}`], ['case-file-allow', `/engine/${ids['harborline-outfitters']}`], ['payment', `/pay/${inv}`], ['payment-allow', `/pay/${ids['harborline-outfitters']}`], ['payment-warn', `/pay/${ids['bargainbarn-outlet']}`],
       ['stores', '/stores'], ['storefront', '/store/harborline-outfitters'], ['checkout', '/checkout/bargainbarn-outlet'],
       ['analyst', '/analyst'], ['onboarding', '/onboarding'], ['profile', '/profile'],
@@ -177,18 +177,16 @@ for (const theme of THEMES) {
       report.push({ theme, width, screen: name, findings });
       total += findings.length;
     }
-    // The case file with its side panel collapsed (the [ key), where there is room for one.
-    if (width >= 1024) {
-      await page.goto(`${BASE}/engine/${inv}`, { waitUntil: 'networkidle' });
-      await page.keyboard.press('[');
-      await page.waitForTimeout(300);
-      const f = await page.evaluate(audit);
-      await shot(page, theme, width, 'case-file-panel-toggled');
-      report.push({ theme, width, screen: 'case-file-panel-toggled', findings: f });
-      total += f.length;
-    }
+    // The case page with its one Details section open.
+    await page.goto(`${BASE}/engine/${inv}`, { waitUntil: 'networkidle' });
+    await page.click('button[aria-expanded]:has-text("Details")');
+    await page.waitForTimeout(300);
+    const details = await page.evaluate(audit);
+    await shot(page, theme, width, 'case-details-open');
+    report.push({ theme, width, screen: 'case-details-open', findings: details });
+    total += details.length;
     // The command palette, opened with the keyboard and given a pasted address.
-    await page.goto(`${BASE}/`, { waitUntil: 'networkidle' });
+    await page.goto(`${BASE}/check`, { waitUntil: 'networkidle' });
     await page.keyboard.press('Control+k');
     await page.keyboard.type('shop.example');
     await page.waitForSelector('dialog[open] [role="option"]');
@@ -197,15 +195,17 @@ for (const theme of THEMES) {
     report.push({ theme, width, screen: 'palette', findings: palette });
     total += palette.length;
     await page.keyboard.press('Escape');
-    // A new check from the home page: the case file reveals its checks one after another.
+    // The front page's button runs a prepared check and lands on the case page.
     await page.goto(`${BASE}/`, { waitUntil: 'networkidle' });
-    await page.click('a:has-text("Run a check on www.harborlyne")');
+    await page.click('a:has-text("See it catch a fake store")');
     await page.waitForURL(/\/engine\/INV-/, { timeout: 15000 });
-    await page.waitForSelector('[aria-label="What was checked"]');
+    await page.waitForSelector('[aria-label="Decision"]');
+    await page.waitForTimeout(5200);
+    await page.click('button[aria-expanded]:has-text("Details")');
     await page.waitForTimeout(1200);
     const scanFindings = await page.evaluate(audit);
-    await shot(page, theme, width, 'case-file-new');
-    report.push({ theme, width, screen: 'case-file-new', findings: scanFindings });
+    await shot(page, theme, width, 'case-new-details');
+    report.push({ theme, width, screen: 'case-new-details', findings: scanFindings });
     total += scanFindings.length;
     if (errors.length) report.push({ theme, width, screen: 'console', findings: errors.slice(0, 5).map((e) => ({ kind: 'console-error', detail: e })) });
     await context.close();

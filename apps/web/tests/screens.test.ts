@@ -71,7 +71,7 @@ test('the staged reveal is about 600 ms in all and the animation is skipped for 
 
 test('every existing route still works and the old history address redirects', () => {
   const app = readFileSync(new URL('../src/App.tsx', import.meta.url), 'utf8');
-  for (const path of ['scanner', 'engine/:id', 'pay/:id', 'history', 'onboarding', 'stores', 'checkout/:id', 'profile', '/store/:id', 'analyst', 'investigations', 'investigations/:id']) {
+  for (const path of ['check', 'scanner', 'engine/:id', 'pay/:id', 'history', 'onboarding', 'stores', 'checkout/:id', 'profile', '/store/:id', 'analyst', 'investigations', 'investigations/:id']) {
     assert.ok(app.includes(`path="${path}"`) || app.includes(`path="${path.replace(/:id/, ':id')}"`), `route missing: ${path}`);
   }
   assert.match(app, /path="history" element=\{<Navigate to="\/investigations" replace \/>\}/);
