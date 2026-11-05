@@ -21,6 +21,48 @@ coloured icon circles.
    PayPal. The only PayPal mark on screen is the button PayPal's own SDK renders. The footer says
    so.
 
+## Shell
+
+There is no sidebar. A sticky 52 px top bar holds the logo, the text navigation (Check, Cases, Demo
+stores, Analyst; the active item has a 2 px accent underline, never a filled pill), a "Search or paste
+a link" button with its shortcut, a theme menu (one icon button: System, Light, Dark) and About.
+Content is up to 1280 px wide on a 12-column grid with 16 to 32 px gutters. A page header may sit on
+a full-width surface-2 band (`.band`).
+
+Below 768 px the bar keeps the logo, search and a menu button that opens a full-height sheet (a native
+`<dialog>`), and a bottom tab bar has four items (Check, Cases, Stores, Analyst).
+
+## Collapsible panels
+
+A side panel (the decision panel on a case file, the filters on the analyst console) has a button and
+the `[` key. Its state is remembered in localStorage under `trustora.panel.<name>` (every storage call
+is in try/catch). With nothing remembered, a panel starts open from 1280 px and collapsed below. On a
+case file the panel is always shown when the layout is stacked (below 1024 px).
+
+## Command palette
+
+Ctrl+K, Cmd+K or `/` opens a native `<dialog>`. It lists the pages, the three demo stores, the theme
+options and, when the input looks like a web address, "Check <address>" first. Arrow keys move, Enter
+chooses, Esc closes and focus returns to where it was. "Check" goes to `/?check=<address>`, which fills the
+home page's field and runs the check once. The list is built by `lib/palette.ts` (tested).
+
+## Visual rules
+
+- Left-aligned and asymmetric. Ruled lists and tables instead of nested cards; whitespace over
+  borders. No resting shadows; two elevation levels, for overlays only.
+- One accent. Verdict colour appears only on the three verdict marks (and the status marks), always
+  with text. No pill badges for ordinary text, no icon-in-a-circle, no gradients or glow, no uppercase
+  tracking-wide micro-labels: secondary labels are 12 px, sentence case, muted.
+- Radius: 8 px for controls, 12 px for panels and overlays.
+- Type: Inter for the interface, headings 24 to 32 px semibold with slightly negative letter spacing,
+  body 14.5 px, tabular figures for numbers. JetBrains Mono only for domains, ids and amounts.
+- Domains wrap between parts (after a dot or hyphen), never inside a word where a break point exists.
+- A check that did not run (no price comparison, no payee supplied, a name that could not be
+  compared) reads "Not checked" with a neutral mark, never a green tick. A scan with no payee reads
+  "No red flags found" and says the receiving account was not checked; the API verdict is unchanged.
+  Domain age is in human units ("about 24 years") with the exact days beside it.
+- Reduced motion: every animation and transition is off.
+
 ## Tokens
 
 All tokens live in `apps/web/src/styles/tokens.css`. Tailwind reads them
@@ -84,7 +126,7 @@ block are identical, because plain CSS needs the dark values twice.
 ## Components
 
 `apps/web/src/components/ui`: `Button` (primary, secondary, ghost, danger), `Card`, `Badge`,
-`VerdictBadge`, `Stat`, `Field`, `Skeleton`, `EmptyState`, `Disclosure` (no tooltips: everything is
+`VerdictText` (and `VerdictBadge`, the same thing under its older name), `StatusMark`, `Stat`, `Field`, `Skeleton`, `EmptyState`, `Disclosure` (no tooltips: everything is
 reachable by keyboard), `Stepper`, `Toast`, plus `Modal`, `Switch`, `Icon` and `VerdictMark`. The
 older `btn-*`, `card`, `pill` and `input` classes are defined on the same tokens, so screens that
 have not been moved to the components yet follow the theme too.
