@@ -14,7 +14,6 @@ export const PAGE_SIZE = 25;
 
 function Detail({ id }: { id: string }) {
   const { inv, error, refresh } = useOrderPolling(id);
-  const [retryBusy, setRetryBusy] = useState(false);
   if (error && !inv) return <InvestigationError error={error} onRetry={refresh} />;
   if (!inv) return <div className="space-y-3" aria-busy="true"><Skeleton className="h-8 w-2/3" /><Skeleton className="h-40 w-full" /></div>;
   return <div className="space-y-4">

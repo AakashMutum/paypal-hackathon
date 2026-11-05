@@ -1,6 +1,6 @@
 ﻿import { FormEvent, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ChevronDown, CreditCard, Info, Loader2, ShieldCheck, XCircle, FileText, Flag } from 'lucide-react';
+import { Info, Loader2, ShieldCheck, XCircle, FileText, Flag } from 'lucide-react';
 import type { Verdict } from '../types';
 import { useInvestigations, useOrderPolling } from '../hooks/useOrderPolling';
 import { usePageTitle } from '../hooks/usePageTitle';
@@ -27,7 +27,7 @@ export default function Pay() {
   const { list, loading } = useInvestigations();
   const target = id ?? list.find(i => i.orderId)?.id;
   const { inv, refresh } = useOrderPolling(target);
-  const [why, setWhy] = useState(false); const [log, setLog] = useState(false); const [rep, setRep] = useState(false);
+  const [log, setLog] = useState(false); const [rep, setRep] = useState(false);
   const [reason, setReason] = useState(''); const [busy, setBusy] = useState('');
   if (!target) return loading ? <Skeleton className="h-40 w-full" /> : <Empty title="No payments yet">Check out from a demo storefront to see how TrustOra handles the payment.<div className="mt-4"><Link to="/stores" className="link">Open demo storefronts</Link></div></Empty>;
   if (!inv) return <div className="space-y-3" aria-busy="true"><Skeleton className="h-24 w-full" /><Skeleton className="h-40 w-full" /></div>;
@@ -86,8 +86,4 @@ export default function Pay() {
       <textarea required className="input !h-28 py-2" placeholder="What looked wrong?" value={reason} onChange={e => setReason(e.target.value)} aria-label="Reason" />
       <button className="btn-danger w-full" disabled={busy === 'rep'}>Submit report</button></form></Modal>
   </>;
-}
-
-function EmptyCard({ icon: IconComp, title, children }: { icon: React.ComponentType<any>; title: string; children: React.ReactNode }) {
-  return <div className="text-center py-16"><IconComp className="h-12 w-12 text-muted mb-3" aria-hidden="true" /><h3 className="font-semibold">{title}</h3>{children}</div>;
 }
