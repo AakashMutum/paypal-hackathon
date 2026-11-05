@@ -5,6 +5,8 @@ export const TONE: Record<Tone, string> = {
   ok: 'text-success bg-success-bg border-success/40', warn: 'text-warning bg-warning-bg border-warning/40', bad: 'text-danger bg-danger-bg border-danger/40',
   info: 'text-action bg-surface-2 border-action/40', cyan: 'text-action bg-surface-2 border-action/40', neutral: 'text-muted bg-surface-2 border-line',
 };
+/** A host name with a break opportunity after each dot and hyphen, so it wraps between parts, not inside one. */
+export const softBreak = (host: string): string => host.replace(/([.-])/g, (c) => c + String.fromCharCode(0x200b));
 export const cn = (...a: (string | false | null | undefined)[]) => a.filter(Boolean).join(' ');
 export const money = (n: number | null | undefined, c = 'USD') =>
   n === null || n === undefined ? '—' : new Intl.NumberFormat('en-US', { style: 'currency', currency: c }).format(n);

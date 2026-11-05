@@ -55,6 +55,10 @@ const PAIRS: Array<[string, string, number]> = [
   ['success', 'success-bg', 4.5], ['success', 'surface', 4.5], ['success', 'bg', 4.5],
   ['warn', 'warn-bg', 4.5], ['warn', 'surface', 4.5], ['warn', 'bg', 4.5],
   ['danger', 'danger-bg', 4.5], ['danger', 'surface', 4.5], ['danger', 'bg', 4.5],
+  // The band behind page headers, the inspector and ruled rows put status marks and text on surface-2.
+  ['success', 'surface-2', 4.5], ['warn', 'surface-2', 4.5], ['danger', 'surface-2', 4.5],
+  ['text', 'success-bg', 4.5], ['text', 'warn-bg', 4.5], ['text', 'danger-bg', 4.5],
+  ['on-action', 'action', 4.5],
   ['border-strong', 'surface', 3], ['border-strong', 'bg', 3], ['border-strong', 'surface-2', 3],
   ['focus', 'bg', 3], ['focus', 'surface', 3], ['focus', 'surface-2', 3],
 ];
