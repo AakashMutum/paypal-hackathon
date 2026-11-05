@@ -11,7 +11,7 @@
   color-scheme: light;
 
   /* Backgrounds */
-  --bg: #F7F9FC;            /* page background: cool light gray-blue */
+  --bg: #F5F7FA;            /* page background: cool light gray-blue */
   --surface: #FFFFFF;        /* cards, modals, elevated surfaces */
   --surface-2: #F1F5FA;      /* subtle section backgrounds, hover states */
 
@@ -21,14 +21,15 @@
   --border-focus: #006DDA;    /* focus ring: matches primary action */
 
   /* Text */
-  --text: #0A1A33;            /* primary text: deep navy */
+  --text: #0B1B33;            /* primary text: deep navy */
   --text-weak: #3A4A5F;       /* secondary text */
-  --muted: #5B6B82;           /* tertiary text, placeholders */
+  --muted: #4B5B73;           /* tertiary text, placeholders */
 
   /* Brand */
-  --navy: #003087;            /* deep brand blue */
-  --on-navy: #FFFFFF;         /* text on navy */
-  --action: #006DDA;          /* primary action: PayPal-inspired blue */
+--navy: #003087;            /* deep brand blue */
+  --brand: #005AC4;         /* brand link colour */
+  --on-navy: #FFFFFF;       /* text on navy */
+  --action: #0070E0;          /* primary action: PayPal-inspired blue */
   --action-hover: #005AC4;    /* primary action hover */
   --on-action: #FFFFFF;       /* text on action */
 
@@ -43,7 +44,8 @@
   --danger-bg: #FEE4E2;
   --danger-border: #F0A39A;
 
-  --focus: #006DDA;
+  --focus: #0070E0;
+  --link: #005AC4;
   --overlay: rgba(10, 26, 51, 0.45);
 
   /* Radii */
@@ -103,6 +105,7 @@
 
   /* Brand */
   --navy: #123A8F;
+  --brand: #4C9AFF;
   --on-navy: #FFFFFF;
   --action: #4C9AFF;
   --action-hover: #7DB5FF;
@@ -120,6 +123,7 @@
   --danger-border: #F97066;
 
   --focus: #4C9AFF;
+  --link: #4C9AFF;
   --overlay: rgba(2, 6, 14, 0.65);
 
   --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
@@ -141,6 +145,7 @@
     --text-weak: #B9C4D6;
     --muted: #8EA0BC;
     --navy: #123A8F;
+    --brand: #4C9AFF;
     --on-navy: #FFFFFF;
     --action: #4C9AFF;
     --action-hover: #7DB5FF;
@@ -155,6 +160,7 @@
     --danger-bg: #3A1512;
     --danger-border: #F97066;
     --focus: #4C9AFF;
+    --link: #4C9AFF;
     --overlay: rgba(2, 6, 14, 0.65);
     --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
     --shadow-2: 0 8px 24px rgba(0, 0, 0, 0.5);

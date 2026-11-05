@@ -1,79 +1,98 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ShieldAlert, Ban, Download, Loader2, Radar, ArrowRight, Printer, AlertTriangle } from 'lucide-react';
+import { Link, useLocation, useParams } from 'react-router-dom';
+import { Download, Loader2, Printer } from 'lucide-react';
 import { useApp } from '../context/OrderStateContext';
 import { useInvestigations, useOrderPolling } from '../hooks/useOrderPolling';
 import { usePageTitle } from '../hooks/usePageTitle';
 import { api } from '../api/apiClient';
-import { Empty, Modal, Pill, Skeleton } from '../components/ui';
-import { StatusRows } from '../components/StatusRows';
-import { Timeline } from '../components/Timeline';
-import { SimilarCases } from '../components/Provenance';
+import { Disclosure, Empty, Icon, Modal, Skeleton, VerdictMark } from '../components/ui';
+import { CheckList } from '../components/CheckList';
 import { ClaimedVsActual } from '../components/ClaimedVsActual';
+import { SimilarCases } from '../components/Provenance';
 import { HowChecked, SignalChecklist } from '../components/HowChecked';
-import { download } from '../lib/format';
-import { displayBrand } from '../lib/labels';
+import { decisionSentence, outcome, topReasons } from '../lib/checks';
+import { download, softBreak } from '../lib/format';
+import { formatDateTime, VERDICT_WORDS } from '../lib/labels';
+import { CAPTURE_WORDS, fundsStatement } from '../lib/payment';
+
+const MARK_COLOR = { ALLOW: 'text-success', WARN: 'text-warning', PAUSE: 'text-danger' } as const;
 
 export default function Engine() {
-  usePageTitle('Investigation');
-  const { id } = useParams(); const nav = useNavigate();
+  const { id } = useParams();
+  const fresh = Boolean((useLocation().state as { fresh?: boolean } | null)?.fresh);
   const { latestId, setLatestId, toast } = useApp();
   const { list, loading } = useInvestigations();
   const target = id ?? latestId ?? list[0]?.id;
-  const { inv, latency, error, refresh } = useOrderPolling(target);
-  const [busy, setBusy] = useState(false); const [exp, setExp] = useState(false);
+  const { inv, error, refresh } = useOrderPolling(target);
+  const [busy, setBusy] = useState(''); const [exp, setExp] = useState(false);
+  usePageTitle(inv ? `Case ${inv.id}` : 'Case');
   useEffect(() => { if (id) setLatestId(id); }, [id, setLatestId]);
 
-  if (!target) return loading ? <Skeleton className="h-40 w-full" /> : <EmptyCard icon={Radar} title="No investigations yet">Scan a URL or check out from a demo store to start the checker.<div className="mt-4 flex gap-2 justify-center"><Link className="btn-direct" to="/scanner">Scan URL</Link><Link className="btn-secondary" to="/stores">Demo stores</Link></div></EmptyCard>;
-  if (error && !inv) return <EmptyCard icon={ShieldAlert} title="Cannot reach the checker"><p>{error}</p><button className="btn-primary mt-4" onClick={refresh}>Retry</button></EmptyCard>;
-  if (!inv) return <div className="space-y-3" aria-busy="true"><Skeleton className="h-24 w-full" /><Skeleton className="h-40 w-full" /></div>;
+  if (!target) return loading ? <Skeleton className="h-40 w-full" /> : <Empty title="No cases yet">Check a website or buy from a demo store to open the first case.<div className="mt-4 flex gap-4"><Link className="link" to="/check">Check a website</Link><Link className="link" to="/stores">Demo stores</Link></div></Empty>;
+  if (error && !inv) return <Empty title="Cannot reach the checker"><p>{error}</p><button className="btn-primary mt-4" onClick={refresh}>Retry</button></Empty>;
+  if (!inv) return <div className="space-y-3" aria-busy="true"><Skeleton className="h-10 w-1/2" /><Skeleton className="h-32 w-full" /><Skeleton className="h-40 w-full" /></div>;
 
   const done = inv.status === 'COMPLETE';
-  const act = async () => {
-    setBusy(true);
-    try {
-      if (inv.orderId) { await api.cancelOrder(inv.id); toast('Purchase cancelled. The PayPal authorization was voided.', 'ok'); }
-      else { await api.reportMerchant({ domain: inv.domain, reason: 'Reported from the scan screen', investigationId: inv.id }); toast(`${inv.domain} reported`, 'ok'); }
-      refresh();
-    } catch (e) { toast((e as Error).message, 'bad'); } finally { setBusy(false); }
-  };
   const voided = inv.captureState === 'VOIDED';
+  const evidenceOfFraud = done && (inv.verdict === 'PAUSE' || Boolean(inv.payeeMismatch));
+  const run = async (key: string, fn: () => Promise<unknown>, ok: string) => {
+    setBusy(key);
+    try { await fn(); toast(ok, 'ok'); refresh(); } catch (e) { toast((e as Error).message, 'bad'); } finally { setBusy(''); }
+  };
+  const reasons = done ? topReasons(inv.reasons) : [];
+  const headline = done && inv.verdict ? (inv.verdict === 'ALLOW' ? outcome(inv).headline : VERDICT_WORDS[inv.verdict].label) : 'Checking';
 
-  return <>
-    <section className="card xl space-y-4 p-6">
-      <div className="flex justify-between gap-2"><Pill tone="info">{done ? 'Check finished' : 'Check running'}</Pill><Pill tone="neutral" className="font-mono">{latency} ms</Pill></div>
-      <h1 className="text-[22px] font-bold leading-7">Merchant check</h1>
-      <p className="text-sm text-muted">Compares what the website claims with the account that would be paid, using rule-based checks.</p>
-      <dl className="grid grid-cols-3 gap-2 rounded-lg bg-tint p-3">
-        <div><dt className="mono-label">Checks done</dt><dd className="font-mono font-semibold text-sm mt-1">{inv.evidence.length} of 4</dd></div>
-        <div><dt className="mono-label">Confidence</dt><dd className="font-mono font-semibold text-sm mt-1">{done ? `${inv.confidence}%` : '—'}</dd></div>
-        <div><dt className="mono-label">Site</dt><dd className="font-mono font-semibold text-sm mt-1 break-all">{displayBrand(inv.claimedBrand, inv.domain)}</dd></div></dl>
+  return <div className="space-y-10 max-w-4xl">
+    <header>
+      <p className="label"><span className="font-mono">Case {inv.id}</span> · {formatDateTime(inv.createdAt)}</p>
+      <div className="flex flex-wrap items-start justify-between gap-x-8 gap-y-3 mt-1">
+        <h1 className="font-mono text-xl sm:text-2xl lg:text-[28px] break-words min-w-0">{softBreak(inv.domain)}</h1>
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-1">
+          <button type="button" className="tbtn" onClick={() => setExp(true)} disabled={!done}><Icon icon={Download} size={16} />Export this record</button>
+          {done && inv.orderId && inv.verdict !== 'ALLOW' && <button type="button" className="tbtn" disabled={busy !== '' || voided} onClick={() => run('cancel', () => api.cancelOrder(inv.id), 'Purchase cancelled. The PayPal authorization was voided.')}>{voided ? 'Purchase cancelled' : 'Cancel purchase'}</button>}
+          {evidenceOfFraud && <button type="button" className="tbtn" disabled={busy !== ''} onClick={() => run('report', () => api.reportMerchant({ domain: inv.domain, reason: 'Reported from the case page', investigationId: inv.id }), `${inv.domain} reported`)}>Report seller</button>}
+        </div>
+      </div>
+    </header>
+
+    <section aria-label="Decision" className="band py-6">
+      <div className="flex items-center gap-3">
+        {done && inv.verdict ? <VerdictMark verdict={inv.verdict} size={24} className={MARK_COLOR[inv.verdict]} /> : <Loader2 size={24} className="animate-spin text-muted" aria-hidden="true" />}
+        <p className="text-2xl font-semibold tracking-tight">{headline}</p>
+      </div>
+      <p className="mt-2 text-lg max-w-2xl">{decisionSentence(inv)}</p>
+      {!done && <p className="mt-1 text-muted" aria-live="polite">{inv.evidence.length} of 4 checks done. No funds are captured until the check ends.</p>}
     </section>
 
     <ClaimedVsActual inv={inv} />
 
-    {done ? <StatusRows inv={inv} />
-      : <section className="card flex items-center gap-3 p-5" aria-busy="true"><Loader2 className="animate-spin text-electric" /><div><div className="font-semibold">Investigation in progress</div><div className="text-sm text-muted">Collecting signals from {inv.domain}…</div></div></section>}
+    {reasons.length > 0 && <section aria-labelledby="why-h">
+      <h2 id="why-h" className="text-xl font-semibold">Why</h2>
+      <ul className="mt-2 space-y-2 list-disc pl-5">{reasons.map(r => <li key={r}>{r}</li>)}</ul>
+    </section>}
 
-    <section className="card xl"><div className="flex justify-between items-center mb-4"><h2 className="font-semibold">Checks run</h2><span className="mono-label bg-tint rounded px-2 py-1">{inv.evidence.length} of 4</span></div>
-      <Timeline evidence={inv.evidence} /></section>
+    <section aria-labelledby="pay-h">
+      <h2 id="pay-h" className="text-xl font-semibold">Payment</h2>
+      <p className="mt-2">{inv.orderId
+        ? <>{CAPTURE_WORDS[inv.captureState]}. {fundsStatement(inv.captureState).text} <Link to={`/pay/${inv.id}`} className="link">Open the payment</Link></>
+        : 'No payment was started. No funds were captured.'}</p>
+    </section>
 
-    {done && <SimilarCases cases={inv.similarCases} />}
-    {done && <SignalChecklist availability={inv.signalAvailability} reason={inv.confidenceReason} />}
-    {done && <HowChecked inv={inv} />}
-
-    <section className="card xl space-y-3"><h2 className="font-semibold">Actions</h2>
-      {done && inv.verdict !== 'ALLOW' && <button className="btn-danger w-full" disabled={busy || voided} onClick={act}>{busy ? <Loader2 className="animate-spin" size={16} /> : <Ban size={16} />}{voided ? 'Purchase cancelled' : inv.orderId ? 'Cancel purchase and report seller' : 'Report seller'}</button>}
-      {inv.orderId && <button className="btn-primary w-full" onClick={() => nav(`/pay/${inv.id}`)}>View payment<ArrowRight size={16} /></button>}
-      <button className="btn-secondary w-full !bg-tint" onClick={() => setExp(true)} disabled={!done}><Download size={16} />Export this record</button></section>
+    <Disclosure title={<span className="text-xl font-semibold">Details</span>}>
+      <div className="space-y-8 pt-2">
+        <section aria-labelledby="ran-h"><h3 id="ran-h" className="font-semibold mb-2">All checks run</h3>
+          <CheckList evidence={inv.evidence} availability={inv.signalAvailability} reveal={fresh && done} /></section>
+        {inv.signalAvailability && <section aria-labelledby="could-h"><h3 id="could-h" className="font-semibold mb-2">What we could and could not check</h3>
+          <SignalChecklist availability={inv.signalAvailability} /></section>}
+        {inv.provenance && <section aria-labelledby="how-h"><h3 id="how-h" className="font-semibold mb-2">How it was checked</h3><HowChecked inv={inv} /></section>}
+        {done && <SimilarCases cases={inv.similarCases} />}
+        {done && <p className="text-sm"><span className="font-semibold">Confidence {inv.confidence}%.</span> <span className="text-muted">{inv.confidenceReason ?? 'Based on the checks that ran.'}</span></p>}
+      </div>
+    </Disclosure>
 
     <Modal open={exp} onClose={() => setExp(false)} title="Export this record">
       <p className="text-sm text-muted mb-4">Includes every check, the confidence scores and the final decision.</p>
-      <div className="grid grid-cols-2 gap-2"><button className="btn-primary" onClick={() => { download(`record-${inv.id}.json`, inv); setExp(false); }}><Download size={16} />JSON</button>
+      <div className="flex flex-wrap gap-2"><button className="btn-primary" onClick={() => { download(`record-${inv.id}.json`, inv); setExp(false); }}><Download size={16} />JSON</button>
         <button className="btn-secondary" onClick={() => { setExp(false); setTimeout(() => window.print(), 100); }}><Printer size={16} />Print or save as PDF</button></div></Modal>
-  </>;
-}
-
-function EmptyCard({ icon: IconComp, title, children }: { icon: React.ComponentType<any>; title: string; children: React.ReactNode }) {
-  return <div className="text-center py-16"><IconComp className="h-12 w-12 text-muted mb-3" aria-hidden="true" /><h3 className="font-semibold">{title}</h3>{children}</div>;
+  </div>;
 }

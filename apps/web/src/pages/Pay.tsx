@@ -6,7 +6,7 @@ import { useInvestigations, useOrderPolling } from '../hooks/useOrderPolling';
 import { usePageTitle } from '../hooks/usePageTitle';
 import { useApp } from '../context/OrderStateContext';
 import { api } from '../api/apiClient';
-import { Modal, Pill, Skeleton, Stepper } from '../components/ui';
+import { Disclosure, Empty, Modal, Pill, Skeleton, Stepper } from '../components/ui';
 import { ClaimedVsActual } from '../components/ClaimedVsActual';
 import { HowChecked } from '../components/HowChecked';
 import { StatusRows } from '../components/StatusRows';
@@ -29,7 +29,7 @@ export default function Pay() {
   const { inv, refresh } = useOrderPolling(target);
   const [why, setWhy] = useState(false); const [log, setLog] = useState(false); const [rep, setRep] = useState(false);
   const [reason, setReason] = useState(''); const [busy, setBusy] = useState('');
-  if (!target) return loading ? <Skeleton className="h-40 w-full" /> : <EmptyCard icon={CreditCard} title="No payments yet">Check out from a demo storefront to see how TrustOra handles the payment.<div className="mt-4"><Link to="/stores" className="btn-direct">Open demo storefronts</Link></div></EmptyCard>;
+  if (!target) return loading ? <Skeleton className="h-40 w-full" /> : <Empty title="No payments yet">Check out from a demo storefront to see how TrustOra handles the payment.<div className="mt-4"><Link to="/stores" className="link">Open demo storefronts</Link></div></Empty>;
   if (!inv) return <div className="space-y-3" aria-busy="true"><Skeleton className="h-24 w-full" /><Skeleton className="h-40 w-full" /></div>;
   const running = inv.status !== 'COMPLETE', cs = inv.captureState, held = cs === 'HELD';
   const run = async (k: string, fn: () => Promise<unknown>, msg: string) => { setBusy(k); try { await fn(); toast(msg, 'ok'); refresh(); } catch (e) { toast((e as Error).message, 'bad'); } finally { setBusy(''); } };
@@ -44,7 +44,7 @@ export default function Pay() {
     <section className="card xl p-6 space-y-3">
       <h1 className="text-[22px] font-bold">Payment</h1>
       <p className="text-sm text-muted">{funds.text}</p>
-      {inv.simulated && <p className="text-xs mt-2 font-mono uppercase tracking-wide">Simulated payment: no real money moved</p>}
+      {inv.simulated && <p className="text-xs mt-2 font-mono">Simulated payment: no real money moved</p>}
       <div className="grid grid-cols-3 gap-2 mt-4">{(['ALLOW', 'WARN', 'PAUSE'] as Verdict[]).map(v => { const w = VERDICT_WORDS[v]; const on = inv.verdict === v;
         return <div key={v} className={cn('rounded-xl p-2 text-center border', on ? (v === 'ALLOW' ? 'bg-success text-bg border-ok' : v === 'WARN' ? 'bg-warn-bg text-warning border-warning' : 'bg-danger text-bg border-danger') : 'bg-tint text-muted border-line')} aria-current={on ? 'true' : undefined}>
           <div className="text-[12px] font-semibold">{w.word} · {w.subtitle}</div><div className="text-[11px]">{WHAT_HAPPENS[v]}</div></div>; })}</div></section>
@@ -64,8 +64,9 @@ export default function Pay() {
       <div className="grid grid-cols-2 gap-2 text-sm"><div className="rounded-xl bg-tint p-3"><div className="mono-label">Buyer</div><div className="font-semibold mt-1">Provided at checkout</div><div className="font-mono text-xs text-muted">{inv.buyerEmail ? maskEmail(inv.buyerEmail) : 'Not stored'}</div></div>
         <div className="rounded-xl bg-tint p-3"><div className="mono-label">Delivery</div><div className="font-semibold mt-1">Not collected</div><div className="font-mono text-xs text-muted">Handled by the store</div></div></div></section>
 
-    <section className="card xl p-0"><button className="w-full p-4 flex justify-between items-center font-semibold" aria-expanded={why} onClick={() => setWhy(!why)}><span className="flex items-center gap-2"><Info size={16} className="text-electric" aria-hidden="true" />Why did TrustOra {inv.verdict === 'ALLOW' ? 'allow' : 'hold'} this?</span><ChevronDown className={cn('transition', why && 'rotate-180')} aria-hidden="true" /></button>
-      {why && <ul className="px-4 pb-4 space-y-2 text-sm list-disc list-inside text-ink/80">{inv.reasons.map(r => <li key={r}>{r}</li>)}</ul>}</section>
+    <Disclosure title={<span className="text-xl font-semibold">Why this result</span>}>
+  <ul className="px-4 pb-4 space-y-2 text-sm list-disc list-inside text-ink/80">{inv.reasons.map(r => <li key={r}>{r}</li>)}</ul>
+</Disclosure>
 
     <HowChecked inv={inv} />
     <SimilarCases cases={inv.similarCases} />

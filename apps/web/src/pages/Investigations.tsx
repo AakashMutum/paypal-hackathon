@@ -74,7 +74,7 @@ export default function Investigations() {
       <div className="card !p-0 divide-y divide-line">
         {loading && <div className="p-4 space-y-3" aria-busy="true"><Skeleton className="h-12 w-full" /><Skeleton className="h-12 w-full" /><Skeleton className="h-12 w-full" /></div>}
         {!loading && !rows.length && <div className="p-8 text-center"><ListChecks className="h-10 w-10 text-muted mb-3" aria-hidden="true" /><h3 className="font-semibold">No investigations match</h3><p className="text-sm text-muted">Try another filter, or scan a site.</p><Link className="mt-3 inline-flex items-center gap-1 text-sm text-action font-semibold" to="/scanner">Scan a site<Icon icon={ArrowRight} size={16} /></Link></div>}
-        {visible.map(i => <button key={i.id} aria-current={selected === i.id ? 'true' : undefined} onClick={() => nav(`/investigations/${i.id}`)}
+        {visible.map(i => <button key={i.id} aria-current={selected === i.id ? 'true' : undefined} onClick={() => nav(`/engine/${i.id}`)}
           className={cn('w-full text-left p-4 flex justify-between items-center gap-3 hover:bg-surface-2', selected === i.id && 'bg-surface-2')}>
           <div className="min-w-0"><div className="font-mono text-sm font-semibold truncate">{i.domain}</div>
             <div className="text-xs text-muted truncate">{displayBrand(i.claimedBrand, i.domain)} → {i.payeeName ?? 'Not supplied'}</div>
