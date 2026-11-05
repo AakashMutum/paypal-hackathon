@@ -6,10 +6,17 @@ import { parseTheme, THEME_KEY } from '../src/lib/theme.js';
 const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 const config = readFileSync(new URL('../tailwind.config.js', import.meta.url), 'utf8');
 
-test('only light and dark are stored choices; anything else means system', () => {
+test('light is the default; only dark and system are other choices', () => {
   assert.equal(parseTheme('light'), 'light');
   assert.equal(parseTheme('dark'), 'dark');
-  for (const v of [null, undefined, '', 'system', 'blue', 'LIGHT']) assert.equal(parseTheme(v as string | null | undefined), 'system');
+  assert.equal(parseTheme('system'), 'system');
+  for (const v of [null, undefined, '', 'blue', 'LIGHT']) assert.equal(parseTheme(v as string | null | undefined), 'light');
+});
+
+test('the page starts light whatever the system prefers', () => {
+  assert.match(html, /<html[^>]*data-theme="light"/);
+  assert.match(html, /t === 'dark'/);
+  assert.doesNotMatch(html, /prefers-color-scheme/);
 });
 
 test('index.html sets the theme before the app loads, from the same storage key', () => {

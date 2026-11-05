@@ -5,14 +5,16 @@ import type { Verdict } from '../types';
 export type Tone = 'ok' | 'warn' | 'bad' | 'info' | 'cyan' | 'neutral';
 
 /** One decision vocabulary: ALLOW, WARN, PAUSE, each with a plain subtitle. */
-export const VERDICT_WORDS: Record<Verdict, { word: Verdict; subtitle: string; tone: Tone; meaning: string }> = {
-  ALLOW: { word: 'ALLOW', subtitle: 'Cleared', tone: 'ok', meaning: 'No problems were found. The payment can be captured.' },
-  WARN: { word: 'WARN', subtitle: 'Needs review', tone: 'warn', meaning: 'Something could not be confirmed. A person must acknowledge it before the payment is captured.' },
-  PAUSE: { word: 'PAUSE', subtitle: 'Held', tone: 'bad', meaning: 'The evidence does not support the storefront. The payment is never captured.' },
+export const VERDICT_WORDS: Record<Verdict, { word: Verdict; label: string; subtitle: string; tone: Tone; meaning: string }> = {
+  ALLOW: { word: 'ALLOW', label: 'Allowed', subtitle: 'Cleared', tone: 'ok', meaning: 'No problems were found. The payment can be captured.' },
+  WARN: { word: 'WARN', label: 'Needs review', subtitle: 'Needs review', tone: 'warn', meaning: 'Something could not be confirmed. A person must acknowledge it before the payment is captured.' },
+  PAUSE: { word: 'PAUSE', label: 'Held', subtitle: 'Held', tone: 'bad', meaning: 'The evidence does not support the storefront. The payment is never captured.' },
 };
 
-/** The decision as one string, for example "WARN · Needs review". */
-export const verdictText = (v: Verdict): string => `${VERDICT_WORDS[v].word} · ${VERDICT_WORDS[v].subtitle}`;
+/** The one user-facing word for a decision: Allowed, Needs review or Held. ALLOW, WARN and PAUSE stay in the API, exports, docs and the analyst table. */
+export const verdictLabel = (v: Verdict): string => VERDICT_WORDS[v].label;
+/** The API word, for the analyst table and exports only. */
+export const verdictText = (v: Verdict): string => VERDICT_WORDS[v].word;
 
 /**
  * The score is a separate number. A WARN with a score of 0 means nothing suspicious was found but
@@ -63,11 +65,11 @@ const EVIDENCE_LABEL: Record<string, string> = {
   PRODUCT_DATA_UNAVAILABLE: 'No product details on the page',
 };
 
-const keyOf = (raw: string): string => raw.trim().toUpperCase().replace(/[\s-]+/g, '_');
+export const evidenceKey = (raw: string): string => raw.trim().toUpperCase().replace(/[\s-]+/g, '_');
 
 /** A human label for an evidence type or for the title-cased label the API sends. */
 export function evidenceLabel(raw: string): string {
-  return EVIDENCE_LABEL[keyOf(raw)] ?? raw;
+  return EVIDENCE_LABEL[evidenceKey(raw)] ?? raw;
 }
 
 /** What a similar-case search really used, in words that do not over-claim. */

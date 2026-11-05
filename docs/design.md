@@ -21,6 +21,53 @@ coloured icon circles.
    PayPal. The only PayPal mark on screen is the button PayPal's own SDK renders. The footer says
    so.
 
+## Shell
+
+There is no sidebar. A sticky 52 px top bar holds the logo and "TrustOra", the text navigation (Check,
+Cases, Demo stores, Analyst; the active item has a 2 px accent underline, never a filled pill) and, on
+the right, one theme icon button with a menu (Light, Dark, System). Nothing else is in the bar. Content
+is up to 1280 px wide with 16 to 32 px gutters. A page header may sit on a full-width surface-2 band
+(`.band`). The footer has the GitHub link, "Fictional demo stores only", "About this demo" and the
+independence line.
+
+Below 768 px the bar keeps the logo and a menu button that opens a full-height sheet (a native
+`<dialog>`); a bottom bar has Check, Cases and Stores.
+
+The command palette (Ctrl+K, Cmd+K or `/`, a native `<dialog>`) still works but is not advertised. It lists
+the pages, the three demo stores, the theme options and "Check <address>" for a pasted address.
+
+There are no collapsible side panels and no keyboard shortcut for one. Each page has at most one
+Show or Hide control (the Details section on a case and on a payment).
+
+## Pages
+
+- **Front page:** a left-aligned hero, three numbered steps, one example of the claimed-versus-actual
+  band labelled "Example", three outcomes as a ruled list, a short agent block. No stat tiles, no live
+  data, no decoration.
+- **Case:** decision band, claimed versus actual, at most three reasons, one payment line, then Details
+  (closed): all checks run, what could and could not be checked, how it was checked, similar past
+  cases (only when there are any) and the confidence with its reason.
+- **Cases:** a plain table; a row opens the case.
+- **Checkout:** one centred white panel. When PayPal is not set up it shows a short gray box with a
+  link, never variable names.
+
+## Visual rules
+
+- Left-aligned. Ruled lists and tables instead of nested cards; whitespace over borders. No resting
+  shadows; two elevation levels, for overlays only.
+- One accent. Verdict colour appears only on the verdict marks and the status marks, always with text.
+  No pill badges for ordinary text, no icon-in-a-circle, no gradients or glow, no uppercase micro-labels.
+- Shape: primary buttons are 44 px pills, secondary buttons outlined pills, inputs 44 px with a 10 px
+  radius, panels 14 px with a thin border.
+- Type: Inter, body 16 px, headings semibold with slightly negative tracking, tabular figures,
+  JetBrains Mono only for domains, ids and amounts.
+- One word per decision on screen: Allowed, Needs review, Held (ALLOW, WARN, PAUSE only in the analyst
+  table, exports, the API and docs).
+- A check that did not run reads "Not checked" with a neutral mark. A scan with no payee reads "No red
+  flags found" and says the receiving account was not checked. Domain age is in human units.
+- Light is the default whatever the system prefers; Dark and System are remembered in localStorage
+  (in try/catch) and applied before first paint. Reduced motion turns every animation off.
+
 ## Tokens
 
 All tokens live in `apps/web/src/styles/tokens.css`. Tailwind reads them
@@ -28,28 +75,29 @@ All tokens live in `apps/web/src/styles/tokens.css`. Tailwind reads them
 
 | Token | Light | Dark | Use |
 | --- | --- | --- | --- |
-| `--bg` | #F7F9FC | #0A0F1C | Page |
+| `--bg` | #F5F7FA | #0A0F1C | Page |
 | `--surface` | #FFFFFF | #101828 | Cards, inputs |
-| `--surface-2` | #F1F5FA | #162033 | Quiet fills, hover |
+| `--surface-2` | #EDF1F7 | #162033 | Quiet fills, hover |
 | `--border` | #E3E8F0 | #1F2A44 | Dividers and card edges (decoration) |
 | `--border-strong` | #75849B | #6B7F9E | Edges of controls (3:1 or more) |
-| `--text` | #0A1A33 | #EAF0FA | Text |
-| `--muted` | #5B6B82 | #8EA0BC | Secondary text |
+| `--text` | #0B1B33 | #EAF0FA | Text |
+| `--muted` | #4B5B73 | #8EA0BC | Secondary text |
 | `--navy` | #003087 | #123A8F | Solid brand fill (white text) |
-| `--action` | #006DDA | #4C9AFF | Links, primary buttons |
+| `--brand` | #003087 | #EAF0FA | The wordmark and heading accents |
+| `--action` | #0070E0 | #4C9AFF | Primary button fill, focus ring |
+| `--link` | #0062C8 | #6FAEFF | Text links |
 | `--action-hover` | #005AC4 | #7DB5FF | Hover |
 | `--on-action` | #FFFFFF | #0A0F1C | Text on `--action` |
-| `--success` / `--success-bg` | #067647 / #ECFDF3 | #32D583 / #0B2E1F | Cleared |
+| `--success` / `--success-bg` | #067647 / #ECFDF3 | #32D583 / #0B2E1F | Allowed |
 | `--warn` / `--warn-bg` | #B54708 / #FEF0C7 | #FDB022 / #3A2A07 | Needs review |
 | `--danger` / `--danger-bg` | #B42318 / #FEE4E2 | #F97066 / #3A1512 | Held, failed |
-| `--focus` | #006DDA | #4C9AFF | Focus ring |
+| `--focus` | #0070E0 | #4C9AFF | Focus ring |
 
-The light `--action` started as the specified #0070E0. The contrast check found it was 4.37:1 on
-`--surface-2`, below the 4.5:1 AA minimum for text, so it was darkened to #006DDA (4.57:1). Every
-other starting value passed. `--border-strong` is an addition: the specified `--border` is for
-decoration only, and control edges need 3:1.
+The specified #0070E0 is below 4.5:1 as text on the page background, so it is used only for fills and
+the focus ring (3:1 is enough for those) and text links use `--link`. `--border-strong` is an addition: the
+specified `--border` is for decoration only, and control edges need 3:1.
 
-Other tokens: radius 6, 10 and 14 px; spacing 4, 8, 12, 16, 24, 32 and 48 px; two shadows; type
+Other tokens: radius 10 px (controls) and 14 px (panels), pills for buttons; spacing 4, 8, 12, 16, 24, 32 and 48 px; two shadows; type
 scale 12, 14, 16, 20, 28 and 40 px; motion 120 ms and 180 ms with one easing curve.
 
 ### Contrast check
@@ -61,9 +109,9 @@ block are identical, because plain CSS needs the dark values twice.
 
 ## Themes
 
-- Light is the default. With no stored choice the operating system decides
-  (`prefers-color-scheme`).
-- A toggle in the header chooses System, Light or Dark. The choice is stored in `localStorage`
+- Light is the default whatever the system prefers. Dark and System are explicit choices; System
+  then follows `prefers-color-scheme`.
+- The theme menu in the top bar chooses Light, Dark or System. The choice is stored in `localStorage`
   under `trustora.theme`; every storage call is wrapped in `try/catch`, so a blocked store only
   means the choice is not remembered.
 - A small inline script in `index.html` sets `data-theme` before the first paint, so there is no
@@ -84,7 +132,7 @@ block are identical, because plain CSS needs the dark values twice.
 ## Components
 
 `apps/web/src/components/ui`: `Button` (primary, secondary, ghost, danger), `Card`, `Badge`,
-`VerdictBadge`, `Stat`, `Field`, `Skeleton`, `EmptyState`, `Disclosure` (no tooltips: everything is
+`VerdictText` (and `VerdictBadge`, the same thing under its older name), `StatusMark`, `Stat`, `Field`, `Skeleton`, `EmptyState`, `Disclosure` (no tooltips: everything is
 reachable by keyboard), `Stepper`, `Toast`, plus `Modal`, `Switch`, `Icon` and `VerdictMark`. The
 older `btn-*`, `card`, `pill` and `input` classes are defined on the same tokens, so screens that
 have not been moved to the components yet follow the theme too.

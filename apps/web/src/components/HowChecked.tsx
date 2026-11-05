@@ -1,12 +1,11 @@
-import { useState } from 'react';
+import type { ReactNode } from 'react';
 import type { Investigation, SignalAvailability } from '../types';
 import { USE_MOCK } from '../api/apiClient';
 import { embeddingSettingLabel, memoryLabel } from '../lib/labels';
-import { Disclosure, Icon, Modal } from './ui';
+import { Modal, StatusMark } from './ui';
 import { useHealth } from './Provenance';
-import { CheckCircle2, MinusCircle, AlertTriangle } from 'lucide-react';
 
-/** "How this was checked": the sources behind one investigation, tucked into a disclosure. */
+/** "How it was checked": the sources behind one investigation, as a plain list. */
 export function HowChecked({ inv }: { inv: Pick<Investigation, 'provenance' | 'simulated' | 'mode'> }) {
   const p = inv.provenance;
   if (!p) return null;
@@ -19,9 +18,7 @@ export function HowChecked({ inv }: { inv: Pick<Investigation, 'provenance' | 's
   ];
   if (p.modelBudget?.exhausted) rows.push(['Time budget', 'The model ran out of its time budget, so plain rules wrote the explanation']);
   if (p.llmError) rows.push(['Language model error', p.llmError]);
-  return <Disclosure title="How this was checked">
-    <dl className="grid gap-x-4 gap-y-2 sm:grid-cols-[max-content_1fr] text-sm">{rows.map(([k, v]) => <div key={k} className="contents"><dt className="text-muted">{k}</dt><dd className="break-words">{v}</dd></div>)}</dl>
-  </Disclosure>;
+  return <dl className="grid gap-x-6 gap-y-2 sm:grid-cols-[max-content_1fr] text-sm">{rows.map(([k, v]) => <div key={k} className="contents"><dt className="text-muted">{k}</dt><dd className="break-words">{v}</dd></div>)}</dl>;
 }
 
 const CHECKS: Array<[keyof SignalAvailability, string, (v: string) => 'ok' | 'gap']> = [
@@ -35,34 +32,36 @@ const CHECKS: Array<[keyof SignalAvailability, string, (v: string) => 'ok' | 'ga
 ];
 const GAP_WORD: Record<string, string> = { blocked: 'blocked the checker', empty: 'nothing to read', unavailable: 'could not be checked', not_checked: 'not checked', not_provided: 'not supplied', not_assessed: 'not assessed (no source)' };
 
-/** A compact checklist of what was and was not checked. */
+/** What the checker could and could not use: a compact list, with the reason for a gap. */
 export function SignalChecklist({ availability, reason }: { availability?: SignalAvailability; reason?: string }) {
   if (!availability) return null;
-  return <section className="card space-y-3" aria-label="What was checked">
-    <h2 className="font-semibold">What was checked</h2>
+  return <section aria-label="Signals used">
     <ul className="grid gap-x-6 gap-y-1.5 sm:grid-cols-2 text-sm">{CHECKS.map(([key, label, ok]) => {
       const value = String(availability[key]);
       const state = ok(value);
-      const glyph = state === 'ok' ? CheckCircle2 : value === 'blocked' ? AlertTriangle : MinusCircle;
       return <li key={key} className="flex items-start gap-2">
-        <span className={state === 'ok' ? 'text-success' : value === 'blocked' ? 'text-warning' : 'text-muted'}><Icon icon={glyph} size={16} label={state === 'ok' ? 'Checked' : 'Not checked'} /></span>
+        <StatusMark state={state === 'ok' ? 'pass' : value === 'blocked' ? 'warn' : 'none'} />
         <span>{label}{state === 'ok' ? '' : <span className="text-muted"> · {GAP_WORD[value] ?? value.replace(/_/g, ' ')}</span>}</span></li>;
     })}</ul>
-    {reason && <p className="text-xs text-muted">{reason}</p>}
+    {reason && <p className="text-xs text-muted mt-3">{reason}</p>}
   </section>;
 }
 
-/** The footer: independence line and a link to an honest panel of how this deployment is running. */
-export function SiteFooter() {
-  const [open, setOpen] = useState(false);
-  return <footer className="text-center text-xs text-muted space-y-1 py-4">
+export const REPO_URL = 'https://github.com/AakashMutum/paypal-hackathon';
+
+/** The footer: the repository, a note that every store is fictional, the independence line, About this demo. */
+export function SiteFooter({ onAbout }: { onAbout?: () => void }) {
+  return <footer className="text-sm text-muted py-8 mt-12 border-t border-line space-y-2">
+    <p className="flex flex-wrap gap-x-5 gap-y-1">
+      <a className="link" href={REPO_URL} target="_blank" rel="noreferrer">GitHub<span className="sr-only"> (opens in a new tab)</span></a>
+      <span>Fictional demo stores only</span>
+      {onAbout && <button type="button" className="link" onClick={onAbout}>About this demo</button>}
+    </p>
     <p>TrustOra is an independent hackathon project and is not affiliated with PayPal.</p>
-    <button type="button" className="underline text-action" onClick={() => setOpen(true)}>About this demo</button>
-    {open && <AboutDemo onClose={() => setOpen(false)} />}
   </footer>;
 }
 
-function AboutDemo({ onClose }: { onClose: () => void }) {
+export function AboutDemo({ onClose, children }: { onClose: () => void; children?: ReactNode }) {
   const { health, error } = useHealth();
   const m = health?.modes;
   const rows: Array<[string, string]> = USE_MOCK
@@ -83,5 +82,6 @@ function AboutDemo({ onClose }: { onClose: () => void }) {
     <p className="text-sm text-muted mb-3">The stores are fictional. This is how this deployment is running right now.</p>
     <dl className="grid gap-x-4 gap-y-2 sm:grid-cols-[max-content_1fr] text-sm">{rows.map(([k, v]) => <div key={k} className="contents"><dt className="text-muted">{k}</dt><dd className="break-words">{v}</dd></div>)}</dl>
     <p className="text-xs text-muted mt-4">The decision comes from fixed scoring rules and hard rules. A language model, when on, can add cautious evidence and writes the explanation, but it cannot override a hard rule or clear a payee mismatch.</p>
+    {children}
   </Modal>;
 }

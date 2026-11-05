@@ -62,7 +62,7 @@ test('while the check runs the later steps are not done', () => {
 });
 
 test('the staged reveal is about 600 ms in all and the animation is skipped for reduced motion', () => {
-  const strip = readFileSync(new URL('../src/components/ChecksStrip.tsx', import.meta.url), 'utf8');
+  const strip = readFileSync(new URL('../src/components/CheckList.tsx', import.meta.url), 'utf8');
   const step = Number(/REVEAL_STEP_MS = (\d+)/.exec(strip)?.[1]);
   assert.ok(step * 4 >= 500 && step * 4 <= 700, `reveal step ${step} ms x 4`);
   const css = readFileSync(new URL('../src/index.css', import.meta.url), 'utf8');
@@ -71,7 +71,7 @@ test('the staged reveal is about 600 ms in all and the animation is skipped for 
 
 test('every existing route still works and the old history address redirects', () => {
   const app = readFileSync(new URL('../src/App.tsx', import.meta.url), 'utf8');
-  for (const path of ['scanner', 'engine/:id', 'pay/:id', 'history', 'onboarding', 'stores', 'checkout/:id', 'profile', '/store/:id', '/analyst', 'investigations', 'investigations/:id']) {
+  for (const path of ['check', 'scanner', 'engine/:id', 'pay/:id', 'history', 'onboarding', 'stores', 'checkout/:id', 'profile', '/store/:id', 'analyst', 'investigations', 'investigations/:id']) {
     assert.ok(app.includes(`path="${path}"`) || app.includes(`path="${path.replace(/:id/, ':id')}"`), `route missing: ${path}`);
   }
   assert.match(app, /path="history" element=\{<Navigate to="\/investigations" replace \/>\}/);
