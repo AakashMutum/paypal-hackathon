@@ -33,11 +33,11 @@ export function Badge({ tone = 'neutral', children, className }: { tone?: Tone; 
 const VERDICT_COLOR: Record<Verdict, string> = { ALLOW: 'text-success', WARN: 'text-warning', PAUSE: 'text-danger' };
 
 /** The decision: a coloured mark, then the word and its plain subtitle in normal text. Never colour alone. */
-export function VerdictText({ verdict, subtitle = true, className }: { verdict?: Verdict; subtitle?: boolean; className?: string }) {
+export function VerdictText({ verdict, code, className }: { verdict?: Verdict; code?: boolean; className?: string }) {
   if (!verdict) return <span className={cn('inline-flex items-center gap-1.5 text-muted', className)}>Checking…</span>;
   const w = VERDICT_WORDS[verdict];
   return <span className={cn('inline-flex items-center gap-1.5 font-medium whitespace-nowrap', className)}>
-    <VerdictMark verdict={verdict} size={16} className={VERDICT_COLOR[verdict]} />{w.word}{subtitle && <span className="font-normal text-muted">· {w.subtitle}</span>}</span>;
+    <VerdictMark verdict={verdict} size={16} className={VERDICT_COLOR[verdict]} />{code ? w.word : w.label}</span>;
 }
 
 /** Kept under its older name so every screen shows the decision the same way. */
