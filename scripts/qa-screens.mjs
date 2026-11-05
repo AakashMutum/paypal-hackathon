@@ -1,4 +1,4 @@
-/* global document, getComputedStyle, NodeFilter, localStorage, window */
+/* global document, getComputedStyle, NodeFilter, localStorage */
 // Visual and accessibility QA for the web app, run against a built copy using the built-in
 // simulated backend (no API, no accounts).
 //

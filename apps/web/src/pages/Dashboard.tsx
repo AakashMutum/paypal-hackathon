@@ -63,7 +63,6 @@ export default function Check() {
     setUrl(wanted);
     setParams({}, { replace: true });
     void run(wanted);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [wanted]);
 
   const latest = list.slice(0, 8);
