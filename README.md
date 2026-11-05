@@ -263,19 +263,32 @@ Names only; values never belong in the repository. See `.env.example` and `apps/
 
 ## Screens
 
-The web app (`apps/web`) has a 52 px top bar with text navigation (no sidebar), a command palette
-(Ctrl+K, Cmd+K or `/`), and a bottom tab bar below 768 px. It comes in a light and a dark theme: light
-by default, then the operating system's preference, with a System, Light and Dark menu in the bar
-(`docs/design.md`).
+The web app (`apps/web`) has a 52 px top bar with text navigation (Check, Cases, Demo stores,
+Analyst) and a theme menu, no sidebar, and a bottom bar below 768 px. It is light by default whatever
+the system prefers; Dark and System are one menu away and are remembered (`docs/design.md`).
 
 | Screen | Address | What it shows |
 | --- | --- | --- |
-| Check | `/`, `/scanner` | One question and one input, a live count line, the three known cases and the latest eight checks |
-| Case file | `/engine/:id` | Storefront says / PayPal pays with MATCH, MISMATCH or NOT CHECKED, a ruled "What was checked" list, and a collapsible decision and payment panel (`[`) |
-| Cases | `/investigations`, `/investigations/:id` | A table with filters, search and sortable columns; a row opens an inspector drawer (`/history` redirects here) |
-| Payment | `/pay/:id` | A four-step stepper (Authorized, Reviewed, Decision, outcome); the merchant check and the payment status as separate rows |
-| Demo stores | `/stores`, `/store/:id`, `/checkout/:id` | A ruled list of three fictional stores, each with its own illustration |
-| Analyst console | `/analyst` | A full-width AG Grid table with a collapsible filter panel and CSV export |
+| Front page | `/` | What TrustOra does: three steps, one invented example, three outcomes, the agent tools. No live data |
+| Check | `/check` (`/scanner` redirects) | One question and one input, a count line, the three known cases and the latest five checks |
+| Case | `/engine/:id` | The decision, Storefront says / PayPal pays, up to three reasons, one payment line, and one Details section |
+| Cases | `/investigations` | A table with filters, search and sortable columns; a row opens the case (`/history` and `/investigations/:id` redirect) |
+| Payment | `/pay/:id` | The four-step stepper (Authorized, Reviewed, Decision, outcome), whether funds were captured, one Details section |
+| Demo stores | `/stores`, `/store/:id`, `/checkout/:id` | A ruled list of three fictional stores; checkout is one white panel |
+| Analyst console | `/analyst` | A full-width AG Grid table with a filter row and CSV export |
+
+Decision words: the screens say one thing per decision. The API, exports, the analyst table and the
+docs keep the original words.
+
+| Screens | API, exports, analyst table, docs |
+| --- | --- |
+| Allowed | ALLOW |
+| Needs review | WARN |
+| Held | PAUSE |
+
+A check with no payee reads "No red flags found" and "The receiving account was not checked", never
+"Allowed". The register-a-merchant form (`/onboarding`) works and is in the command palette; the sample
+profile (`/profile`) has no function, so it is not linked from anywhere (the address still works).
 
 The central picture is "Storefront says" next to "PayPal pays", joined by MATCH, MISMATCH or NOT
 CHECKED, built only from the investigation's own data. TrustOra is an independent hackathon

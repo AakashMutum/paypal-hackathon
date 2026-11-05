@@ -3,10 +3,9 @@ import test from 'node:test';
 import { closeCases, displayBrand, evidenceLabel, formatDateTime, memoryLabel, retrievalLabel, scoreText, VERDICT_WORDS, verdictText } from '../src/lib/labels.js';
 import { radarMessage } from '../src/lib/explain.js';
 
-test('one decision vocabulary with a plain subtitle', () => {
-  assert.equal(verdictText('ALLOW'), 'ALLOW · Cleared');
-  assert.equal(verdictText('WARN'), 'WARN · Needs review');
-  assert.equal(verdictText('PAUSE'), 'PAUSE · Held');
+test('one user-facing word per decision; the API words stay for the analyst table', () => {
+  assert.deepEqual((['ALLOW', 'WARN', 'PAUSE'] as const).map((v) => VERDICT_WORDS[v].label), ['Allowed', 'Needs review', 'Held']);
+  assert.deepEqual((['ALLOW', 'WARN', 'PAUSE'] as const).map(verdictText), ['ALLOW', 'WARN', 'PAUSE']);
   assert.ok(Object.values(VERDICT_WORDS).every((w) => !/risk/i.test(w.subtitle)));
 });
 

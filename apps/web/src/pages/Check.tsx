@@ -27,7 +27,7 @@ function Summary({ list, loading }: { list: Parameters<typeof summaryCounts>[0];
   if (loading) return <Skeleton className="h-5 w-72" />;
   const c = summaryCounts(list);
   if (c.total === 0) return <p className="text-muted">No checks yet. Run one above or open a known case below.</p>;
-  const parts = [`${c.total} ${c.total === 1 ? 'check' : 'checks'}`, `${c.cleared} cleared`];
+  const parts = [`${c.total} ${c.total === 1 ? 'check' : 'checks'}`, `${c.cleared} allowed`];
   if (c.noFlags > 0) parts.push(`${c.noFlags} with no red flags (receiving account not checked)`);
   parts.push(`${c.review} need review`, `${c.held} held`);
   return <p className="text-muted num">{parts.join(' · ')}</p>;
@@ -65,10 +65,10 @@ export default function Check() {
     void run(wanted);
   }, [wanted]);
 
-  const latest = list.slice(0, 8);
+  const latest = list.slice(0, 5);
   return <div className="space-y-12">
-    <section className="band -mt-6 lg:-mt-8 py-10 lg:py-12">
-      <div className="max-w-2xl">
+    <section className="max-w-2xl">
+      <div>
         <h1>Who would this checkout really pay?</h1>
         <p className="mt-2 text-muted">Paste a store's address. TrustOra compares what the storefront says with the public records and the account that would be paid, before any money is captured.</p>
         <form onSubmit={submit} className="mt-6" noValidate>
@@ -79,7 +79,7 @@ export default function Check() {
             <button className="btn-primary !h-11 sm:px-6" disabled={busy}>{busy ? <><Loader2 size={16} className="animate-spin" aria-hidden="true" />Checking…</> : 'Check'}</button>
           </div>
           {error && <p id="check-error" role="alert" className="flex gap-2 text-sm text-danger mt-2"><Icon icon={AlertTriangle} size={16} className="shrink-0 mt-0.5" />{error}</p>}
-          <p className="label mt-2">A check does not include a payee. The receiving account is compared at checkout, so a check on its own reads "no red flags", not "cleared".</p>
+          <p className="label mt-2">A check does not include a payee. The receiving account is compared at checkout, so a check on its own reads "no red flags", not "allowed".</p>
         </form>
         <div className="mt-6" aria-live="polite" aria-busy={loading}><Summary list={list} loading={loading} /></div>
         <WakeNote show={slow} />
@@ -94,7 +94,7 @@ export default function Check() {
         <span className="font-mono text-sm break-words">{softBreak(s.domain)}</span>
         <span className="text-sm">{s.product.name} <span className="font-mono num text-muted">· {money(s.product.price)}</span></span>
         <span className="text-sm"><span className="label mr-1.5">Expected</span><VerdictText verdict={s.expected} /></span>
-        <Link to={`/?check=${encodeURIComponent(s.domain)}`} className="link text-sm sm:text-right">Run<span className="sr-only"> a check on {s.domain}</span></Link>
+        <Link to={`/check?check=${encodeURIComponent(s.domain)}`} className="link text-sm sm:text-right">Run<span className="sr-only"> a check on {s.domain}</span></Link>
       </li>)}</ul>
     </section>
 
@@ -103,8 +103,8 @@ export default function Check() {
       {loading ? <div className="mt-3 space-y-3" aria-busy="true"><Skeleton className="h-9 w-full" /><Skeleton className="h-9 w-full" /><Skeleton className="h-9 w-full" /></div>
         : latest.length === 0 ? <div className="mt-3"><EmptyState title="No checks yet">Run a check above, or open a known case. Every check is kept here as a case you can open again.</EmptyState></div>
           : <div className="mt-3 overflow-x-auto"><table className="w-full text-sm min-w-[640px]">
-            <caption className="sr-only">The latest eight checks</caption>
-            <thead><tr className="text-left label border-b border-line"><th scope="col" className="py-2 pr-4 font-normal">Domain</th><th scope="col" className="py-2 pr-4 font-normal">Claimed brand</th><th scope="col" className="py-2 pr-4 font-normal">Who gets paid</th><th scope="col" className="py-2 pr-4 font-normal">Decision</th><th scope="col" className="py-2 font-normal text-right">Time</th></tr></thead>
+            <caption className="sr-only">The latest five checks</caption>
+            <thead><tr className="text-left label border-b border-line"><th scope="col" className="py-2 pr-4 font-normal">Domain</th><th scope="col" className="py-2 pr-4 font-normal">Claimed brand</th><th scope="col" className="py-2 pr-4 font-normal">Who gets paid</th><th scope="col" className="py-2 pr-4 font-normal">Result</th><th scope="col" className="py-2 font-normal text-right">Time</th></tr></thead>
             <tbody>{latest.map(i => <tr key={i.id} className="border-b border-line align-top">
               <td className="py-3 pr-4 font-mono break-words"><Link to={`/engine/${i.id}`} className="link">{softBreak(i.domain)}</Link></td>
               <td className="py-3 pr-4">{displayBrand(i.claimedBrand, i.domain)}</td>

@@ -24,7 +24,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
     onClose();
     if (c.kind === 'go') nav(c.to);
     else if (c.kind === 'theme') { applyTheme(c.theme); saveTheme(c.theme); }
-    else nav(`/?check=${encodeURIComponent(c.url)}`);
+    else nav(`/check?check=${encodeURIComponent(c.url)}`);
   };
   const onKey = (e: React.KeyboardEvent) => {
     if (e.key === 'ArrowDown') { e.preventDefault(); setAt(i => Math.min(i + 1, items.length - 1)); }

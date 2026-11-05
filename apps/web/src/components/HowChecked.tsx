@@ -2,10 +2,10 @@ import type { ReactNode } from 'react';
 import type { Investigation, SignalAvailability } from '../types';
 import { USE_MOCK } from '../api/apiClient';
 import { embeddingSettingLabel, memoryLabel } from '../lib/labels';
-import { Disclosure, Modal, StatusMark } from './ui';
+import { Modal, StatusMark } from './ui';
 import { useHealth } from './Provenance';
 
-/** "How this was checked": the sources behind one investigation, tucked into a disclosure. */
+/** "How it was checked": the sources behind one investigation, as a plain list. */
 export function HowChecked({ inv }: { inv: Pick<Investigation, 'provenance' | 'simulated' | 'mode'> }) {
   const p = inv.provenance;
   if (!p) return null;
@@ -18,9 +18,7 @@ export function HowChecked({ inv }: { inv: Pick<Investigation, 'provenance' | 's
   ];
   if (p.modelBudget?.exhausted) rows.push(['Time budget', 'The model ran out of its time budget, so plain rules wrote the explanation']);
   if (p.llmError) rows.push(['Language model error', p.llmError]);
-  return <Disclosure title="How this was checked">
-    <dl className="grid gap-x-4 gap-y-2 sm:grid-cols-[max-content_1fr] text-sm">{rows.map(([k, v]) => <div key={k} className="contents"><dt className="text-muted">{k}</dt><dd className="break-words">{v}</dd></div>)}</dl>
-  </Disclosure>;
+  return <dl className="grid gap-x-6 gap-y-2 sm:grid-cols-[max-content_1fr] text-sm">{rows.map(([k, v]) => <div key={k} className="contents"><dt className="text-muted">{k}</dt><dd className="break-words">{v}</dd></div>)}</dl>;
 }
 
 const CHECKS: Array<[keyof SignalAvailability, string, (v: string) => 'ok' | 'gap']> = [
@@ -49,11 +47,17 @@ export function SignalChecklist({ availability, reason }: { availability?: Signa
   </section>;
 }
 
-/** The footer: the independence line and how this deployment is running. */
-export function SiteFooter() {
-  return <footer className="text-xs text-muted py-6 mt-8 border-t border-line flex flex-wrap items-center justify-between gap-x-6 gap-y-1">
+export const REPO_URL = 'https://github.com/AakashMutum/paypal-hackathon';
+
+/** The footer: the repository, a note that every store is fictional, the independence line, About this demo. */
+export function SiteFooter({ onAbout }: { onAbout?: () => void }) {
+  return <footer className="text-sm text-muted py-8 mt-12 border-t border-line space-y-2">
+    <p className="flex flex-wrap gap-x-5 gap-y-1">
+      <a className="link" href={REPO_URL} target="_blank" rel="noreferrer">GitHub<span className="sr-only"> (opens in a new tab)</span></a>
+      <span>Fictional demo stores only</span>
+      {onAbout && <button type="button" className="link" onClick={onAbout}>About this demo</button>}
+    </p>
     <p>TrustOra is an independent hackathon project and is not affiliated with PayPal.</p>
-    <p>{USE_MOCK ? 'Simulated backend: nothing leaves this browser.' : 'Connected to the TrustOra API.'}</p>
   </footer>;
 }
 

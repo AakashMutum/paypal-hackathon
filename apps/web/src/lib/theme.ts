@@ -1,17 +1,19 @@
-// Theme choice: system (follow the operating system), light or dark. The choice is kept in
-// localStorage; every storage call is wrapped because storage can be blocked or full.
+// Theme choice: light (the default, whatever the system prefers), dark, or system (follow the
+// operating system). The choice is kept in localStorage; every storage call is wrapped because
+// storage can be blocked or full.
 export type ThemeChoice = 'system' | 'light' | 'dark';
 export const THEME_KEY = 'trustora.theme';
 
+/** Nothing stored, or anything unknown, means light. System is only ever an explicit choice. */
 export function parseTheme(value: string | null | undefined): ThemeChoice {
-  return value === 'light' || value === 'dark' ? value : 'system';
+  return value === 'dark' || value === 'system' ? value : 'light';
 }
 
 export function readTheme(): ThemeChoice {
   try {
     return parseTheme(localStorage.getItem(THEME_KEY));
   } catch {
-    return 'system';
+    return 'light';
   }
 }
 
@@ -24,8 +26,7 @@ export function applyTheme(choice: ThemeChoice): void {
 
 export function saveTheme(choice: ThemeChoice): void {
   try {
-    if (choice === 'system') localStorage.removeItem(THEME_KEY);
-    else localStorage.setItem(THEME_KEY, choice);
+    localStorage.setItem(THEME_KEY, choice);
   } catch {
     // The choice still applies for this visit; it just will not be remembered.
   }

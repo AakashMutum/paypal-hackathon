@@ -14,6 +14,7 @@ import { StatusRows } from '../components/StatusRows';
 import { SimilarCases } from '../components/Provenance';
 import { maskEmail, money } from '../lib/format';
 import { fundsStatement, paymentSteps } from '../lib/payment';
+import { topReasons } from '../lib/checks';
 
 const WHAT_HAPPENS: Record<Verdict, string> = {
   ALLOW: 'The payment is captured automatically.',
@@ -64,9 +65,13 @@ export default function Pay() {
       </dl>
     </section>
 
-    {inv.reasons.length > 0 && <Disclosure title={`Why did TrustOra ${inv.verdict === 'ALLOW' ? 'allow' : 'hold'} this?`}><ul className="space-y-1.5 text-sm list-disc pl-5">{inv.reasons.map(r => <li key={r}>{r}</li>)}</ul></Disclosure>}
-    <HowChecked inv={inv} />
-    <SimilarCases cases={inv.similarCases} />
+    <Disclosure title={<span className="text-xl font-semibold">Details</span>}>
+      <div className="space-y-6 pt-2">
+        {topReasons(inv.reasons).length > 0 && <section><h3 className="font-semibold mb-1">Why</h3><ul className="space-y-1.5 list-disc pl-5">{topReasons(inv.reasons).map(r => <li key={r}>{r}</li>)}</ul></section>}
+        {inv.provenance && <section><h3 className="font-semibold mb-2">How it was checked</h3><HowChecked inv={inv} /></section>}
+        <SimilarCases cases={inv.similarCases} />
+      </div>
+    </Disclosure>
 
     {held && <div className="flex flex-wrap gap-3">
       {inv.verdict === 'WARN' && !inv.payeeMismatch && !inv.acknowledged && <button className="btn-primary" disabled={!!busy} onClick={() => run('ack', () => api.acknowledge(inv.id), 'Warning acknowledged.')}>{busy === 'ack' && <Loader2 className="animate-spin" size={16} />}I understand the warning. Release the payment.</button>}

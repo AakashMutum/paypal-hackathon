@@ -74,7 +74,7 @@ export function outcome(inv: Pick<Investigation, 'status' | 'verdict' | 'signalA
   if (inv.verdict === 'ALLOW') {
     return payeeNotChecked(inv)
       ? { headline: 'No red flags found', note: 'The receiving account was not checked.' }
-      : { headline: 'Cleared' };
+      : { headline: 'Allowed' };
   }
   return { headline: inv.verdict === 'WARN' ? 'Needs review' : 'Held' };
 }
@@ -96,14 +96,18 @@ export function summaryCounts(list: Array<Pick<Investigation, 'status' | 'verdic
   };
 }
 
-/** One plain sentence under the claimed-versus-actual band. It says only what the case established. */
-export function decisionSentence(inv: Pick<Investigation, 'status' | 'verdict' | 'signalAvailability' | 'payeeName' | 'orderId' | 'reasons'>): string {
+/** The one plain sentence in the decision band. The reasons are listed separately, under "Why". */
+export function decisionSentence(inv: Pick<Investigation, 'status' | 'verdict' | 'signalAvailability' | 'payeeName' | 'orderId'>): string {
   if (inv.status !== 'COMPLETE' || !inv.verdict) return 'Collecting evidence about this merchant…';
   if (inv.verdict === 'ALLOW') {
     return payeeNotChecked(inv)
-      ? 'No red flags found. The receiving account was not checked, so this is not a clearance to pay.'
-      : 'Cleared. No problems were found and the payment can be captured.';
+      ? 'The receiving account was not checked, so this is not a clearance to pay.'
+      : 'No problems were found. The payment can be captured.';
   }
-  const lead = inv.verdict === 'PAUSE' ? 'Held. The payment is never captured.' : 'Needs review. A person must acknowledge it before the payment is captured.';
-  return inv.reasons[0] ? `${lead} ${inv.reasons[0]}` : lead;
+  return inv.verdict === 'WARN'
+    ? 'Something could not be verified. A person must confirm before the payment is captured.'
+    : 'The evidence does not support the storefront. The payment is never captured.';
 }
+
+/** At most three reasons, most important first (the API already orders them). */
+export const topReasons = (reasons: readonly string[] | undefined): string[] => (reasons ?? []).filter(Boolean).slice(0, 3);

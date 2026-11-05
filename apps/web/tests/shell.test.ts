@@ -3,7 +3,6 @@ import { readdirSync, readFileSync } from 'node:fs';
 import test from 'node:test';
 import { decisionSentence, fieldState, findingText, groupRan, groupState, humanAge, outcome, summaryCounts } from '../src/lib/checks.js';
 import { buildCommands, looksLikeUrl } from '../src/lib/palette.js';
-import { PANEL_WIDE, panelKey, readPanel, savePanel } from '../src/lib/panel.js';
 import type { Evidence, SignalAvailability } from '../src/types.js';
 
 const src = (p: string) => readFileSync(new URL(`../src/${p}`, import.meta.url), 'utf8');
@@ -59,7 +58,7 @@ test('a clean scan with no payee reads "No red flags found" and says the account
   assert.match(outcome(scan).note ?? '', /receiving account was not checked/);
   assert.match(decisionSentence(scan), /not a clearance/);
   const paid = { ...scan, signalAvailability: av({}), payeeName: 'Harborline Outfitters Ltd' };
-  assert.equal(outcome(paid).headline, 'Cleared');
+  assert.equal(outcome(paid).headline, 'Allowed');
   assert.equal(outcome({ ...scan, verdict: 'PAUSE' }).headline, 'Held');
 });
 
@@ -84,9 +83,10 @@ test('looksLikeUrl accepts addresses and rejects searches', () => {
 
 test('the palette lists pages, the three stores and the theme options', () => {
   const ids = buildCommands('').map((c) => c.id);
-  assert.ok(ids.includes('go:/investigations') && ids.includes('go:/analyst'));
+  assert.ok(ids.includes('go:/check') && ids.includes('go:/investigations') && ids.includes('go:/analyst'));
+  assert.ok(!ids.includes('go:/profile'), 'the sample profile has no function, so it is not listed');
   assert.equal(ids.filter((i) => i.startsWith('store:')).length, 3);
-  assert.deepEqual(ids.filter((i) => i.startsWith('theme:')), ['theme:system', 'theme:light', 'theme:dark']);
+  assert.deepEqual(ids.filter((i) => i.startsWith('theme:')), ['theme:light', 'theme:dark', 'theme:system']);
 });
 
 test('a pasted address adds "Check ..." first, and a search term filters the list', () => {
@@ -105,48 +105,92 @@ test('the palette component stays small and is a native dialog', () => {
   assert.ok(code.includes('<dialog') && code.includes('showModal'));
 });
 
-// --- Collapsible panels -----------------------------------------------------------------------
-
-function fakeStorage(blocked = false) {
-  const data = new Map<string, string>();
-  (globalThis as { localStorage?: unknown }).localStorage = {
-    getItem: (k: string) => { if (blocked) throw new Error('blocked'); return data.get(k) ?? null; },
-    setItem: (k: string, v: string) => { if (blocked) throw new Error('blocked'); data.set(k, v); },
-  };
-  return data;
-}
-
-test('panels start collapsed below 1280 px and open from 1280 px', () => {
-  fakeStorage();
-  assert.equal(readPanel('case', PANEL_WIDE - 1), false);
-  assert.equal(readPanel('case', PANEL_WIDE), true);
-});
-
-test('a remembered panel state wins over the width default', () => {
-  fakeStorage();
-  savePanel('case', true);
-  assert.equal(readPanel('case', 800), true);
-  savePanel('case', false);
-  assert.equal(readPanel('case', 1920), false);
-  assert.equal(panelKey('case'), 'trustora.panel.case');
-});
-
-test('blocked storage never throws and falls back to the width default', () => {
-  fakeStorage(true);
-  assert.doesNotThrow(() => savePanel('case', true));
-  assert.equal(readPanel('case', 1920), true);
-  assert.equal(readPanel('case', 400), false);
-});
-
 // --- Shell and visual rules (read from the source) ----------------------------------------------
 
-test('the shell has a top bar with text navigation and no sidebar', () => {
+test('the shell has a top bar with text navigation and a theme menu, and advertises nothing else', () => {
   const layout = src('components/Layout.tsx');
   assert.ok(!/<aside/.test(layout) && !/232px/.test(layout), 'no sidebar');
   assert.ok(layout.includes('h-[52px]'), '52 px bar');
   for (const label of ['Check', 'Cases', 'Demo stores', 'Analyst']) assert.ok(layout.includes(`label: '${label}'`), label);
-  assert.ok(layout.includes('Search or paste a link') && layout.includes('Ctrl+K'));
-  assert.ok(layout.includes("e.key === '/'"), 'the / key opens the palette');
+  assert.ok(!layout.includes('Search or paste a link') && !layout.includes('Ctrl+K'), 'the palette is not advertised');
+  assert.ok(!/>\s*About\s*</.test(layout), 'no About link in the bar');
+  assert.ok(layout.includes("e.key === '/'") && layout.includes("e.key.toLowerCase() === 'k'"), 'the palette still opens from the keyboard');
+  assert.ok(src('components/HowChecked.tsx').includes('About this demo'), 'About this demo lives in the footer');
+});
+
+test('the bottom bar has Check, Cases and Stores', () => {
+  assert.ok(src('components/Layout.tsx').includes('const BOTTOM = NAV.slice(0, 3);'));
+});
+
+test('no collapsible side panels and no [ shortcut anywhere', () => {
+  for (const f of [...files('pages'), ...files('components'), 'hooks/usePageTitle.ts', 'App.tsx']) {
+    const code = src(f);
+    assert.ok(!/usePanel|readPanel|savePanel|trustora\.panel/.test(code), f);
+    assert.ok(!code.includes("e.key !== '['") && !code.includes("key === '['"), f);
+  }
+});
+
+test('the theme menu offers Light, Dark and System in that order', () => {
+  const code = src('components/ThemeMenu.tsx');
+  assert.ok(code.indexOf("label: 'Light'") < code.indexOf("label: 'Dark'") && code.indexOf("label: 'Dark'") < code.indexOf("label: 'System'"));
+});
+
+// --- Front page, check, case and cases ------------------------------------------------------------
+
+test('the front page has the headline, the pill button, three steps, an example, three outcomes and the agent block', () => {
+  const home = src('pages/Home.tsx');
+  assert.ok(home.includes('Know who gets paid before you pay.'));
+  assert.ok(home.includes('See it catch a fake store') && home.includes('btn-primary'));
+  assert.ok(home.includes('Check a website'));
+  for (const w of ['The storefront says', 'PayPal pays', 'TrustOra compares them']) assert.ok(home.includes(w), w);
+  assert.ok(home.includes('Example: an invented store, not live data'));
+  assert.ok(home.includes('Three outcomes') && home.includes('VERDICT_WORDS[o.v].label'));
+  assert.ok(home.includes('investigate_merchant') && home.includes('safe_checkout') && home.includes('docs/agentic-demo.md'));
+  assert.ok(!/useInvestigations|api\./.test(home), 'no live data on the front page');
+});
+
+test('the checker lives at /check and /scanner redirects to it', () => {
+  const app = src('App.tsx');
+  assert.ok(app.includes('<Route index element={<Home />} />') && app.includes('path="check"'));
+  assert.match(app, /path="scanner" element=\{<Navigate to="\/check" replace \/>\}/);
+});
+
+test('the footer has the repository, the fictional note and the independence line', () => {
+  const f = src('components/HowChecked.tsx');
+  assert.ok(f.includes('Fictional demo stores only') && f.includes('github.com/AakashMutum/paypal-hackathon'));
+  assert.ok(f.includes('TrustOra is an independent hackathon project and is not affiliated with PayPal.'));
+});
+
+test('the case page has one disclosure, no side panel and no payment stepper', () => {
+  const code = src('pages/Engine.tsx');
+  assert.equal((code.match(/<Disclosure/g) ?? []).length, 1);
+  assert.ok(!/<Stepper|usePanel|<aside/.test(code));
+  for (const part of ['aria-label="Decision"', 'ClaimedVsActual', 'topReasons', 'No payment was started', 'All checks run', 'What we could and could not check', 'How it was checked']) assert.ok(code.includes(part), part);
+});
+
+test('the payment page keeps the four-step stepper and has one disclosure', () => {
+  const code = src('pages/Pay.tsx');
+  assert.ok(code.includes('<Stepper'));
+  assert.equal((code.match(/<Disclosure/g) ?? []).length, 1);
+});
+
+test('the cases page opens the case page; there is no drawer', () => {
+  const code = src('pages/Investigations.tsx');
+  assert.ok(!code.includes('<dialog') && code.includes('/engine/'));
+  assert.ok(src('App.tsx').includes('CaseRedirect'));
+});
+
+test('checkout shows a short gray box, not variable names, when PayPal is not set up', () => {
+  const code = src('components/PaypalButton.tsx');
+  assert.ok(code.includes('Checkout is not set up on this deployment yet.') && code.includes('How to set it up'));
+  assert.ok(!code.includes('VITE_PAYPAL_CLIENT_ID'));
+  assert.ok(code.includes('Simulated payment'));
+});
+
+test('user-facing decision words are Allowed, Needs review and Held; the API words stay in the analyst table', () => {
+  const prim = src('components/ui/primitives.tsx');
+  assert.ok(prim.includes('{code ? w.word : w.label}'));
+  assert.ok(src('pages/AnalystConsole.tsx').includes('code />'));
 });
 
 test('the analyst console is inside the shell', () => {

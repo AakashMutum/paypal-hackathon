@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import type { Health, Investigation, SimilarCase } from '../types';
 import { api, USE_MOCK } from '../api/apiClient';
 import { cn } from '../lib/format';
-import { closeCases, embeddingSettingLabel, memoryLabel, MIN_CASE_SIMILARITY, retrievalLabel } from '../lib/labels';
+import { VERDICT_WORDS, closeCases, embeddingSettingLabel, memoryLabel, MIN_CASE_SIMILARITY, retrievalLabel } from '../lib/labels';
 import { Pill } from './ui';
 
 /** The API's modes, read once from GET /health. Null in the simulated backend or while loading. */
@@ -72,17 +72,16 @@ const MATCH_LABEL: Record<SimilarCase['matchType'], string> = {
 /** The closest past cases retrieved from memory. Shown for context; they never change a decision. */
 export function SimilarCases({ cases }: { cases?: SimilarCase[] }) {
   const close = closeCases(cases);
+  if (!close.length) return null;
   return <section aria-label="Similar past cases">
-    <h2 className="text-base font-semibold">Similar past cases <span className="font-normal text-muted num">({close.length})</span></h2>
-    {!close.length
-      ? <p className="text-sm text-muted mt-1">No close past cases.</p>
-      : <ul className="ruled border-y border-line mt-2">{close.map((c, n) => <li key={c.caseId ?? n} className="py-3 text-sm">
+    <h3 className="font-semibold">Similar past cases <span className="font-normal text-muted num">({close.length})</span></h3>
+    <ul className="ruled border-y border-line mt-2">{close.map((c, n) => <li key={c.caseId ?? n} className="py-3 text-sm">
         <div className="flex flex-wrap gap-x-3 items-center mb-1">
-          <span className="font-medium">{c.decision}</span>
+          <span className="font-medium">{VERDICT_WORDS[c.decision].label}</span>
           <span>{MATCH_LABEL[c.matchType]}</span>
           <span className="text-muted num">similarity {c.score.toFixed(2)}</span></div>
         <p>{c.patternSentence}</p>
-        <p className="label mt-1">Found by: {retrievalLabel(c.retrieval)}</p></li>)}</ul>}
+        <p className="label mt-1">Found by: {retrievalLabel(c.retrieval)}</p></li>)}</ul>
     <p className="label mt-2">For context only. A past case never overrides a decision. Only matches with similarity {MIN_CASE_SIMILARITY} or higher are shown.</p>
   </section>;
 }
