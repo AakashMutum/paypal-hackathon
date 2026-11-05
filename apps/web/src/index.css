@@ -4,7 +4,7 @@
 
 @layer base {
   html { background: var(--bg); }
-  body { @apply bg-bg text-content font-sans antialiased; font-size: 14.5px; line-height: 1.55; }
+  body { @apply bg-bg text-content font-sans antialiased; font-size: 16px; line-height: 1.55; }
   h1, h2, h3 { letter-spacing: -0.015em; }
   h1 { font-size: 28px; line-height: 1.2; font-weight: 600; }
   @media (min-width: 1024px) { h1 { font-size: 30px; } }
@@ -18,17 +18,18 @@
   .card { @apply bg-surface rounded-md border border-line p-5; }
   .mono-label { @apply text-[12px] font-medium text-muted; }
   .pill { @apply inline-flex items-center gap-1.5 min-h-[22px] px-2 rounded border text-[12px] font-medium whitespace-nowrap; }
-  .btn { @apply inline-flex items-center justify-center gap-2 rounded px-4 h-10 text-sm font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed; }
+  .btn { @apply inline-flex items-center justify-center gap-2 rounded-full px-6 h-11 text-[15px] font-medium transition disabled:opacity-50 disabled:cursor-not-allowed; }
   .btn-primary { @apply btn bg-action text-action-on hover:bg-action-hover; }
   .btn-secondary { @apply btn bg-surface text-content border border-line-strong hover:bg-surface-2; }
+  .btn-sm { @apply !h-9 !px-4 !text-sm; }
   .btn-ghost { @apply btn bg-transparent text-content hover:bg-surface-2; }
   .btn-direct { @apply btn-primary; }
   .btn-danger { @apply btn bg-danger text-bg hover:opacity-90; }
-  .input { @apply w-full h-10 px-3 rounded bg-surface border border-line-strong text-sm text-content placeholder:text-muted; }
+  .input { @apply w-full h-11 px-3.5 rounded bg-surface border border-line-strong text-sm text-content placeholder:text-muted; }
   .input:focus { outline: 2px solid var(--focus); outline-offset: 0; border-color: var(--focus); }
   .label { @apply text-[12px] text-muted; }
-  .link { @apply text-action font-medium hover:underline underline-offset-2; }
-  .tbtn { @apply inline-flex items-center gap-1.5 text-sm font-medium text-content hover:text-action rounded px-1 -mx-1 py-1 disabled:opacity-50; }
+  .link { @apply text-link font-medium hover:underline underline-offset-2; }
+  .tbtn { @apply inline-flex items-center gap-1.5 text-sm font-medium text-link hover:underline underline-offset-2 rounded px-1 -mx-1 py-1 disabled:opacity-50 disabled:no-underline; }
   .ruled > * + * { border-top: 1px solid var(--border); }
   .inset { box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.08); }
 }

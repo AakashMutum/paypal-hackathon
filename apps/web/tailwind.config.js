@@ -16,6 +16,8 @@ export default {
         content: token('text'),
         muted: token('muted'),
         navy: { DEFAULT: token('navy'), on: token('on-navy') },
+        link: token('link'),
+        brand: token('brand'),
         action: { DEFAULT: token('action'), hover: token('action-hover'), on: token('on-action') },
         success: { DEFAULT: token('success'), bg: token('success-bg') },
         warning: { DEFAULT: token('warn'), bg: token('warn-bg') },

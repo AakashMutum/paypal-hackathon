@@ -10,17 +10,19 @@
 :root {
   color-scheme: light;
 
-  --bg: #F7F9FC;
+  --bg: #F5F7FA;
   --surface: #FFFFFF;
-  --surface-2: #F1F5FA;
+  --surface-2: #EDF1F7;
   --border: #E3E8F0;          /* decoration: dividers and card edges */
   --border-strong: #75849B;   /* controls: input and button edges, at least 3:1 on surface */
-  --text: #0A1A33;
-  --muted: #5B6B82;
+  --text: #0B1B33;
+  --muted: #4B5B73;
   --navy: #003087;
   --on-navy: #FFFFFF;
-  --action: #006DDA;          /* adjusted from #0070E0, which was 4.37:1 on surface-2 */
+  --brand: #003087;           /* the wordmark and heading accents: navy in light, near-white in dark */
+  --action: #0070E0;          /* fills: the primary button, the focus ring, active marks */
   --action-hover: #005AC4;
+  --link: #0062C8;            /* text links: #0070E0 is below 4.5:1 on the page background */
   --on-action: #FFFFFF;
   --success: #067647;
   --success-bg: #ECFDF3;
@@ -28,12 +30,12 @@
   --warn-bg: #FEF0C7;
   --danger: #B42318;
   --danger-bg: #FEE4E2;
-  --focus: #006DDA;
+  --focus: #0070E0;
   --overlay: rgba(10, 26, 51, 0.45);
 
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 12px;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 14px;
 
   --space-1: 4px;
   --space-2: 8px;
@@ -70,8 +72,10 @@
   --muted: #8EA0BC;
   --navy: #123A8F;
   --on-navy: #FFFFFF;
+  --brand: #EAF0FA;
   --action: #4C9AFF;
   --action-hover: #7DB5FF;
+  --link: #6FAEFF;
   --on-action: #0A0F1C;
   --success: #32D583;
   --success-bg: #0B2E1F;
@@ -99,8 +103,10 @@
     --muted: #8EA0BC;
     --navy: #123A8F;
     --on-navy: #FFFFFF;
+    --brand: #EAF0FA;
     --action: #4C9AFF;
     --action-hover: #7DB5FF;
+    --link: #6FAEFF;
     --on-action: #0A0F1C;
     --success: #32D583;
     --success-bg: #0B2E1F;

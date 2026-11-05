@@ -48,10 +48,12 @@ export function contrast(a: string, b: string): number {
 const PAIRS: Array<[string, string, number]> = [
   ['text', 'bg', 4.5], ['text', 'surface', 4.5], ['text', 'surface-2', 4.5],
   ['muted', 'bg', 4.5], ['muted', 'surface', 4.5], ['muted', 'surface-2', 4.5],
-  ['action', 'bg', 4.5], ['action', 'surface', 4.5], ['action', 'surface-2', 4.5],
+  // Fills (the primary button, the focus ring) are UI colour; text links use --link and need the text ratio.
+  ['action', 'surface', 3], ['action', 'bg', 3], ['action', 'surface-2', 3],
+  ['link', 'bg', 4.5], ['link', 'surface', 4.5], ['link', 'surface-2', 4.5],
   ['action-hover', 'surface', 4.5], ['action-hover', 'bg', 4.5],
   ['on-action', 'action', 4.5], ['on-action', 'action-hover', 4.5],
-  ['on-navy', 'navy', 4.5],
+  ['on-navy', 'navy', 4.5], ['brand', 'surface', 4.5], ['brand', 'bg', 4.5],
   ['success', 'success-bg', 4.5], ['success', 'surface', 4.5], ['success', 'bg', 4.5],
   ['warn', 'warn-bg', 4.5], ['warn', 'surface', 4.5], ['warn', 'bg', 4.5],
   ['danger', 'danger-bg', 4.5], ['danger', 'surface', 4.5], ['danger', 'bg', 4.5],
@@ -86,9 +88,18 @@ test('both themes define the same colour tokens', () => {
 });
 
 test('the starting palette values are the specified ones', () => {
-  assert.equal(light.bg, '#F7F9FC');
+  assert.equal(light.bg, '#F5F7FA');
+  assert.equal(light.surface, '#FFFFFF');
+  assert.equal(light.border, '#E3E8F0');
+  assert.equal(light.text, '#0B1B33');
+  assert.equal(light.muted, '#4B5B73');
   assert.equal(light.navy, '#003087');
-  assert.equal(light.action, '#006DDA'); // #0070E0 failed AA on surface-2 (4.37:1)
+  assert.equal(light.action, '#0070E0');
+  assert.equal(light['action-hover'], '#005AC4');
+  assert.equal(light.focus, '#0070E0');
+  assert.equal(light.success, '#067647');
+  assert.equal(light.warn, '#B54708');
+  assert.equal(light.danger, '#B42318');
   assert.equal(dark.bg, '#0A0F1C');
   assert.equal(dark.action, '#4C9AFF');
 });
