@@ -103,13 +103,15 @@ export async function registryLookup(by: RegistryField, value: string): Promise<
   if (backend.mode === 'database') {
     const column = by === 'name' ? 'lower(claimed_name)' : by === 'domain' ? 'lower(domain)' : 'lower(merchant_id)';
     const res = await query<MerchantRow>(`SELECT * FROM merchant_records WHERE ${column} = $1 LIMIT 5`, [by === 'domain' ? cleanDomain(q) : q]);
-    return res.rows.map(fromRow);
+    // DB table may not be seeded yet — fall through to the in-memory catalog so demo
+    // stores are always found even without running migrations + seed scripts.
+    if (res.rows.length > 0) return res.rows.map(fromRow);
   }
   seedMemory();
   const out: RegistryMerchant[] = [];
   for (const m of memory.values()) {
     const hit =
-      (by === 'name' && m.brandNames.some((n) => n.toLowerCase() === q)) ||
+      (by === 'name' && (m.brandNames.some((n) => n.toLowerCase() === q) || m.legalName.toLowerCase() === q)) ||
       (by === 'merchantId' && m.merchantId.toLowerCase() === q) ||
       (by === 'domain' && m.domain === cleanDomain(q));
     if (hit) out.push(m);

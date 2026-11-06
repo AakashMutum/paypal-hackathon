@@ -131,7 +131,7 @@ export function loadConfig(overrides: DeepPartial<InvestigatorAgentConfig> = {})
   const candidate: InvestigatorAgentConfig = {
     maxToolCalls: maxFollowUps,
     maxFollowUps,
-    timeoutMs: readNumber('AGENT_TIMEOUT_MS', 12000),
+    timeoutMs: readNumber('AGENT_TIMEOUT_MS', 25000),
     confidenceThreshold: readNumber('AGENT_CONF_THRESHOLD', 0.7),
     memoryMatchMin: readNumber('MEMORY_MATCH_MIN', 0.75),
     baselineCountsTowardCap: readFlag('BASELINE_COUNTS_TOWARD_CAP', false),
