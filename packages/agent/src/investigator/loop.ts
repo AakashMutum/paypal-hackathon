@@ -30,7 +30,7 @@ import { MAX_CALLS_PER_TURN, MAX_TURNS, TurnSchema, type ToolCall } from './prot
 
 export const INVESTIGATOR_TIMEOUT_MS = 3000;
 export const INVESTIGATOR_MAX_TOKENS = 400;
-export const MIN_TURN_WINDOW_MS = 3200;
+export const MIN_TURN_WINDOW_MS = 4500;
 export const MAX_STATE_EVIDENCE = 12;
 
 export interface InvestigationState extends FollowUpState {

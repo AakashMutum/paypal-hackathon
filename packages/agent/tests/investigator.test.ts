@@ -164,7 +164,7 @@ test('compare_offers is capped at two uses', async () => {
   assert.ok(result.trace.some((step) => step.result === 'rejected: usage_limit'));
 });
 
-test('no turn starts when less than 3.2 seconds remain', async () => {
+test('no turn starts when less than 4.5 seconds remain', async () => {
   const llm = new FakeLlm([finish()]);
   const result = await runInvestigatorAgentDetailed(scenarioB.request, depsFor(scenarioB, {}, llm), {
     timeoutMs: 3000,

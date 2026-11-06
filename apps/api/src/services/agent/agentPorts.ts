@@ -45,10 +45,24 @@ import { registryLookup } from '../registry/registry.service.js';
 export type SignalsMode = 'replay' | 'live' | 'auto';
 export type LlmMode = 'live' | 'replay' | 'record' | 'none';
 
-function isPlaceholder(value: string | undefined): boolean {
-  if (!value) return true;
-  const v = value.trim().toLowerCase();
-  return v === '' || v.startsWith('your_') || v.includes('.example') || v === 'your_llm_api_key';
+/** Exact placeholder strings from .env.example and render.yaml, besides anything starting with "your_". */
+const PLACEHOLDERS = new Set(['changeme', 'change_me', 'replace_me', 'https://your-elastic-deployment.example']);
+
+/**
+ * True for a value that was copied from an example file and never filled in: empty, "your_...", or
+ * one of the exact known placeholder strings. Real text that merely contains ".example" is not one.
+ */
+export function isPlaceholder(value: string | undefined): boolean {
+  const v = (value ?? '').trim().toLowerCase();
+  return v === '' || v.startsWith('your_') || PLACEHOLDERS.has(v);
+}
+
+/** The environment for the pattern store: a copy without placeholder Elastic settings. */
+export function memoryEnv(env: NodeJS.ProcessEnv = process.env): NodeJS.ProcessEnv {
+  const copy = { ...env };
+  if (isPlaceholder(copy.ELASTIC_URL)) delete copy.ELASTIC_URL;
+  if (isPlaceholder(copy.ELASTIC_API_KEY)) delete copy.ELASTIC_API_KEY;
+  return copy;
 }
 
 export function signalsMode(env: NodeJS.ProcessEnv = process.env): SignalsMode {
@@ -66,15 +80,15 @@ type LlmKeySource = 'LLM_API_KEY' | 'GEMINI_API_KEY' | 'none';
 function llmApiKey(env: NodeJS.ProcessEnv): { key: string; source: LlmKeySource } {
   for (const name of ['LLM_API_KEY', 'GEMINI_API_KEY'] as const) {
     const value = env[name]?.trim();
-    if (value) return { key: value, source: name };
+    if (value && !isPlaceholder(value)) return { key: value, source: name };
   }
   return { key: '', source: 'none' };
 }
 
 export function llmMode(env: NodeJS.ProcessEnv = process.env): LlmMode {
   const raw = env.LLM_MODE?.trim().toLowerCase();
-  const hasKey = Boolean(env.LLM_API_KEY?.trim()) && !isPlaceholder(env.LLM_API_KEY);
-  const hasKey = llmApiKey(env).key.length > 0;
+  const key = llmApiKey(env).key;
+  const hasKey = key.length > 0 && !isPlaceholder(key);
   if (raw === 'none') return 'none';
   if (raw === 'mock' || raw === 'replay') return 'replay';
   if (raw === 'record' || raw === 'live') {
@@ -84,7 +98,7 @@ export function llmMode(env: NodeJS.ProcessEnv = process.env): LlmMode {
     }
     return raw;
   }
-  return 'none';
+  return hasKey ? 'live' : 'none';
 }
 
 export interface LlmInfo {
@@ -358,16 +372,6 @@ export function setCustomMemoryFetch(fn: typeof fetch | null): void {
 
 export function getPatternStore(): Promise<PatternStore> {
   patternStore ??= (async () => {
-    const env = { ...process.env };
-    if (isPlaceholder(env.ELASTIC_URL) || isPlaceholder(env.ELASTIC_API_KEY)) {
-      delete env.ELASTIC_URL;
-      delete env.ELASTIC_API_KEY;
-    }
-    const store = await createPatternStore({ env });
-    if (store instanceof ElasticPatternStore) {
-      // The in-memory store loads its seeds itself; Elasticsearch gets them once, when empty.
-      await store.ensureIndex();
-      if ((await store.size()) === 0) await loadSeeds(store);
     try {
       const requested = process.env.MEMORY_MODE?.trim().toLowerCase();
       const inTest = Boolean(process.env.NODE_TEST_CONTEXT);
@@ -376,7 +380,7 @@ export function getPatternStore(): Promise<PatternStore> {
       const useFile = requested === 'file' || (!inTest && requested !== 'memory' && requested !== 'elastic');
       const filePath = process.env.MEMORY_FILE?.trim() || join(process.cwd(), '.cache', 'trustora-memory.json');
       const store = await createPatternStore({
-        env: process.env,
+        env: memoryEnv(process.env),
         fetchImpl: customMemoryFetch ?? undefined,
         ...(useFile ? { filePath } : {}),
         seed: true,
