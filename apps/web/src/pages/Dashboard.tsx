@@ -1,83 +1,114 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { Globe, BadgeCheck, Flag, ShieldAlert, ScanLine, FileSearch, Zap, Building2, Mail, Activity, ShieldCheck, Radar } from 'lucide-react';
+import { Activity, ArrowRight, ListChecks, ScanLine } from 'lucide-react';
 import { useInvestigations } from '../hooks/useOrderPolling';
-import { useApp } from '../context/OrderStateContext';
-import { Pill, RiskBadge, Switch } from '../components/ui';
-import { cn, telemetry } from '../lib/format';
+import { usePageTitle } from '../hooks/usePageTitle';
+import { useSlowLoading } from '../hooks/useSlowLoading';
+import { Icon, Skeleton, Stat, VerdictBadge, Badge, WakeNote } from '../components/ui';
+import { ClaimedVsActual } from '../components/ClaimedVsActual';
+import { cn, money, telemetry } from '../lib/format';
+import { dashboardMetrics } from '../lib/metrics';
+import { radarMessage } from '../lib/explain';
+import { displayBrand, formatDateTime, scoreText, VERDICT_WORDS } from '../lib/labels';
+import { STORES } from '../data/stores';
 
 export default function Dashboard() {
-  const { list } = useInvestigations(3000);
-  const { protection, setProtection, toast } = useApp();
+  usePageTitle('Overview');
+  const { list, loading, error } = useInvestigations(3000);
+  const slow = useSlowLoading(loading);
   const nav = useNavigate();
+  const metrics = dashboardMetrics(list);
   const done = list.filter(i => i.status === 'COMPLETE');
-  const flagged = done.filter(i => i.verdict !== 'ALLOW');
-  const stats = [
-    { l: 'Websites Checked', v: 139 + list.length, icon: Globe, sub: <span className="text-electric font-mono text-xs">Demo figures</span> },
-    { l: 'Allowed Sites', v: 97 + done.filter(i => i.verdict === 'ALLOW').length, icon: BadgeCheck, sub: <span className="text-muted text-xs">Allowed by Guardian</span> },
-    { l: 'Suspicious Sites', v: 16 + flagged.length, icon: Flag, sub: <Pill tone="info">Flagged</Pill> },
-    { l: 'Prevented Threats', v: 4 + done.filter(i => i.verdict === 'PAUSE').length, icon: ShieldAlert, sub: <span className="mono-label !text-bad">Capture paused</span> },
-  ];
-  const defended = 4620.45 + flagged.filter(i => i.captureState !== 'CAPTURED').reduce((s, i) => s + i.price, 0);
-  const radar = flagged[0];
-  const [whole, cents] = defended.toFixed(2).split('.');
-  return <>
-    <section>
-      <p className="mono-label !text-electric">Active session • ID #8849-DF</p>
-      <h1 className="text-3xl font-bold mt-1">Welcome, Alex</h1>
-      <p className="text-muted text-sm mt-1">TrustOra protection {protection ? 'enabled' : 'paused'} (demo switch; the API screens every order)</p>
-    </section>
+  const flagged = done.filter(i => i.verdict === 'WARN' || i.verdict === 'PAUSE');
+  const latest = flagged[0];
+  const warnCount = done.filter(i => i.verdict === 'WARN').length;
+  const activity = telemetry(list);
 
-    <section className="rounded-xl bg-navy text-white p-5 shadow-l2">
-      <div className="flex justify-between items-start">
-        <Pill tone="cyan" pulse className="!bg-white/5">GUARDIAN: {protection ? 'ON' : 'OFF'}</Pill>
-        <span className="pill border-white/20 text-white/80">DEMO</span></div>
-      <p className="text-sm text-white/60 mt-4">Sample amount held or paused</p>
-      <div className="flex items-end justify-between gap-3 mt-1">
-        <div className="text-4xl font-bold font-mono">${Number(whole).toLocaleString()}<span className="text-lg text-white/60">.{cents} (demo)</span></div>
-        <span className="pill border-white/15 text-white/80 !h-9 px-3"><ShieldCheck size={14} />Demo data</span></div>
-      <div className="mt-5 rounded-lg bg-white/5 p-3 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3"><Zap size={18} className="text-accent" /><div><div className="text-sm font-semibold">Pre-Payment Intervention</div><div className="text-xs text-white/60">Investigates before capture</div></div></div>
-        <Switch on={protection} label="Pre-payment intervention" onChange={b => { setProtection(b); toast(b ? 'Switch on' : 'Switch off. This only changes this screen: the API still screens every order', b ? 'ok' : 'bad'); }} /></div>
-    </section>
-
-    <section className="flex gap-2 overflow-x-auto -mx-4 px-4 pb-1">
-      <button className="btn-direct shrink-0" onClick={() => nav('/scanner')}><ScanLine size={16} />Scan URL</button>
-      <button className="btn-secondary shrink-0" onClick={() => nav('/onboarding')}><BadgeCheck size={16} />Register Merchant</button>
-      <button className="btn-secondary shrink-0" onClick={() => nav('/engine')}><FileSearch size={16} />Inspect</button>
-    </section>
-
-    <section className="grid grid-cols-2 md:grid-cols-4 gap-3">{stats.map(s => <div key={s.l} className="card !p-4">
-      <div className="flex justify-between"><span className="mono-label">{s.l}</span><s.icon size={16} className="text-muted" /></div>
-      <div className="text-3xl font-semibold font-mono my-1">{s.v}</div>{s.sub}</div>)}</section>
-
-    <section className="card">
-      <div className="flex items-center justify-between"><h2 className="font-semibold flex items-center gap-2"><Radar size={18} className="text-electric" />Live Consistency Radar</h2>
-        {radar && <Pill tone={radar.verdict === 'PAUSE' ? 'bad' : 'warn'}>{radar.verdict === 'PAUSE' ? 'INTERCEPTED' : 'FLAGGED'}</Pill>}</div>
-      {radar ? <>
-        <p className="text-sm text-muted my-2">A checkout was flagged because the claimed merchant and the payee do not line up.</p>
-        <div className="rounded-lg bg-tint p-3 space-y-2">
-          <div className="bg-white rounded p-3 flex justify-between items-center"><div><div className="mono-label">Browsed domain</div><div className="font-mono text-sm font-semibold break-all">{radar.domain}</div></div><span className="pill border-ink/10 font-mono">Site</span></div>
-          <div className="text-center"><Pill tone="bad">RISK SCORE {Math.round(radar.riskScore)}</Pill></div>
-          <div className="bg-white rounded p-3 flex justify-between items-center"><div><div className="mono-label">Claimed storefront</div><div className="font-mono text-sm font-semibold">{radar.claimedBrand}</div></div><Pill tone="bad">CLAIMED</Pill></div>
-          <div className="bg-bad-bg rounded p-3 flex justify-between items-center"><div><div className="mono-label !text-bad-deep">Actual recipient account</div><div className="font-mono text-sm font-semibold text-bad-deep">{radar.payeeName}</div></div><span className="text-xs font-mono text-bad-deep">Payee</span></div>
+  return <div className="space-y-8">
+    {/* Hero */}
+    <section className="relative isolate overflow-hidden rounded-2xl bg-navy p-8 md:p-12 text-white shadow-2">
+      <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width=%2260%22 height=%2260%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Ccircle cx=%2230%22 cy=%2230%22 r=%222%22 fill=%22%234c9aff%22 fill-opacity=%220.15%22/%3E%3C/svg%3E')] opacity-30" />
+      <div className="relative z-10 max-w-3xl">
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-white/20 bg-white/10 text-xs font-medium text-white/90 mb-4">Trustworthy checkout scanning</span>
+        <h1 className="text-3xl font-bold tracking-tight leading-tight mb-4">Who would this checkout really pay?</h1>
+        <p className="text-white/80 text-base lg:text-xl mb-8 max-w-xl leading-relaxed">
+          TrustOra verifies who is behind a checkout, compares storefront claims with public records,
+          and helps identify suspicious receiving accounts before money is captured.
+        </p>
+        <div className="flex flex-wrap gap-3">
+          <button className="btn-xl bg-action hover:bg-action-hover" onClick={() => nav('/scanner')}>
+            <Icon icon={ScanLine} size={16} className="shrink-0" /> Check a store</button>
+          <Link to="/stores" className="btn-xl border border-white/30 hover:bg-white/10">Explore demo cases</Link>
         </div>
-        <div className="flex justify-between text-xs mt-3 text-muted"><span>Funds are not captured without an ALLOW or an acknowledged warning</span><Link className="text-electric font-semibold" to={`/engine/${radar.id}`}>Audit Trail</Link></div>
-      </> : <p className="text-sm text-muted mt-2">No mismatches right now. Run a scan to see the radar in action.</p>}
+      </div>
     </section>
 
-    <section>
-      <div className="flex justify-between items-baseline mb-2"><h2 className="font-semibold text-lg">Recent Assessments</h2><Link to="/history" className="text-electric text-sm font-semibold">View All ({list.length})</Link></div>
-      <div className="space-y-3">{list.slice(0, 3).map(i => <button key={i.id} onClick={() => nav(`/engine/${i.id}`)} className="card !p-4 w-full text-left hover:shadow-l2 hover:border-electric/20 transition">
-        <div className="flex justify-between items-start gap-2"><div><div className="font-mono font-semibold text-sm break-all">{i.domain}</div><div className="text-xs text-muted">Claimed: {i.claimedBrand}</div></div><RiskBadge verdict={i.verdict} /></div>
-        <div className="mt-3 rounded bg-tint p-2 flex justify-between items-center text-xs font-mono">
-          <span className="flex items-center gap-2 min-w-0">{i.payeeName.includes('@') ? <Mail size={14} /> : <Building2 size={14} />}<span className="truncate">{i.payeeName}</span></span>
-          <span className={cn('font-semibold', i.verdict === 'PAUSE' ? 'text-bad' : i.verdict === 'ALLOW' ? 'text-electric' : 'text-warn')}>{i.verdict === 'PAUSE' ? 'CAPTURE PAUSED' : i.verdict === 'ALLOW' ? 'ALLOWED' : i.verdict === 'WARN' ? `${i.riskScore}% Anomaly` : '…'}</span></div></button>)}</div>
+    {/* Wake note + error */}
+    <WakeNote show={slow} />
+    {error && !loading && <p role="alert" className="card text-sm text-danger border-danger border">Could not load investigations: {error}</p>}
+
+    {/* Metrics */}
+    <section aria-label="Totals" className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <Stat label="Websites checked" value={metrics.websitesChecked} hint="Completed investigations" loading={loading} />
+      <Stat label="Cleared" value={metrics.allowed} hint="ALLOW · Cleared" loading={loading} />
+      <Stat label="Needs review" value={warnCount} hint="WARN · Needs review" loading={loading} />
+      <Stat label="Held" value={metrics.prevented} hint={metrics.defendedAmount > 0 ? `PAUSE · ${money(metrics.defendedAmount)} flagged and not captured` : 'PAUSE · Never captured'} loading={loading} />
     </section>
 
-    <section className="card">
-      <div className="flex justify-between"><h2 className="font-semibold flex items-center gap-2"><Activity size={18} className="text-electric" />Recent activity</h2><span className="mono-label !text-electric">This session</span></div>
-      <ul className="mt-3 space-y-4">{telemetry(list).map(t => <li key={t.id} className="flex gap-3"><span className={cn('mt-1.5 w-2 h-2 rounded-full shrink-0', t.tone === 'bad' ? 'bg-bad' : t.tone === 'warn' ? 'bg-warn' : t.tone === 'info' ? 'bg-electric' : 'bg-muted')} />
-        <div><div className="flex justify-between gap-4 text-sm font-semibold"><span>{t.title}</span><span className="font-mono text-xs text-muted">{t.time}</span></div><p className="text-sm text-muted">{t.text}</p></div></li>)}</ul>
+    {/* Latest flagged investigation */}
+    <section className="space-y-3" aria-label="Latest flagged investigation">
+      <h2 className="font-semibold">Latest flagged investigation</h2>
+      {loading ? <Skeleton className="h-48 w-full" /> : latest ? <>
+        <div className="rounded-xl bg-surface-2 border border-line p-4"><p className="text-sm text-muted">{radarMessage(latest)}</p>
+          <ClaimedVsActual inv={latest} />
+          <div className="flex flex-wrap items-center gap-3 mt-4 text-sm"><VerdictBadge verdict={latest.verdict} /><span className="text-muted">{scoreText(latest.verdict, latest.riskScore)}</span>
+            <Link className="text-action font-semibold underline" to={`/investigations/${latest.id}`}>Open this investigation</Link></div></div>
+      </> : <EmptyStateWithIcon />}
     </section>
-  </>;
+
+    {/* Two column layout: recent investigations + demo stores */}
+    <div className="grid gap-6 lg:grid-cols-[1fr_360px] items-start">
+      <div className="space-y-6 min-w-0">
+        <section className="space-y-3" aria-label="Recent investigations">
+          <div className="flex items-baseline justify-between"><h2 className="font-semibold">Recent investigations</h2><Link to="/investigations" className="text-action text-sm font-semibold">View all ({list.length})</Link></div>
+          {loading ? <div className="space-y-3" aria-busy="true"><Skeleton className="h-16 w-full" /><Skeleton className="h-16 w-full" /></div>
+            : list.length === 0 ? <EmptyStateWithIcon />
+              : <ul className="card !p-0 divide-y divide-line">{list.slice(0, 5).map(i => <li key={i.id}>
+                <Link to={`/investigations/${i.id}`} className="p-4 flex justify-between items-center gap-3 hover:bg-surface-2">
+                  <div className="min-w-0"><div className="font-mono text-sm font-semibold truncate">{i.domain}</div>
+                    <div className="text-xs text-muted truncate">{displayBrand(i.claimedBrand, i.domain)} → {i.payeeName ?? 'Payee not supplied'} · {formatDateTime(i.createdAt)}</div></div>
+                  <VerdictBadge verdict={i.verdict} /></Link></li>)}</ul>}
+        </section>
+      </div>
+
+      <aside className="space-y-6 min-w-0">
+        <section className="card xl p-5 space-y-4" aria-label="Try the demo in 3 steps">
+          <div className="flex items-baseline gap-2"><h2 className="font-semibold">Try the demo</h2><span className="mono-label bg-tint px-2 py-1 rounded">3 fictional stores</span></div>
+          <ol className="space-y-3 text-sm">{STORES.map((s, n) => <li key={s.id} className="flex gap-3">
+            <span className="font-mono text-xs text-muted pt-0.5 w-4">{n + 1}.</span>
+            <div className="min-w-0 space-y-1"><Link className="text-action font-semibold underline" to={`/store/${s.id}`}>{s.name}</Link>
+              <div><Badge tone={VERDICT_WORDS[s.expected].tone}>Expect {s.expected} · {VERDICT_WORDS[s.expected].subtitle}</Badge></div></div></li>)}</ol>
+          <p className="text-xs text-muted">Open a store, add the item and check out. The stores are fictional.</p>
+        </section>
+
+        <section className="card xl p-5 space-y-4" aria-label="Recent activity">
+          <h2 className="font-semibold flex items-center gap-2"><Icon icon={Activity} size={20} />Recent activity</h2>
+          {loading ? <Skeleton className="h-16 w-full" /> : activity.length === 0
+            ? <p className="text-sm text-muted">No completed investigations yet.</p>
+            : <ul className="space-y-4">{activity.map(t => <li key={t.id} className="flex gap-3">
+              <span aria-hidden="true" className={cn('mt-1.5 w-2 h-2 rounded-full shrink-0', t.tone === 'bad' ? 'bg-danger' : t.tone === 'warn' ? 'bg-warning' : 'bg-action')} />
+              <div><div className="flex justify-between gap-4 text-sm font-semibold"><span>{t.title}</span><span className="font-mono text-xs text-muted">{t.time}</span></div><p className="text-sm text-muted">{t.text}</p></div></li>)}</ul>}
+          <Link to="/investigations" className="inline-flex items-center gap-1 text-sm text-action font-semibold">All investigations<Icon icon={ArrowRight} size={16} /></Link>
+        </section>
+      </aside>
+    </div>
+  </div>;
+}
+
+function EmptyStateWithIcon() {
+  return <div className="card flex flex-col items-center justify-center p-12 text-center" role="status">
+    <ListChecks className="h-12 w-12 text-muted mb-3" aria-hidden="true" />
+    <h3 className="font-semibold">Nothing flagged yet</h3>
+    <p className="text-sm text-muted">Scan a website or buy from a demo store. Anything that needs review or is held shows up here.</p>
+    <Link to="/scanner" className="mt-4 inline-flex items-center gap-1 text-sm text-action font-semibold">Scan a site<Icon icon={ArrowRight} size={16} /></Link>
+  </div>;
 }

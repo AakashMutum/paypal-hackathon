@@ -115,6 +115,10 @@ test('an ambiguous case runs the investigator and then the writer', async () => 
       data: { action: 'finish', why: 'Enough evidence.' },
     },
     {
+      match: (request) => request.schemaName === 'PromotionalLanguage',
+      data: { tactics: [] },
+    },
+    {
       match: isWriter,
       data: {
         headline: 'Payment held for review',
@@ -125,7 +129,8 @@ test('an ambiguous case runs the investigator and then the writer', async () => 
 
   const result = await runInvestigatorAgentDetailed(scenarioB.request, depsFor(scenarioB, {}, llm));
 
-  assert.equal(llm.calls.length, 2);
+  // The investigator turn, the promotional-language read and the writer.
+  assert.equal(llm.calls.length, 3);
   assert.equal(result.explanation.headline, 'Payment held for review');
   assert.equal(result.verdict.score, 61);
   assert.equal(result.degraded, false);

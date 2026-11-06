@@ -6,6 +6,7 @@ import type {
   PatternQuery,
   PatternStore,
   PatternStoreOptions,
+  ResolvedPatternOptions,
 } from './types.js';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -31,7 +32,7 @@ export function tokenSimilarity(a: string, b: string): number {
   return shared / (left.size + right.size - shared);
 }
 
-export function resolvePatternOptions(options: PatternStoreOptions = {}): Required<PatternStoreOptions> {
+export function resolvePatternOptions(options: PatternStoreOptions = {}): ResolvedPatternOptions {
   return {
     now: options.now ?? Date.now,
     ttlDays: options.ttlDays ?? 180,
@@ -66,7 +67,7 @@ export function mergeSightings(existing: PastInvestigation, incoming: PastInvest
 
 export class InMemoryPatternStore implements PatternStore {
   private readonly records = new Map<string, PastInvestigation>();
-  private readonly options: Required<PatternStoreOptions>;
+  private readonly options: ResolvedPatternOptions;
 
   constructor(options: PatternStoreOptions = {}) {
     this.options = resolvePatternOptions(options);

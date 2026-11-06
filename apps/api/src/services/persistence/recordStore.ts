@@ -1,4 +1,9 @@
 import { getPool, query } from '../../database/connection.js';
+import {
+  openAuditPayload,
+  redactAuditDetail,
+  sealAuditPayload,
+} from './auditPrivacy.js';
 import type { CaptureState, PaymentEvent } from '../investigation/investigation.types.js';
 
 export type RecordKind = 'order' | 'agent_checkout';
@@ -86,7 +91,10 @@ export class MemoryBackend implements RecordBackend {
   }
 
   async addEvent(event: PaymentEvent): Promise<void> {
-    this.eventLog.push(structuredClone(event));
+    this.eventLog.push(structuredClone({
+      ...event,
+      detail: redactAuditDetail(event.detail),
+    }));
   }
 
   async events(investigationId: string): Promise<PaymentEvent[]> {
@@ -147,7 +155,7 @@ function fromDb(r: DbRow): StoredRow {
     ...(r.amount !== null ? { amount: Number(r.amount) } : {}),
     ...(r.currency ? { currency: r.currency } : {}),
     simulated: r.simulated,
-    data: r.data,
+    data: openAuditPayload(r.data) as Record<string, unknown>,
     createdAt: r.created_at.toISOString(),
   };
 }
@@ -175,7 +183,7 @@ export class DatabaseBackend implements RecordBackend {
         row.amount ?? null,
         row.currency ?? null,
         row.simulated,
-        JSON.stringify(row.data),
+        JSON.stringify(sealAuditPayload(row.data)),
         row.createdAt,
       ],
     );
@@ -201,7 +209,13 @@ export class DatabaseBackend implements RecordBackend {
   async addEvent(event: PaymentEvent): Promise<void> {
     await query(
       'INSERT INTO payment_events (investigation_id, from_state, to_state, detail, simulated) VALUES ($1,$2,$3,$4,$5)',
-      [event.investigationId, event.fromState ?? null, event.toState, JSON.stringify(event.detail ?? {}), event.simulated],
+      [
+        event.investigationId,
+        event.fromState ?? null,
+        event.toState,
+        JSON.stringify(sealAuditPayload(redactAuditDetail(event.detail))),
+        event.simulated,
+      ],
     );
   }
 
@@ -214,7 +228,7 @@ export class DatabaseBackend implements RecordBackend {
       investigationId: r.investigation_id,
       ...(r.from_state ? { fromState: r.from_state } : {}),
       toState: r.to_state,
-      detail: r.detail,
+      detail: openAuditPayload(r.detail) as Record<string, unknown>,
       simulated: r.simulated,
     }));
   }

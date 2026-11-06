@@ -24,6 +24,8 @@ import {
   scanBody,
 } from '../validation/schemas.js';
 import { registryAddMerchant } from '../services/registry/registry.service.js';
+import { normalizeMerchantUrl } from '../validation/url.js';
+import { hashPayeeEmail } from '../services/persistence/auditPrivacy.js';
 
 const param = (req: Request, name: string): string => {
   const raw = req.params[name];
@@ -34,6 +36,7 @@ const param = (req: Request, name: string): string => {
 export function publicView(inv: FrontendInvestigation): Omit<FrontendInvestigation, 'orderTokenHash'> {
   const copy: FrontendInvestigation = { ...inv };
   delete copy.orderTokenHash;
+  delete copy.expectedPayeeEmailHash;
   return copy;
 }
 
@@ -46,9 +49,22 @@ export async function scanUrl(req: Request, res: Response, next: NextFunction): 
     const body = parseBody(scanBody, req, res);
     if (!body) return;
 
-    const investigation = await executeMerchantInvestigation({ url: body.url });
+    const url = normalizeMerchantUrl(body.url);
+    if (!url) {
+      sendError(
+        res,
+        400,
+        'INVALID_URL',
+        'Enter a valid website address, for example https://store-name.example/product/123 or store-name.example.',
+      );
+      return;
+    }
+
+    const scanStart = Date.now();
+    const investigation = await executeMerchantInvestigation({ url });
     investigation.simulated = isSimulated();
     investigation.mode = paymentMode();
+    investigation.latencyMs = Date.now() - scanStart;
     await investigationStore.add(investigation);
     res.status(200).json(publicView(investigation));
   } catch (err) {
@@ -111,7 +127,9 @@ export async function createOrder(req: Request, res: Response, next: NextFunctio
 
     const orderToken = newOrderToken();
     investigation.orderTokenHash = hashToken(orderToken);
-    if (profile.sandboxPayee && profile.payeeEmail) investigation.expectedPayeeEmail = profile.payeeEmail;
+    if (profile.sandboxPayee && profile.payeeEmail) {
+      investigation.expectedPayeeEmailHash = hashPayeeEmail(profile.payeeEmail);
+    }
     investigation.simulated = created.simulated;
     investigation.mode = created.mode;
     investigation.captureState = 'PENDING';
@@ -144,7 +162,7 @@ export async function notifyApproval(req: Request, res: Response, next: NextFunc
     // Approving twice must not authorize or capture twice.
     if (inv.captureState === 'PENDING') {
       try {
-        if (await payeeDiffers(inv, { email: inv.expectedPayeeEmail })) {
+        if (await payeeDiffers(inv, { emailHash: inv.expectedPayeeEmailHash })) {
           inv.payeeMismatch = true;
         }
       } catch (error) {

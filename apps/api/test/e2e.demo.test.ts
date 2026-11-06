@@ -30,6 +30,7 @@ let app: Application;
 const original = { ...env };
 
 before(() => {
+  process.env.LLM_MODE = 'none';
   setDatabaseUrl('');
   setPaypalConfig({ paypalClientId: '', paypalClientSecret: '' });
   env.demoAdminToken = '';
@@ -565,17 +566,23 @@ test('an unknown store is decided by evidence, not by words in the domain', asyn
   const b = await request(app).post('/api/scan').send({ url: 'garden-tools-supply.example' });
   assert.equal(a.body.verdict, b.body.verdict);
   assert.equal(a.body.verdict, 'WARN', 'with no evidence a merchant is not cleared');
-  assert.match(a.body.reasons[0], /live signals|enough evidence/i);
+  assert.match(a.body.reasons[0], /live signals|enough evidence|URL safety|rejected/i);
+  assert.equal(a.body.signalAvailability.page, 'unavailable');
 });
 
 test('every investigation carries its provenance and up to three similar past cases', async () => {
   for (const key of Object.keys(STORES) as StoreKey[]) {
     const res = await request(app).post('/api/scan').send({ url: STORES[key].domain });
-    assert.deepEqual(Object.keys(res.body.provenance).sort(), ['llm', 'memory', 'signals', 'signalsMode']);
-    assert.equal(res.body.provenance.signals, 'replay');
+    const provenance = res.body.provenance;
+    for (const required of ['signals', 'llm', 'memory', 'signalsMode', 'llmProvider', 'llmModel', 'llmModels', 'llmKeySource', 'memoryPersistent', 'embeddings']) {
+      assert.ok(required in provenance, `provenance.${required} is present`);
+    }
+    assert.equal(provenance.signals, 'replay');
     assert.ok(Array.isArray(res.body.similarCases) && res.body.similarCases.length <= 3);
     for (const c of res.body.similarCases) {
-      assert.deepEqual(Object.keys(c).sort(), ['decision', 'matchType', 'patternSentence', 'score']);
+      for (const required of ['caseId', 'decision', 'matchType', 'patternSentence', 'score', 'relevance']) {
+        assert.ok(required in c, `similar case ${required} is present`);
+      }
     }
   }
 });
@@ -588,7 +595,8 @@ test('the payee-binding hard rule forces PAUSE whatever the score', async () => 
 
 test('GET /health reports the signals, llm and memory modes the pipeline uses', async () => {
   const res = await request(app).get('/health');
-  assert.equal(res.body.data.modes.signals, 'replay');
+  assert.equal(res.body.data.modes.signals, 'auto');
   assert.equal(res.body.data.modes.llm, 'none');
   assert.equal(res.body.data.modes.memory, 'memory');
+  assert.equal(res.body.data.modes.memoryPersistent, false);
 });

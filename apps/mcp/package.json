@@ -22,6 +22,6 @@
   "dependencies": {
     "@channel3/sdk": "^4.6.0",
     "@modelcontextprotocol/sdk": "^1.32.2",
-    "zod": "^3.25.76"
+    "zod": "^4.6.7"
   }
 }

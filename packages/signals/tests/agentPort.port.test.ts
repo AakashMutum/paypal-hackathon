@@ -1,3 +1,4 @@
+// @brand-check-allow functional real-merchant hostname tests, not demo content.
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { createLocalSignalsPort } from '../src/agentPort/port.js';
@@ -33,6 +34,15 @@ test('getDomainReport maps domain age to agent severities', async () => {
     assert.equal(age.deterministic, true);
     assert.equal((age.data as { ageDays: number }).ageDays, days);
   }
+});
+
+test('getDomainReport carries the registrar name from RDAP when it is present', async () => {
+  const port = createLocalSignalsPort(baseOptions({ rdapDaysAgo: 500, registrar: 'Example Registrar' }));
+  const out = await port.getDomainReport('shop.example', callOpts);
+  const age = out.find((e) => e.type === 'DOMAIN_AGE');
+  assert.ok(age);
+  assert.equal((age.data as { registrar?: string }).registrar, 'Example Registrar');
+  assert.match(age.summary, /Example Registrar/);
 });
 
 test('getDomainReport reports TLS_INVALID only for expired or untrusted certificates', async () => {
@@ -220,6 +230,60 @@ test('an aborted signal stops the page fetch', async () => {
   controller.abort();
   const out = await pending;
   assert.equal(out.visibleText, '');
+});
+
+test('an Amazon bot-check page is marked blocked and is not a lookalike of itself', async () => {
+  const challenge =
+    '<html><head><title>Amazon.in</title></head><body><p>Click the button below to continue shopping</p></body></html>';
+  const port = createLocalSignalsPort(
+    baseOptions(
+      { rdapDaysAgo: 4000, pages: { 'https://www.amazon.in/dp/B08N5WRWNW': challenge } },
+      { knownBrandDomains: ['amazon.in', 'amazon.com'] },
+    ),
+  );
+  const claims = await port.getPageClaims('https://www.amazon.in/dp/B08N5WRWNW', callOpts);
+  assert.equal(claims.pageAccess?.state, 'blocked');
+  assert.equal(claims.pageAccess?.reason, 'bot_check');
+  assert.equal(claims.marketplace?.region, 'IN');
+
+  const report = await port.getDomainReport('amazon.in', callOpts);
+  assert.equal(report.some((e) => e.type === 'LOOKALIKE_DOMAIN'), false);
+});
+
+test('HTTP errors and rate limits are distinguished, never treated as a page', async () => {
+  const respond = (status: number) =>
+    (async () => new Response(status === 204 ? null : 'denied', { status })) as unknown as typeof fetch;
+
+  const forbidden = createLocalSignalsPort(baseOptions({}, { fetchImpl: respond(403) }));
+  const forbiddenClaims = await forbidden.getPageClaims('https://shop.example/', callOpts);
+  assert.equal(forbiddenClaims.pageAccess?.state, 'blocked');
+  assert.equal(forbiddenClaims.pageAccess?.reason, 'access_denied');
+  assert.equal(forbiddenClaims.visibleText, '');
+
+  const limited = createLocalSignalsPort(baseOptions({}, { fetchImpl: respond(429) }));
+  const limitedClaims = await limited.getPageClaims('https://shop.example/', callOpts);
+  assert.equal(limitedClaims.pageAccess?.state, 'blocked');
+  assert.equal(limitedClaims.pageAccess?.reason, 'rate_limited');
+
+  const missing = createLocalSignalsPort(baseOptions({}, { fetchImpl: respond(404) }));
+  const missingClaims = await missing.getPageClaims('https://shop.example/', callOpts);
+  assert.equal(missingClaims.pageAccess?.state, 'unreachable');
+  assert.equal(missingClaims.pageAccess?.reason, 'not_found');
+});
+
+test('structured product price is used for a price comparison when no amount was supplied', async () => {
+  const html = `<html><head><title>Example</title><script type="application/ld+json">
+  {"@type":"Product","name":"Trail jacket","offers":{"price":"18.00","priceCurrency":"USD"}}
+  </script></head><body><p>Trail jacket</p></body></html>`;
+  const port = createLocalSignalsPort(
+    baseOptions({ pages: { 'https://shop.example/item': html } }, { channel3: channel3With(120) }),
+  );
+  const claims = await port.getPageClaims('https://shop.example/item', callOpts);
+  assert.equal(claims.product?.price, 18);
+
+  const [price] = await port.getPriceReport({ claims }, callOpts);
+  assert.equal(price.type, 'PRICE_DEVIATION');
+  assert.equal((price.data as { discountPct: number }).discountPct, 85);
 });
 
 test('fetchPageSection finds the first usual path and caps text', async () => {

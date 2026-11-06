@@ -26,6 +26,8 @@ export interface AgentMemoryHit {
   riskScore: number;
   seed: boolean;
   score?: number;
+  retrieval?: string;
+  embeddingProvider?: string;
 }
 
 export interface AgentMemoryDocument {
@@ -74,6 +76,8 @@ export function asAgentMemoryPort(store: PatternStore): AgentMemoryPort {
         riskScore: hit.riskScore,
         seed: hit.seed,
         score: hit.score,
+        ...(hit.retrieval ? { retrieval: hit.retrieval } : {}),
+        ...(hit.embeddingProvider ? { embeddingProvider: hit.embeddingProvider } : {}),
       }));
     },
 

@@ -8,10 +8,11 @@ import type {
   InvestigationRequest,
   Verdict,
 } from './types.js';
-import { matchIdentity, type IdentityInput } from './identity/matcher.js';
+import { IDENTITY_TIMEOUT_MS, matchIdentity, type IdentityInput } from './identity/matcher.js';
 import { AgentResultSchema, InvestigationRequestSchema } from './types.js';
 import { loadConfig, type DeepPartial, type InvestigatorAgentConfig } from './config.js';
 import { makeClock } from './clock.js';
+import { withModelBudget } from './llm/budget.js';
 import { createIdFactory, type IdFactory } from './evidence/ids.js';
 import { deriveEvidence } from './evidence/derive.js';
 import { runBaseline, type BaselineResult } from './tools/baseline.js';
@@ -36,6 +37,7 @@ import {
   searchMemory,
   writeMemorySafely,
 } from './memory/store.js';
+import { PROMO_TIMEOUT_MS, assessPromotionalLanguage } from './promo/promo.js';
 import { registrableDomain } from './util/domain.js';
 import { FALLBACK_SUMMARY } from './scoring/summary.js';
 import {
@@ -111,6 +113,9 @@ export async function runInvestigatorAgentDetailed(
   const clock = makeClock(config.timeoutMs, now);
   const started = now();
   const ids = createIdFactory();
+  const budgeted =
+    deps.llm && config.modelBudgetMs > 0 ? withModelBudget(deps.llm, config.modelBudgetMs, now) : undefined;
+  const llm = budgeted?.client ?? deps.llm;
 
   try {
     const parsed = InvestigationRequestSchema.safeParse(request);
@@ -142,7 +147,7 @@ export async function runInvestigatorAgentDetailed(
     let investigator: InvestigatorOutcome | undefined;
     if (path === 'AMBIGUOUS') {
       investigator = await runInvestigator(state, deps, ids, clock, {
-        llm: deps.llm,
+        llm,
         maxFollowUps: config.maxFollowUps,
         useLoop: config.features.investigatorLoop,
         signal: clock.signal,
@@ -172,7 +177,7 @@ export async function runInvestigatorAgentDetailed(
       const pattern =
         patternBudget > 0
           ? await writePatternSentence(facts, {
-              llm: deps.llm,
+              llm,
               timeoutMs: patternBudget,
               forbiddenTerms,
               signal: clock.signal,
@@ -193,20 +198,41 @@ export async function runInvestigatorAgentDetailed(
         sentence: pattern.sentence,
         usedLlm: pattern.usedLlm,
         evidence: buildMemoryEvidence(hits, ids, config.memoryMatchMin),
+        hits,
       };
     })();
 
     const identityTask =
       path === 'AMBIGUOUS'
         ? matchIdentity(buildIdentityInput(state, parsed.data), ids, {
-            llm: deps.llm,
+            llm,
             useLlm: config.features.identityLlm,
-            timeoutMs: 2500,
+            timeoutMs: IDENTITY_TIMEOUT_MS,
             signal: clock.signal,
           })
         : Promise.resolve(undefined);
 
-    const [patternResult, identityResult] = await Promise.all([patternTask, identityTask]);
+    // Pressure and promotional wording is read in parallel with identity and the pattern sentence.
+    const promoBudget = clock.step(PROMO_TIMEOUT_MS);
+    const promoTask =
+      path === 'AMBIGUOUS' && config.features.promoLanguage && promoBudget > 0
+        ? assessPromotionalLanguage(
+            { visibleText: state.safeClaims?.visibleText, existing: state.evidence },
+            ids,
+            { llm, timeoutMs: promoBudget, signal: clock.signal },
+          )
+        : Promise.resolve(undefined);
+
+    const [patternResult, identityResult, promoResult] = await Promise.all([
+      patternTask,
+      identityTask,
+      promoTask,
+    ]);
+
+    if (promoResult) {
+      if (promoResult.usedLlm) state.llmCalls += 1;
+      if (promoResult.evidence.length > 0) state.evidence.push(...promoResult.evidence);
+    }
 
     if (patternResult) {
       patternSentence = patternResult.sentence;
@@ -220,7 +246,7 @@ export async function runInvestigatorAgentDetailed(
       if (identityResult.result) identityMatch = identityResult.result;
     }
 
-    if (identityResult || patternResult) {
+    if (identityResult || patternResult || promoResult) {
       score = scoreAndDecide(state.evidence, scoreOptions);
     }
 
@@ -244,8 +270,19 @@ export async function runInvestigatorAgentDetailed(
           confidence: score.confidence,
           evidence: ordered.slice(0, MAX_WRITER_EVIDENCE),
           hardRules: score.hardRulesTriggered,
+          ...(patternResult && patternResult.hits.length > 0
+            ? {
+                retrievedCases: patternResult.hits.slice(0, 3).map((hit) => ({
+                  caseId: hit.id,
+                  patternText: hit.patternText,
+                  decision: hit.decision,
+                  score: hit.score ?? 0,
+                  ...(hit.retrieval ? { retrieval: hit.retrieval } : {}),
+                })),
+              }
+            : {}),
         },
-        { llm: deps.llm, timeoutMs: writerBudget, signal: clock.signal }
+        { llm, timeoutMs: writerBudget, signal: clock.signal }
       );
 
       const checked = checkExplanation({
@@ -253,6 +290,7 @@ export async function runInvestigatorAgentDetailed(
         evidence,
         decision: score.decision,
         hardRules: score.hardRulesTriggered,
+        allowedCaseIds: patternResult?.hits.map((hit) => hit.id) ?? [],
       });
 
       if (writer.attempted) state.llmCalls += 1;
@@ -260,18 +298,22 @@ export async function runInvestigatorAgentDetailed(
       explanationFallback = writer.attempted && (!writer.ok || checked.usedTemplate);
     }
 
+    const modelBudget = budgeted?.summary();
     let degraded =
       baseline.failedBaseline > 0 ||
       Boolean(investigator?.degraded) ||
-      Boolean(identityResult?.degraded);
+      Boolean(identityResult?.degraded) ||
+      Boolean(modelBudget?.exhausted);
     let fallbackReason =
       baseline.failedBaseline > 0
         ? 'tool_unavailable'
-        : investigator?.degraded
-          ? 'investigator_failed'
-          : identityResult?.degraded
-            ? 'identity_llm_failed'
-            : undefined;
+        : modelBudget?.exhausted
+          ? 'model_budget'
+          : investigator?.degraded
+            ? 'investigator_failed'
+            : identityResult?.degraded
+              ? 'identity_llm_failed'
+              : undefined;
 
     if (explanationFallback) {
       degraded = true;
@@ -305,6 +347,7 @@ export async function runInvestigatorAgentDetailed(
         llmCalls: state.llmCalls,
         followUps: state.followUps,
         failedBaseline: baseline.failedBaseline,
+        ...(modelBudget ? { modelBudget } : {}),
       },
       degraded,
       ...(fallbackReason ? { fallbackReason } : {}),

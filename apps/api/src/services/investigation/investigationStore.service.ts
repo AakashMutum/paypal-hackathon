@@ -1,4 +1,5 @@
 import { getBackend, type StoredRow } from '../persistence/recordStore.js';
+import { redactInvestigationForStorage } from '../persistence/auditPrivacy.js';
 import type { FrontendInvestigation } from './investigation.types.js';
 
 export type { FrontendInvestigation } from './investigation.types.js';
@@ -11,10 +12,10 @@ function toRow(inv: FrontendInvestigation): StoredRow {
     ...(inv.paypalOrderId ? { paypalOrderId: inv.paypalOrderId } : {}),
     ...(inv.verdict ? { verdict: inv.verdict } : {}),
     captureState: inv.captureState,
-    amount: inv.price,
+    ...(inv.price !== null ? { amount: inv.price } : {}),
     currency: inv.currency,
-    simulated: inv.simulated ?? true,
-    data: inv as unknown as Record<string, unknown>,
+    simulated: inv.simulated ?? false,
+    data: redactInvestigationForStorage(inv) as unknown as Record<string, unknown>,
     createdAt: inv.createdAt,
   };
 }

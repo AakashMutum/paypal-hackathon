@@ -42,7 +42,9 @@ export function templatePhraseFor(ev: Evidence): string {
     case 'DOMAIN_AGE': {
       const ageDays = readNumber(data.ageDays);
       if (ageDays === undefined || ageDays < 0) return ev.summary;
-      return `The website was registered only ${Math.floor(ageDays)} days ago.`;
+      return ageDays < 90
+        ? `The website was registered only ${Math.floor(ageDays)} days ago.`
+        : `The website has been registered for ${Math.floor(ageDays)} days.`;
     }
 
     case 'PRICE_DEVIATION': {
@@ -100,10 +102,16 @@ export function identitySentence(overall: number | undefined): string {
 export function templateExplanation(evidence: readonly Evidence[] | undefined, decision: Decision): Explanation | null {
   if (!Array.isArray(evidence) || evidence.length === 0) return null;
 
+  // The generic "identity, age and price are consistent" sentence is only accurate when a
+  // payee binding actually matched. A scan without a payee must list what was checked instead.
+  const hasPayeeMatch = evidence.some(
+    (entry) => entry.type === 'PAYEE_BINDING' && readString((entry.data ?? {}).status) === 'MATCH',
+  );
   const bullets: ExplanationBullet[] = [];
   for (const entry of evidence) {
     if (bullets.length >= 5) break;
-    const text = decision === 'ALLOW' ? ALLOW_SENTENCE : templatePhraseFor(entry);
+    const text =
+      decision === 'ALLOW' && hasPayeeMatch ? ALLOW_SENTENCE : templatePhraseFor(entry);
     if (!text) continue;
     const trimmed = truncateText(text, 160);
     if (bullets.some((bullet) => bullet.text === trimmed)) continue;

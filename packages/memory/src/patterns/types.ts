@@ -6,6 +6,7 @@
  */
 
 import type { Decision } from '../types/contracts-fallback.js';
+import type { EmbeddingProvider } from './embeddings.js';
 
 export const DOMAIN_AGE_BUCKETS = ['<7d', '7-29d', '30-89d', '>=90d', 'unknown'] as const;
 export const DISCOUNT_BUCKETS = ['<50', '50-69', '70-79', '>=80', 'unknown'] as const;
@@ -30,6 +31,10 @@ export interface PastInvestigation {
   timestamp: string;
   seed: boolean;
   seenCount: number;
+  /** Optional embedding for semantic retrieval in the file-backed store. */
+  embedding?: number[];
+  embeddingProvider?: string;
+  embeddingModel?: string;
 }
 
 export type PatternMatchType = 'exact_payee' | 'exact_domain' | 'semantic';
@@ -49,6 +54,9 @@ export interface PatternHit {
   seed: boolean;
   /** Match strength from 0 to 1, already reduced by age decay. */
   score: number;
+  /** How the hit was retrieved: exact, embedding, or lexical overlap. */
+  retrieval?: string;
+  embeddingProvider?: string;
 }
 
 export interface PatternStoreOptions {
@@ -59,6 +67,15 @@ export interface PatternStoreOptions {
   halfLifeDays?: number;
   /** Semantic matches below this similarity are ignored. Default 0.12. */
   minSimilarity?: number;
+  /** Embedding provider for the file-backed store. */
+  embeddingProvider?: EmbeddingProvider;
+}
+
+export type ResolvedPatternOptions = Required<Omit<PatternStoreOptions, 'embeddingProvider'>>;
+
+export interface EmbeddingInfo {
+  provider: string;
+  model?: string;
 }
 
 export interface PatternStore {
@@ -68,4 +85,8 @@ export interface PatternStore {
   /** Removes expired non-seed patterns and returns how many were removed. */
   purgeExpired(): Promise<number>;
   size(): Promise<number>;
+  /** Describes the embedding strategy, when the store has one. */
+  embeddingInfo?(): EmbeddingInfo;
+  /** Human-readable storage location, when the store is persistent. */
+  location?(): string;
 }

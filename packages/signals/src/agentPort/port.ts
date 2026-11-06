@@ -1,11 +1,13 @@
 import { readCertificate } from '../certificate/tls.js';
-import { domainAgeDays, findRegistrationDate } from '../domain/rdap.js';
+import { domainAgeDays, findRegistrarName, findRegistrationDate, rdapUrlFor } from '../domain/rdap.js';
 import { PayeeBindingCollector } from '../payee/binding.js';
-import { assertSafeUrl } from '../safety/url.js';
+import { assertSafeUrl, UnsafeUrlError } from '../safety/url.js';
 import { readLimitedText, registrableDomain } from '../util.js';
-import { extractPageClaims, extractSection, SECTION_PATHS } from './html.js';
+import { checkFavicon, loadDefaultFaviconReferences } from './favicon.js';
+import { classifyPageAccess, extractPageClaims, extractSection, SECTION_PATHS } from './html.js';
 import { safeGet } from './http.js';
 import { detectLookalike } from './lookalike.js';
+import { recognizeMarketplace } from './marketplace.js';
 import { createMockPort } from './mock.js';
 import type {
   AgentEvidence,
@@ -15,6 +17,7 @@ import type {
   CallOpts,
   LocalSignalsPortOptions,
   OfferSummary,
+  PageAccess,
   PageClaims,
   SectionHint,
   SectionResult,
@@ -28,13 +31,14 @@ export const discountSeverity = (discountPct: number): AgentSeverity =>
 
 const emptyOffers = (): OfferSummary => ({ offerCount: 0, sampleDomains: [] });
 
-function emptyClaims(url: string): PageClaims {
+function emptyClaims(url: string, access: PageAccess): PageClaims {
   let domain = '';
   try {
     domain = new URL(url).hostname.toLowerCase();
   } catch {
     domain = '';
   }
+  const marketplace = domain ? recognizeMarketplace(domain) : undefined;
   return {
     finalUrl: url,
     domain,
@@ -45,7 +49,15 @@ function emptyClaims(url: string): PageClaims {
     sectionLinks: {},
     hasContactPage: false,
     hasLegalPage: false,
+    pageAccess: access,
+    ...(marketplace ? { marketplace } : {}),
   };
+}
+
+function withMarketplace(claims: PageClaims): PageClaims {
+  if (claims.marketplace) return claims;
+  const marketplace = recognizeMarketplace(claims.domain || claims.finalUrl);
+  return marketplace ? { ...claims, marketplace } : claims;
 }
 
 export function createLocalSignalsPort(options: LocalSignalsPortOptions): AgentSignalsPort {
@@ -56,6 +68,7 @@ export function createLocalSignalsPort(options: LocalSignalsPortOptions): AgentS
   const known = options.knownBrandDomains ?? [];
   const bindingCollector = new PayeeBindingCollector();
   const brandByDomain = new Map<string, string>();
+  const faviconReferences = options.faviconReferences ?? loadDefaultFaviconReferences();
   let counter = 0;
 
   const evidence = (
@@ -99,7 +112,11 @@ export function createLocalSignalsPort(options: LocalSignalsPortOptions): AgentS
 
   async function domainAge(domain: string, o: CallOpts): Promise<AgentEvidence[]> {
     const rdapDomain = registrableDomain(domain);
-    const url = `https://rdap.org/domain/${encodeURIComponent(rdapDomain)}`;
+    const url = await rdapUrlFor(rdapDomain, {
+      fetchImpl,
+      timeoutMs: o.timeoutMs,
+      ...(o.signal ? { signal: o.signal } : {}),
+    });
     const timeout = AbortSignal.timeout(o.timeoutMs);
     const res = await fetchImpl(url, {
       headers: { accept: 'application/rdap+json, application/json' },
@@ -114,14 +131,24 @@ export function createLocalSignalsPort(options: LocalSignalsPortOptions): AgentS
     }
     const registered = findRegistrationDate(body);
     const ageDays = registered ? domainAgeDays(registered, new Date(now())) : null;
+    const registrar = findRegistrarName(body);
     if (registered === null || ageDays === null) {
       return [unavailable('domain age lookup', 'rdap', 'no registration date')];
     }
     return [
-      evidence('DOMAIN_AGE', 'rdap', ageSeverity(ageDays), `The domain was registered ${ageDays} days ago.`, {
-        ageDays,
-        registrationDate: registered,
-      }),
+      evidence(
+        'DOMAIN_AGE',
+        'rdap',
+        ageSeverity(ageDays),
+        registrar
+          ? `The domain was registered ${ageDays} days ago with ${registrar}.`
+          : `The domain was registered ${ageDays} days ago.`,
+        {
+          ageDays,
+          registrationDate: registered,
+          ...(registrar ? { registrar } : {}),
+        },
+      ),
     ];
   }
 
@@ -145,23 +172,60 @@ export function createLocalSignalsPort(options: LocalSignalsPortOptions): AgentS
         ),
       ];
     }
-    return [];
+    return [
+      evidence(
+        'TLS_VALID',
+        'tls',
+        'info',
+        `The security certificate is valid for ${cert.daysToExpiry} more days.`,
+        {
+          daysToExpiry: cert.daysToExpiry,
+          issuer: cert.issuer,
+          validFrom: cert.validFrom,
+          validTo: cert.validTo,
+        },
+      ),
+    ];
   }
 
   return {
     async getPageClaims(url, o) {
       try {
-        const claims = options.kernel
-          ? await options.kernel.getPageClaims(url, o)
+        let claims = options.kernel
+          ? withMarketplace(await options.kernel.getPageClaims(url, o))
           : await (async () => {
               const page = await safeGet(url, { ...getOpts(o), maxBytes: 512 * 1024 });
-              return page.ok ? extractPageClaims(page.text, page.finalUrl) : emptyClaims(url);
+              if (!page.ok) {
+                return emptyClaims(page.finalUrl, classifyPageAccess('', undefined, page.status, ''));
+              }
+              return extractPageClaims(page.text, page.finalUrl, page.status);
             })();
         const brand = claims.claimedBrand ?? claims.siteName;
-        if (brand && claims.domain) brandByDomain.set(registrableDomain(claims.domain), brand);
+        // The favicon is fetched only when a trusted reference exists for the claimed brand.
+        if (claims.pageAccess?.state === 'ok') {
+          const faviconCheck = await checkFavicon({
+            pageDomain: claims.domain,
+            claimedBrand: brand,
+            faviconUrl: claims.faviconUrl,
+            references: faviconReferences,
+            fetchOptions: getOpts(o),
+          });
+          claims = {
+            ...claims,
+            faviconCheck,
+            ...(faviconCheck.observedHash ? { faviconHash: faviconCheck.observedHash } : {}),
+          };
+        }
+        if (brand && claims.domain && claims.pageAccess?.state !== 'blocked') {
+          brandByDomain.set(registrableDomain(claims.domain), brand);
+        }
         return claims;
-      } catch {
-        return emptyClaims(url);
+      } catch (error) {
+        const access: PageAccess =
+          error instanceof UnsafeUrlError
+            ? { state: 'unsupported', reason: 'unsafe_url' }
+            : { state: 'unreachable', reason: 'network_error' };
+        return emptyClaims(url, access);
       }
     },
 
@@ -193,10 +257,16 @@ export function createLocalSignalsPort(options: LocalSignalsPortOptions): AgentS
 
     async getPriceReport(input, o) {
       const item = input.items?.[0];
-      const price = item?.unitPrice ?? input.amount;
-      const productQuery = item?.name ?? input.claims.siteName;
+      const price = item?.unitPrice ?? input.amount ?? input.claims.product?.price;
+      const productQuery = item?.name ?? input.claims.product?.name ?? input.claims.siteName;
       if (!options.channel3 || !price || !productQuery) {
-        return [evidence('PRICE_UNKNOWN', 'channel3', 'info', 'No price comparison was available.', { reason: !options.channel3 ? 'no_catalogue' : 'no_price' })];
+        const reason = !options.channel3 ? 'no_catalogue' : !price ? 'no_price' : 'no_product';
+        return [
+          evidence('PRICE_UNKNOWN', 'channel3', 'info', 'No price comparison was available.', {
+            reason,
+            ...(input.claims.product?.source ? { productSource: input.claims.product.source } : {}),
+          }),
+        ];
       }
       try {
         const offers = await options.channel3.searchOffers({ productQuery, maxPrice: price, currency: input.currency }, o);
@@ -269,7 +339,10 @@ export function createLocalSignalsPort(options: LocalSignalsPortOptions): AgentS
         try {
           const url = new URL(path, base).toString();
           const page = await safeGet(url, { ...getOpts(o), maxBytes: 256 * 1024 });
-          if (page.ok && page.text) return extractSection(page.text, page.finalUrl);
+          if (page.ok && page.text) {
+            const section = extractSection(page.text, page.finalUrl, 4000, page.status);
+            if (section.found) return section;
+          }
         } catch {
           // Try the next usual path; an unsafe or failing URL is simply "not found".
         }

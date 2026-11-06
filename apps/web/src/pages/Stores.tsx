@@ -1,17 +1,27 @@
 import { Link } from 'react-router-dom';
-import { Headphones, Watch, ShoppingBag, ExternalLink } from 'lucide-react';
+import { ExternalLink, Gauge } from 'lucide-react';
+import { usePageTitle } from '../hooks/usePageTitle';
 import { STORES } from '../data/stores';
-import { Pill } from '../components/ui';
-import { money, VERDICT } from '../lib/format';
-const ICON = { genuine: Headphones, suspicious: Watch, impersonator: ShoppingBag };
+import { Badge, Icon } from '../components/ui';
+import { StoreArt } from '../components/StoreArt';
+import { money } from '../lib/format';
+import { VERDICT_WORDS } from '../lib/labels';
+
 export default function Stores() {
-  return <>
-    <section><h1 className="text-2xl font-bold">Demo storefronts</h1><p className="text-sm text-muted mt-1">Three stores, three different outcomes. Check out from each to watch Guardian decide.</p></section>
-    {STORES.map(s => { const I = ICON[s.kind]; return <div key={s.id} className="card flex gap-4 items-center">
-      <div className="w-12 h-12 rounded-lg grid place-items-center shrink-0" style={{ background: s.theme.bg, color: s.theme.accent, border: '1px solid rgba(0,0,0,.1)' }}><I /></div>
-      <div className="flex-1 min-w-0"><div className="font-semibold">{s.name}</div><div className="font-mono text-xs text-muted truncate">{s.domain} · {s.product.name} · {money(s.product.price)}</div>
-        <div className="mt-1"><Pill tone={VERDICT[s.expected].tone}>EXPECTED: {s.expected}</Pill></div></div>
-      <Link to={`/store/${s.id}`} className="btn-primary !h-9">Visit<ExternalLink size={14} /></Link></div>; })}
-    <Link to="/analyst" className="btn-secondary w-full">Open Analyst Console</Link>
-  </>;
+  usePageTitle('Demo stores');
+  return <div className="space-y-8">
+    <section className="space-y-2">
+      <h1 className="text-2xl font-bold">Demo stores</h1>
+      <p className="text-sm text-muted">Three fictional stores, three different outcomes. Check out from each to watch TrustOra decide. None of these stores is real.</p>
+    </section>
+    <div className="grid gap-5 md:grid-cols-3">{STORES.map(s => <article key={s.id} className="card xl flex flex-col gap-4 p-5 hover:shadow-2 transition">
+      <div className="rounded-xl grid place-items-center py-5" style={{ background: s.theme.bg }}><StoreArt kind={s.kind} accent={s.theme.accent} size={96} /></div>
+      <div className="flex-1 space-y-2"><h2 className="font-bold">{s.name}</h2>
+        <p className="text-sm text-muted">{s.product.name} · <span className="font-mono num">{money(s.product.price)}</span></p>
+        <p className="font-mono text-xs text-muted break-all">{s.domain}</p>
+        <div className="flex flex-wrap gap-2 pt-2"><Badge tone="neutral">Fictional demo store</Badge>
+          <Badge tone={VERDICT_WORDS[s.expected].tone}>Expect {s.expected} · {VERDICT_WORDS[s.expected].subtitle}</Badge></div></div>
+      <Link to={`/store/${s.id}`} className="btn-primary w-full">Visit the store<Icon icon={ExternalLink} size={16} /></Link></article>)}</div>
+    <Link to="/analyst" className="btn-secondary w-full sm:w-auto"><Icon icon={Gauge} size={16} />Open the analyst console</Link>
+  </div>;
 }

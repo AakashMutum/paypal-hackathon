@@ -68,11 +68,13 @@ interface AttemptOk {
   ok: true;
   text: string;
   usage?: { inputTokens?: number; outputTokens?: number };
+  model?: string;
 }
 interface AttemptFail {
   ok: false;
   error: LlmErrorCode;
   detail?: string;
+  model?: string;
 }
 
 export function createJsonClient(provider: LlmProvider, options: JsonClientOptions = {}): LlmClient {
@@ -88,12 +90,24 @@ export function createJsonClient(provider: LlmProvider, options: JsonClientOptio
       for (let attempt = 0; attempt <= maxRepairs; attempt += 1) {
         const raw = await attemptCompletion(provider, request, user);
         if (!raw.ok) {
-          return { ok: false, error: raw.error, detail: raw.detail, latencyMs: now() - started };
+          return {
+            ok: false,
+            error: raw.error,
+            detail: raw.detail,
+            latencyMs: now() - started,
+            ...(raw.model ? { model: raw.model } : {}),
+          };
         }
 
         const parsed = parseJsonWithSchema(raw.text, request.schema);
         if (parsed.ok) {
-          return { ok: true, data: parsed.data, latencyMs: now() - started, usage: raw.usage };
+          return {
+            ok: true,
+            data: parsed.data,
+            latencyMs: now() - started,
+            usage: raw.usage,
+            ...(raw.model ? { model: raw.model } : {}),
+          };
         }
 
         options.log?.({
@@ -108,6 +122,7 @@ export function createJsonClient(provider: LlmProvider, options: JsonClientOptio
           error: parsed.error,
           detail: parsed.issues,
           latencyMs: now() - started,
+          ...(raw.model ? { model: raw.model } : {}),
         };
         user = buildRepairMessage(request.user, parsed.issues);
       }
@@ -147,20 +162,29 @@ async function attemptCompletion<T>(
   });
 
   try {
+    const providerPromise = provider.complete({
+      tier: request.tier,
+      system: request.system,
+      user,
+      maxOutputTokens: request.maxOutputTokens,
+      timeoutMs: request.timeoutMs,
+      signal: controller.signal,
+    });
+    // Prevent floating unhandled rejection if timeout rejects first and provider rejects later on abort
+    providerPromise.catch(() => {});
+
     const response = await Promise.race([
-      provider.complete({
-        tier: request.tier,
-        system: request.system,
-        user,
-        maxOutputTokens: request.maxOutputTokens,
-        timeoutMs: request.timeoutMs,
-        signal: controller.signal,
-      }),
+      providerPromise,
       timeout,
     ]);
 
     if (request.signal?.aborted) return { ok: false, error: 'aborted' };
-    return { ok: true, text: response.text, usage: response.usage };
+    return {
+      ok: true,
+      text: response.text,
+      usage: response.usage,
+      ...(response.model ? { model: response.model } : {}),
+    };
   } catch (error) {
     if (request.signal?.aborted) return { ok: false, error: 'aborted' };
     if (error instanceof AttemptTimeoutError) return { ok: false, error: 'timeout' };

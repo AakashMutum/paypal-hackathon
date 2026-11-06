@@ -94,11 +94,22 @@ test('template explanations cap at five bullets and drop duplicates', () => {
   assert.equal(new Set(texts).size, texts.length);
 });
 
-test('an ALLOW explanation uses the positive sentence', () => {
+test('an ALLOW explanation uses the positive sentence only when the payee matched', () => {
   const explanation = templateExplanation([ev('PAYEE_BINDING', { status: 'MATCH' })], 'ALLOW');
   assert.ok(explanation);
   assert.equal(explanation.bullets[0].text, ALLOW_SENTENCE);
   assert.equal(explanation.headline, HEADLINES.ALLOW);
+});
+
+test('an ALLOW scan without a payee lists what was checked instead of claiming consistency', () => {
+  const explanation = templateExplanation(
+    [ev('DOMAIN_AGE', { ageDays: 4000 }), ev('PAYEE_UNKNOWN')],
+    'ALLOW',
+  );
+  assert.ok(explanation);
+  assert.notEqual(explanation.bullets[0].text, ALLOW_SENTENCE);
+  assert.match(explanation.bullets[0].text, /registered for 4000 days/);
+  assert.ok(explanation.bullets.some((bullet) => /No payment account was supplied/.test(bullet.text)));
 });
 
 test('every decision has a distinct safe headline', () => {

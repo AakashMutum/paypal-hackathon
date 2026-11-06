@@ -1,0 +1,5 @@
+{
+  "version": 1,
+  "note": "Trusted reference favicons, one entry per brand. Empty on purpose: the invented demo stores (Harborline Outfitters, Bargain Barn Outlet, Harborlyne Outfitters Sale) have no favicon asset in this repository, and a real brand's icon must never be copied here. See docs/favicon-references.md for how to add an entry.",
+  "entries": []
+}

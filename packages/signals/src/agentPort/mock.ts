@@ -1,5 +1,6 @@
 import { loadFixtures, type Fixture } from '../mocks/fixtures.js';
 import { hostnameOf } from '../util.js';
+import { recognizeMarketplace } from './marketplace.js';
 import type {
   AgentEvidence,
   AgentSeverity,
@@ -87,6 +88,7 @@ export function createMockPort(options: LocalSignalsPortOptions): AgentSignalsPo
       const req = f?.request ?? {};
       const brand = typeof req.claimedBrandName === 'string' ? req.claimedBrandName : (req.claimedMerchantName as string | undefined);
       const email = typeof req.payeeEmail === 'string' ? [req.payeeEmail] : [];
+      const marketplace = recognizeMarketplace(host);
       const claims: PageClaims = {
         finalUrl: url,
         domain: host,
@@ -99,6 +101,8 @@ export function createMockPort(options: LocalSignalsPortOptions): AgentSignalsPo
         sectionLinks: {},
         hasContactPage: false,
         hasLegalPage: false,
+        pageAccess: f ? { state: 'ok', httpStatus: 200 } : { state: 'unsupported', reason: 'no_recorded_signals' },
+        ...(marketplace ? { marketplace } : {}),
       };
       return claims;
     },
@@ -126,7 +130,19 @@ export function createMockPort(options: LocalSignalsPortOptions): AgentSignalsPo
 
     async getPriceReport(input) {
       const f = find(hostOf(input.claims.domain));
-      if (!f) return [];
+      if (!f) {
+        return [
+          mk(
+            input.claims.domain,
+            0,
+            'PRICE_UNKNOWN',
+            'channel3',
+            'info',
+            'No recorded price signals are available for this domain.',
+            { reason: 'no_recorded_signals' },
+          ),
+        ];
+      }
       const out: AgentEvidence[] = [];
       itemsOf(f).forEach((item, i) => {
         if (item.kind !== 'pricing') return;

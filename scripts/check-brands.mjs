@@ -66,6 +66,11 @@ function* walk(dir) {
   }
 }
 
+// Real merchant names are allowed in a source file only when it implements recognition of a real
+// merchant (for example an official marketplace hostname list). This is functional data, not demo
+// content. The marker must be in the file header; it is never used in demo-sites, fixtures or docs.
+const BRAND_CHECK_ALLOW = '@brand-check-allow';
+
 const hits = [];
 let scanned = 0;
 for (const target of scanPaths.flatMap(expand)) {
@@ -75,13 +80,13 @@ for (const target of scanPaths.flatMap(expand)) {
     const ext = file.slice(file.lastIndexOf('.')).toLowerCase();
     if (binaryExt.has(ext)) continue;
     scanned += 1;
-    readFileSync(file, 'utf8')
-      .split(/\r?\n/)
-      .forEach((line, i) => {
-        for (const { brand, re } of patterns) {
-          if (re.test(line)) hits.push(`${relative(root, file)}:${i + 1}: "${brand}"`);
-        }
-      });
+    const contents = readFileSync(file, 'utf8');
+    if (contents.includes(BRAND_CHECK_ALLOW)) continue;
+    contents.split(/\r?\n/).forEach((line, i) => {
+      for (const { brand, re } of patterns) {
+        if (re.test(line)) hits.push(`${relative(root, file)}:${i + 1}: "${brand}"`);
+      }
+    });
   }
 }
 

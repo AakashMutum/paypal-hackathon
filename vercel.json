@@ -1,0 +1,6 @@
+{
+  "installCommand": "npm ci --include=dev",
+  "buildCommand": "npm run build -w @checkout-guardian/web",
+  "outputDirectory": "apps/web/dist",
+  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+}

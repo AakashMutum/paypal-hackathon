@@ -26,7 +26,8 @@ export function useOrderPolling(id?: string) {
 export function useInvestigations(poll = 0) {
   const [list, setList] = useState<Investigation[]>([]);
   const [loading, setLoading] = useState(true);
-  const load = useCallback(() => api.listInvestigations().then(setList).catch(() => {}).finally(() => setLoading(false)), []);
+  const [error, setError] = useState<string | null>(null);
+  const load = useCallback(() => api.listInvestigations().then(l => { setList(l); setError(null); }).catch((e: Error) => setError(e.message)).finally(() => setLoading(false)), []);
   useEffect(() => { load(); if (!poll) return; const t = setInterval(load, poll); return () => clearInterval(t); }, [load, poll]);
-  return { list, loading, reload: load };
+  return { list, loading, error, reload: load };
 }

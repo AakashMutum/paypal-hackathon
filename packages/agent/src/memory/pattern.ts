@@ -37,7 +37,7 @@ export interface PatternFacts {
 
 export const PatternResponseSchema = z.object({ pattern: z.string().min(10).max(300) }).strict();
 
-export const PATTERN_TIMEOUT_MS = 2000;
+export const PATTERN_TIMEOUT_MS = 8000;
 export const PATTERN_MAX_TOKENS = 120;
 export const PATTERN_MAX_WORDS = 45;
 

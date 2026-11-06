@@ -12,13 +12,19 @@ export const goodCert: CertificateProbe = {
   authorized: true,
 };
 
-export function rdapBody(daysAgo: number): unknown {
+export function rdapBody(daysAgo: number, registrar?: string): unknown {
   const date = new Date(NOW - daysAgo * 86400000).toISOString();
-  return { events: [{ eventAction: 'registration', eventDate: date }] };
+  return {
+    events: [{ eventAction: 'registration', eventDate: date }],
+    ...(registrar
+      ? { entities: [{ roles: ['registrar'], vcardArray: ['vcard', [['fn', {}, 'text', registrar]]] }] }
+      : {}),
+  };
 }
 
 export interface Route {
   rdapDaysAgo?: number;
+  registrar?: string;
   bindingMerchantId?: string | null;
   pages?: Record<string, string>;
 }
@@ -29,7 +35,9 @@ export function fakeFetch(route: Route, seen: string[] = []): typeof fetch {
     const url = String(input);
     seen.push(url);
     if (url.startsWith('https://rdap.org/domain/')) {
-      return route.rdapDaysAgo === undefined ? new Response('no', { status: 404 }) : jsonResponse(rdapBody(route.rdapDaysAgo));
+      return route.rdapDaysAgo === undefined
+        ? new Response('no', { status: 404 })
+        : jsonResponse(rdapBody(route.rdapDaysAgo, route.registrar));
     }
     if (url.endsWith('/.well-known/checkout-guardian.json')) {
       return route.bindingMerchantId ? jsonResponse({ merchant_id: route.bindingMerchantId }) : new Response('no', { status: 404 });

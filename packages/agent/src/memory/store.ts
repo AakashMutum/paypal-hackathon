@@ -17,7 +17,7 @@ import { bucketAge, bucketDiscount } from './pattern.js';
  * by rule R4 — they can never cause a PAUSE alone.
  */
 
-export const MEMORY_SEARCH_TIMEOUT_MS = 2000;
+export const MEMORY_SEARCH_TIMEOUT_MS = 4000;
 export const MEMORY_WRITE_TIMEOUT_MS = 3000;
 export const MEMORY_MATCHES_LIMIT = 3;
 

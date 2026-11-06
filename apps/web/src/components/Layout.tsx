@@ -1,60 +1,92 @@
-import { useState } from 'react';
-import { Link, NavLink, Outlet } from 'react-router-dom';
-import { Bell, LayoutDashboard, ScanLine, Radar, ShieldCheck, History, User, Store, Gauge, BadgeCheck, RotateCcw } from 'lucide-react';
-import { cn, telemetry } from '../lib/format';
-import { Modal } from './ui';
-import { ModeBadge, ModesFooter } from './Provenance';
-import { useInvestigations } from '../hooks/useOrderPolling';
-import { api } from '../api/apiClient';
+import { useEffect, useRef, useState } from 'react';
+import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
+import { ListChecks, Menu, ScanLine, Store, X } from 'lucide-react';
+import { cn } from '../lib/format';
+import { Icon } from './ui';
+import { AboutDemo, SiteFooter } from './HowChecked';
+import { ThemeMenu } from './ThemeMenu';
+import { CommandPalette } from './CommandPalette';
+import { SHOW_RESET } from '../lib/env';
+import { ResetDialog } from './ResetDialog';
 import { useApp } from '../context/OrderStateContext';
 import trustoraLogo from '../assets/trustora-logo.png';
+
 const NAV = [
-  { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true }, { to: '/scanner', label: 'Scanner', icon: ScanLine },
-  { to: '/engine', label: 'Engine', icon: Radar }, { to: '/pay', label: 'Pay', icon: ShieldCheck }, { to: '/history', label: 'History', icon: History },
+  { to: '/check', label: 'Check', short: 'Check', icon: ScanLine, match: (p: string) => p.startsWith('/check') || p.startsWith('/scanner') },
+  { to: '/investigations', label: 'Cases', short: 'Cases', icon: ListChecks, match: (p: string) => /^\/(investigations|engine|pay|history)/.test(p) },
+  { to: '/stores', label: 'Demo stores', short: 'Stores', icon: Store, match: (p: string) => /^\/(stores|checkout)/.test(p) },
+  { to: '/analyst', label: 'Analyst', short: 'Analyst', icon: ListChecks, match: (p: string) => p.startsWith('/analyst') },
 ];
-function Notifications({ onClose }: { onClose: () => void }) {
-  const { list } = useInvestigations();
-  return <Modal open onClose={onClose} title="Notifications"><ul className="space-y-3">{telemetry(list).map(t => <li key={t.id} className="flex gap-3 text-sm">
-    <span className={cn('mt-1.5 w-2 h-2 rounded-full shrink-0', t.tone === 'bad' ? 'bg-bad' : t.tone === 'warn' ? 'bg-warn' : t.tone === 'info' ? 'bg-electric' : 'bg-muted')} />
-    <div><div className="font-semibold">{t.title} <span className="font-mono text-xs text-muted">{t.time}</span></div><div className="text-muted">{t.text}</div></div></li>)}</ul></Modal>;
-}
-function Account({ onClose }: { onClose: () => void }) {
-  const { toast } = useApp();
-  const row = 'flex items-center gap-3 p-3 rounded-lg hover:bg-canvas text-sm font-medium';
-  return <Modal open onClose={onClose} title="Alex Walker">
-    <p className="text-sm text-muted mb-3 font-mono">alex.walker@mail.example</p>
-    <Link to="/profile" onClick={onClose} className={row}><User size={18} />My Profile</Link>
-    <Link to="/stores" onClick={onClose} className={row}><Store size={18} />Demo storefronts</Link>
-    <Link to="/analyst" onClick={onClose} className={row}><Gauge size={18} />Analyst console</Link>
-    <Link to="/onboarding" onClick={onClose} className={row}><BadgeCheck size={18} />Register a merchant</Link>
-    <button className={cn(row, 'w-full text-left')} onClick={async () => { await api.resetDemo(); toast('Demo data reset', 'ok'); onClose(); }}><RotateCcw size={18} />Reset demo data</button>
-  </Modal>;
-}
+const BOTTOM = NAV.slice(0, 3);
+
+/** The top bar, the mobile sheet and bottom bar, the (unadvertised) command palette and the footer. */
 export default function Layout() {
-  const [panel, setPanel] = useState<'bell' | 'user' | null>(null);
-  const tab = (a: boolean) => cn('flex flex-col items-center gap-1 px-3 py-2 rounded-xl text-[11px] font-medium min-w-[64px]', a ? 'bg-navy text-white' : 'text-muted hover:text-ink');
-  return <div className="min-h-screen pb-28 md:pb-10">
-    <header className="sticky top-0 z-30 bg-white/90 backdrop-blur border-b border-ink/10">
-      <div className="max-w-3xl mx-auto px-4 h-14 flex items-center gap-3">
-        <Link to="/" className="flex items-center gap-2 min-w-0">
-          <img src={trustoraLogo} alt="TrustOra" className="h-9 w-auto object-contain" />
-          <span className="leading-tight hidden sm:block">
-            <span className="block font-mono text-[10px] font-semibold tracking-wider text-electric">
-              <span className="inline-block w-1.5 h-1.5 rounded-full bg-electric mr-1 animate-pulse" />ACTIVE SESSION
-            </span>
-          </span>
-        </Link>
-        <span className="hidden sm:block"><ModeBadge /></span>
-        <nav className="hidden md:flex gap-1 ml-auto mr-2">{NAV.map(n => <NavLink key={n.to} to={n.to} end={n.end} className={({ isActive }) => cn('px-3 py-1.5 rounded text-sm font-medium', isActive ? 'bg-navy text-white' : 'text-muted hover:text-ink')}>{n.label}</NavLink>)}</nav>
-        <div className="flex items-center gap-2 ml-auto md:ml-0">
-          <button aria-label="Notifications" onClick={() => setPanel('bell')} className="p-2 rounded hover:bg-canvas"><Bell size={20} /></button>
-          <button aria-label="Account" onClick={() => setPanel('user')} className="w-9 h-9 rounded-full bg-navy text-white grid place-items-center"><User size={18} /></button></div>
-      </div></header>
-    <main className="max-w-3xl mx-auto px-4 py-4 space-y-4"><Outlet /><div className="sm:hidden"><ModeBadge /></div></main>
-    <footer className="max-w-3xl mx-auto px-4 pb-24 md:pb-6"><ModesFooter /></footer>
-    <nav className="md:hidden fixed bottom-0 inset-x-0 z-30 bg-white border-t border-ink/10 px-2 pb-3 pt-2 flex justify-around" aria-label="Primary">
-      {NAV.map(n => <NavLink key={n.to} to={n.to} end={n.end} className={({ isActive }) => tab(isActive)}><n.icon size={20} />{n.label}</NavLink>)}</nav>
-    {panel === 'bell' && <Notifications onClose={() => setPanel(null)} />}
-    {panel === 'user' && <Account onClose={() => setPanel(null)} />}
+  const { pathname } = useLocation();
+  const { toast } = useApp();
+  const [palette, setPalette] = useState(false);
+  const [sheet, setSheet] = useState(false);
+  const [about, setAbout] = useState(false);
+  const [resetting, setResetting] = useState(false);
+  const sheetRef = useRef<HTMLDialogElement>(null);
+  const fullBleed = pathname.startsWith('/analyst');
+
+  // The command palette still opens from the keyboard; nothing on screen advertises it.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null;
+      const typing = !!t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName));
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); setPalette(true); }
+      else if (e.key === '/' && !typing && !e.ctrlKey && !e.metaKey && !e.altKey) { e.preventDefault(); setPalette(true); }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+  useEffect(() => {
+    const d = sheetRef.current;
+    if (!d) return;
+    if (sheet && !d.open) d.showModal();
+    if (!sheet && d.open) d.close();
+  }, [sheet]);
+  useEffect(() => setSheet(false), [pathname]);
+
+  const link = (active: boolean) => cn('relative h-[52px] px-3 inline-flex items-center text-[15px] font-medium border-b-2', active ? 'border-action text-content' : 'border-transparent text-muted hover:text-content');
+  const tab = (active: boolean) => cn('flex flex-col items-center gap-0.5 py-2 text-[11px] font-medium flex-1', active ? 'text-link' : 'text-muted');
+  const sheetLink = (active: boolean) => cn('flex items-center gap-3 px-2 py-3 text-base border-b border-line', active ? 'font-semibold text-link' : 'text-content');
+
+  return <div className="min-h-screen flex flex-col">
+    <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[70] focus:bg-surface focus:text-content focus:border focus:border-line-strong focus:rounded-md focus:px-3 focus:py-2">Skip to main content</a>
+    <header className="sticky top-0 z-30 bg-surface border-b border-line">
+      <div className={cn('h-[52px] px-4 sm:px-6 lg:px-8 mx-auto flex items-center gap-2', fullBleed ? 'max-w-none' : 'max-w-[1280px]')}>
+        <Link to="/" aria-label="TrustOra home" className="inline-flex items-center gap-2 rounded">
+          <span className="rounded bg-white p-0.5 inline-flex"><img src={trustoraLogo} alt="" className="h-6 w-auto object-contain" /></span>
+          <span className="font-semibold tracking-tight text-brand">TrustOra</span></Link>
+        <nav aria-label="Primary" className="hidden md:flex items-center ml-4">
+          {NAV.map(n => <NavLink key={n.to} to={n.to} aria-current={n.match(pathname) ? 'page' : undefined} className={link(n.match(pathname))}>{n.label}</NavLink>)}</nav>
+        <div className="ml-auto flex items-center gap-1">
+          <ThemeMenu />
+          <button type="button" onClick={() => setSheet(true)} aria-label="Open menu" className="md:hidden h-9 w-9 grid place-items-center rounded text-muted hover:bg-surface-2"><Icon icon={Menu} /></button>
+        </div>
+      </div>
+    </header>
+
+    <main id="main" tabIndex={-1} className={cn('flex-1 w-full pb-24 md:pb-8 outline-none', fullBleed ? 'px-0' : 'max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-10')}><Outlet /></main>
+    {!fullBleed && <div className="w-full max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pb-20 md:pb-0"><SiteFooter onAbout={() => setAbout(true)} /></div>}
+
+    <nav aria-label="Primary" className="md:hidden fixed bottom-0 inset-x-0 z-30 bg-surface border-t border-line flex pb-[env(safe-area-inset-bottom)]">
+      {BOTTOM.map(n => <NavLink key={n.to} to={n.to} aria-current={n.match(pathname) ? 'page' : undefined} className={tab(n.match(pathname))}><Icon icon={n.icon} />{n.short}</NavLink>)}</nav>
+
+    <dialog ref={sheetRef} aria-label="Menu" onClose={() => setSheet(false)} className="drawer m-0 h-full max-h-none w-full max-w-none bg-surface p-4 text-content md:hidden">
+      <div className="flex items-center justify-between mb-2"><span className="font-semibold text-brand">TrustOra</span>
+        <button type="button" onClick={() => setSheet(false)} aria-label="Close menu" className="h-9 w-9 grid place-items-center rounded hover:bg-surface-2"><Icon icon={X} /></button></div>
+      <nav aria-label="Menu">{NAV.map(n => <Link key={n.to} to={n.to} className={sheetLink(n.match(pathname))}>{n.label}</Link>)}
+        <Link to="/" className={sheetLink(false)}>Home</Link>
+        <button type="button" onClick={() => { setSheet(false); setAbout(true); }} className={cn(sheetLink(false), 'w-full text-left')}>About this demo</button></nav>
+    </dialog>
+
+    <CommandPalette open={palette} onClose={() => setPalette(false)} />
+    {about && <AboutDemo onClose={() => setAbout(false)}>
+      {SHOW_RESET && <button type="button" className="tbtn mt-4" onClick={() => { setAbout(false); setResetting(true); }}>Reset demo data</button>}
+    </AboutDemo>}
+    {resetting && <ResetDialog onClose={() => setResetting(false)} onDone={() => { setResetting(false); toast('Demo data reset', 'ok'); }} />}
   </div>;
 }
