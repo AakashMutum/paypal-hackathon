@@ -102,7 +102,7 @@ export function sanitizeClaims(claims: PageClaims | undefined | null): Sanitized
 type CleanFn = (value: unknown, location: SanitizationLocation, maxLen: number) => string;
 
 const ACCESS_STATES = new Set<PageAccess['state']>(['ok', 'blocked', 'empty', 'unreachable', 'unsupported']);
-const PRODUCT_SOURCES = new Set<PageProduct['source']>(['json-ld', 'opengraph', 'microdata', 'metadata', 'title']);
+const PRODUCT_SOURCES = new Set<PageProduct['source']>(['json-ld', 'opengraph', 'microdata', 'metadata', 'title', 'visible-text']);
 
 const FAVICON_STATES = new Set<FaviconCheckState>([
   'no_reference',

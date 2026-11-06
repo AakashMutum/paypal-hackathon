@@ -8,7 +8,7 @@ import { ClaimedVsActual } from '../components/ClaimedVsActual';
 import { cn, money, telemetry } from '../lib/format';
 import { dashboardMetrics } from '../lib/metrics';
 import { radarMessage } from '../lib/explain';
-import { displayBrand, formatDateTime, scoreText, VERDICT_WORDS } from '../lib/labels';
+import { displayBrand, formatDateTime, payeeDisplay, scoreText, VERDICT_WORDS } from '../lib/labels';
 import { STORES } from '../data/stores';
 
 export default function Dashboard() {
@@ -75,7 +75,7 @@ export default function Dashboard() {
               : <ul className="card !p-0 divide-y divide-line">{list.slice(0, 5).map(i => <li key={i.id}>
                 <Link to={`/investigations/${i.id}`} className="p-4 flex justify-between items-center gap-3 hover:bg-surface-2">
                   <div className="min-w-0"><div className="font-mono text-sm font-semibold truncate">{i.domain}</div>
-                    <div className="text-xs text-muted truncate">{displayBrand(i.claimedBrand, i.domain)} → {i.payeeName ?? 'Payee not supplied'} · {formatDateTime(i.createdAt)}</div></div>
+                    <div className="text-xs text-muted truncate">{displayBrand(i.claimedBrand, i.domain)} → {payeeDisplay(i.payeeName)} · {formatDateTime(i.createdAt)}</div></div>
                   <VerdictBadge verdict={i.verdict} /></Link></li>)}</ul>}
         </section>
       </div>

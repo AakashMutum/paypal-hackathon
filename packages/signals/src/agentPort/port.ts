@@ -257,7 +257,11 @@ export function createLocalSignalsPort(options: LocalSignalsPortOptions): AgentS
 
     async getPriceReport(input, o) {
       const item = input.items?.[0];
+      // A price taken from the page must be compared in the currency the page states, not in the
+      // order currency (a scan of an Indian store has no order and defaults to USD).
+      const fromPage = item?.unitPrice === undefined && input.amount === undefined;
       const price = item?.unitPrice ?? input.amount ?? input.claims.product?.price;
+      const currency = fromPage ? input.claims.product?.currency ?? input.currency : input.currency;
       const productQuery = item?.name ?? input.claims.product?.name ?? input.claims.siteName;
       if (!options.channel3 || !price || !productQuery) {
         const reason = !options.channel3 ? 'no_catalogue' : !price ? 'no_price' : 'no_product';
@@ -269,7 +273,7 @@ export function createLocalSignalsPort(options: LocalSignalsPortOptions): AgentS
         ];
       }
       try {
-        const offers = await options.channel3.searchOffers({ productQuery, maxPrice: price, currency: input.currency }, o);
+        const offers = await options.channel3.searchOffers({ productQuery, maxPrice: price, currency }, o);
         if (offers.offerCount === 0 || !offers.medianPrice) {
           return [evidence('PRICE_UNKNOWN', 'channel3', 'info', 'No comparable offers were found.', { reason: 'no_offers' })];
         }

@@ -585,9 +585,8 @@ function productSummary(product: NonNullable<SafeClaims['product']>): string {
   if (product.availability) parts.push(product.availability);
   if (product.seller) parts.push(`sold by ${product.seller}`);
 
-  const text = parts.length
-    ? `Structured page data lists ${parts.join(', ')}.`
-    : 'The page published structured product metadata.';
+  const lead = product.source === 'visible-text' ? 'The product page lists' : 'Structured page data lists';
+  const text = parts.length ? `${lead} ${parts.join(', ')}.` : 'The page published structured product metadata.';
   return truncate(text, 240);
 }
 

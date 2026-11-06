@@ -76,11 +76,12 @@ export function findProfileForUrlOrStore(input: string): MerchantProfile {
   const store = findCatalogStore(input);
   if (store) return profileFromCatalog(store);
   const domain = hostOf(input) || 'unknown.example';
-  const brand = (domain.replace(/^www\./, '').split('.')[0].split('-')[0] || 'Merchant').replace(/^./, (c) => c.toUpperCase());
   return {
     known: false,
     domain,
-    brand,
+    // No brand is invented from the domain label. A merchant that has not been read yet has no
+    // claimed brand, and the page's own site name is used once the agent has fetched it.
+    brand: 'Unknown store',
     product: UNKNOWN_PRODUCT_NAME,
     price: 0,
     benchmark: 0,

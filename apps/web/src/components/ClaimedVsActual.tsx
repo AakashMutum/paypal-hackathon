@@ -1,8 +1,9 @@
 import { CheckCircle2, MinusCircle, XCircle } from 'lucide-react';
 import type { Investigation } from '../types';
+import { payeeNotChecked } from '../lib/checks';
 import { CLAIM_SENTENCE, claimMatch, type ClaimMatch } from '../lib/explain';
 import { cn, money, softBreak } from '../lib/format';
-import { displayBrand } from '../lib/labels';
+import { displayBrand, payeeDisplay } from '../lib/labels';
 import { Icon } from './ui';
 
 const CONNECTOR: Record<ClaimMatch, { word: string; glyph: typeof XCircle; mark: string }> = {
@@ -20,6 +21,7 @@ export function ClaimedVsActual({ inv, className }: { inv: Investigation; classN
   const match = claimMatch(inv);
   const c = CONNECTOR[match];
   const done = inv.status === 'COMPLETE';
+  const noPayee = payeeNotChecked(inv);
   return <section aria-label="Claimed versus actual" className={cn('cva', className)}><div className="cva-grid">
     <div className="space-y-0.5 min-w-0">
       <p className="label">Storefront says</p>
@@ -40,9 +42,9 @@ export function ClaimedVsActual({ inv, className }: { inv: Investigation; classN
 
     <div className="space-y-0.5 min-w-0">
       <p className="label">PayPal pays</p>
-      <p className="text-xl font-semibold break-words">{inv.payeeName ?? 'Not supplied'}</p>
-      <p className="font-mono text-xs text-muted break-all">{inv.payeeId ? `Merchant id ${inv.payeeId}` : 'No merchant id'}</p>
-      <p className="pt-1">{inv.payeeTier ?? 'Account type not checked'}</p>
+      <p className="text-xl font-semibold break-words">{payeeDisplay(inv.payeeName)}</p>
+      <p className="font-mono text-xs text-muted break-all">{noPayee ? 'A website check has no receiving account' : inv.payeeId ? `Merchant id ${inv.payeeId}` : 'No merchant id'}</p>
+      <p className="pt-1">{noPayee ? 'Compared when you pay' : inv.payeeTier ?? 'Account type not checked'}</p>
       <p className="text-xs text-muted">The account email is never shown.</p>
     </div>
   </div></section>;

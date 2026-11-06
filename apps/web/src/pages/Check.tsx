@@ -11,7 +11,7 @@ import { EmptyState, Icon, Skeleton, VerdictText, WakeNote } from '../components
 import { STORES } from '../data/stores';
 import { summaryCounts } from '../lib/checks';
 import { money, softBreak } from '../lib/format';
-import { displayBrand, formatDateTime } from '../lib/labels';
+import { displayBrand, formatDateTime, payeeDisplay } from '../lib/labels';
 import { friendlyPaymentError } from '../lib/payment';
 
 /** The API's message for a bad address, or a plain version of a network failure. */
@@ -108,7 +108,7 @@ export default function Check() {
             <tbody>{latest.map(i => <tr key={i.id} className="border-b border-line align-top">
               <td className="py-3 pr-4 font-mono break-words"><Link to={`/engine/${i.id}`} className="link">{softBreak(i.domain)}</Link></td>
               <td className="py-3 pr-4">{displayBrand(i.claimedBrand, i.domain)}</td>
-              <td className="py-3 pr-4">{i.payeeName ?? <span className="text-muted">Not supplied</span>}</td>
+              <td className="py-3 pr-4">{i.payeeName ?? <span className="text-muted">{payeeDisplay(null)}</span>}</td>
               <td className="py-3 pr-4"><CaseVerdict inv={i} /></td>
               <td className="py-3 text-right text-muted num whitespace-nowrap"><time dateTime={i.createdAt}>{formatDateTime(i.createdAt)}</time></td>
             </tr>)}</tbody></table></div>}

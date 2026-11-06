@@ -1,3 +1,4 @@
+// @brand-check-allow functional test of official marketplace recognition, not demo content.
 import { test, before, after, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import request from 'supertest';

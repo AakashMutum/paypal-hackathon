@@ -1,3 +1,4 @@
+// @brand-check-allow functional test of the price provider, not demo content.
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {

@@ -28,7 +28,7 @@ export interface PageProduct {
   brand?: string;
   availability?: string;
   seller?: string;
-  source: 'json-ld' | 'opengraph' | 'microdata' | 'metadata' | 'title';
+  source: 'json-ld' | 'opengraph' | 'microdata' | 'metadata' | 'title' | 'visible-text';
 }
 
 export type FaviconCheckState =
