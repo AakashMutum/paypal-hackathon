@@ -35,6 +35,12 @@ import { registryLookup } from '../registry/registry.service.js';
 export type SignalsMode = 'replay' | 'live' | 'auto';
 export type LlmMode = 'live' | 'replay' | 'record' | 'none';
 
+function isPlaceholder(value: string | undefined): boolean {
+  if (!value) return true;
+  const v = value.trim().toLowerCase();
+  return v === '' || v.startsWith('your_') || v.includes('.example') || v === 'your_llm_api_key';
+}
+
 export function signalsMode(env: NodeJS.ProcessEnv = process.env): SignalsMode {
   const raw = env.SIGNALS_MODE?.trim().toLowerCase();
   // The agent's own SIGNALS_MODE values (fixture, live) map onto replay and live.
@@ -45,7 +51,7 @@ export function signalsMode(env: NodeJS.ProcessEnv = process.env): SignalsMode {
 
 export function llmMode(env: NodeJS.ProcessEnv = process.env): LlmMode {
   const raw = env.LLM_MODE?.trim().toLowerCase();
-  const hasKey = Boolean(env.LLM_API_KEY?.trim());
+  const hasKey = Boolean(env.LLM_API_KEY?.trim()) && !isPlaceholder(env.LLM_API_KEY);
   if (raw === 'none') return 'none';
   if (raw === 'replay') return 'replay';
   if (raw === 'record' || raw === 'live') {
@@ -55,7 +61,7 @@ export function llmMode(env: NodeJS.ProcessEnv = process.env): LlmMode {
     }
     return raw;
   }
-  return hasKey ? 'live' : 'none';
+  return 'none';
 }
 
 export function isCanonicalDomain(domainOrUrl: string): boolean {
@@ -161,7 +167,12 @@ let patternStore: Promise<PatternStore> | undefined;
 
 export function getPatternStore(): Promise<PatternStore> {
   patternStore ??= (async () => {
-    const store = await createPatternStore({ env: process.env });
+    const env = { ...process.env };
+    if (isPlaceholder(env.ELASTIC_URL) || isPlaceholder(env.ELASTIC_API_KEY)) {
+      delete env.ELASTIC_URL;
+      delete env.ELASTIC_API_KEY;
+    }
+    const store = await createPatternStore({ env });
     if (store instanceof ElasticPatternStore) {
       // The in-memory store loads its seeds itself; Elasticsearch gets them once, when empty.
       await store.ensureIndex();
