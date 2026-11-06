@@ -45,6 +45,26 @@ import { registryLookup } from '../registry/registry.service.js';
 export type SignalsMode = 'replay' | 'live' | 'auto';
 export type LlmMode = 'live' | 'replay' | 'record' | 'none';
 
+/** Exact placeholder strings from .env.example and render.yaml, besides anything starting with "your_". */
+const PLACEHOLDERS = new Set(['changeme', 'change_me', 'replace_me', 'https://your-elastic-deployment.example']);
+
+/**
+ * True for a value that was copied from an example file and never filled in: empty, "your_...", or
+ * one of the exact known placeholder strings. Real text that merely contains ".example" is not one.
+ */
+export function isPlaceholder(value: string | undefined): boolean {
+  const v = (value ?? '').trim().toLowerCase();
+  return v === '' || v.startsWith('your_') || PLACEHOLDERS.has(v);
+}
+
+/** The environment for the pattern store: a copy without placeholder Elastic settings. */
+export function memoryEnv(env: NodeJS.ProcessEnv = process.env): NodeJS.ProcessEnv {
+  const copy = { ...env };
+  if (isPlaceholder(copy.ELASTIC_URL)) delete copy.ELASTIC_URL;
+  if (isPlaceholder(copy.ELASTIC_API_KEY)) delete copy.ELASTIC_API_KEY;
+  return copy;
+}
+
 export function signalsMode(env: NodeJS.ProcessEnv = process.env): SignalsMode {
   const raw = env.SIGNALS_MODE?.trim().toLowerCase();
   // The agent's own SIGNALS_MODE values (fixture, live) map onto replay and live.
@@ -60,14 +80,15 @@ type LlmKeySource = 'LLM_API_KEY' | 'GEMINI_API_KEY' | 'none';
 function llmApiKey(env: NodeJS.ProcessEnv): { key: string; source: LlmKeySource } {
   for (const name of ['LLM_API_KEY', 'GEMINI_API_KEY'] as const) {
     const value = env[name]?.trim();
-    if (value) return { key: value, source: name };
+    if (value && !isPlaceholder(value)) return { key: value, source: name };
   }
   return { key: '', source: 'none' };
 }
 
 export function llmMode(env: NodeJS.ProcessEnv = process.env): LlmMode {
   const raw = env.LLM_MODE?.trim().toLowerCase();
-  const hasKey = llmApiKey(env).key.length > 0;
+  const key = llmApiKey(env).key;
+  const hasKey = key.length > 0 && !isPlaceholder(key);
   if (raw === 'none') return 'none';
   if (raw === 'mock' || raw === 'replay') return 'replay';
   if (raw === 'record' || raw === 'live') {
@@ -359,7 +380,7 @@ export function getPatternStore(): Promise<PatternStore> {
       const useFile = requested === 'file' || (!inTest && requested !== 'memory' && requested !== 'elastic');
       const filePath = process.env.MEMORY_FILE?.trim() || join(process.cwd(), '.cache', 'trustora-memory.json');
       const store = await createPatternStore({
-        env: process.env,
+        env: memoryEnv(process.env),
         fetchImpl: customMemoryFetch ?? undefined,
         ...(useFile ? { filePath } : {}),
         seed: true,

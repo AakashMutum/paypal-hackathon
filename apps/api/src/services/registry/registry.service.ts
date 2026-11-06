@@ -77,7 +77,7 @@ export async function registryAddMerchant(input: NewMerchant): Promise<string> {
   return merchantId;
 }
 
-interface MerchantRow {
+export interface MerchantRow {
   merchant_id: string | null;
   domain: string;
   claimed_name: string;
@@ -96,20 +96,42 @@ const fromRow = (r: MerchantRow): RegistryMerchant => ({
 
 export type RegistryField = 'name' | 'domain' | 'merchantId';
 
+export interface LookupDeps {
+  /** Force the database path on or off. Defaults to the configured backend. */
+  database?: boolean;
+  /** Runs the SQL. Defaults to the shared database connection. */
+  run?: (text: string, params?: unknown[]) => Promise<{ rows: MerchantRow[] }>;
+  env?: NodeJS.ProcessEnv;
+}
+
+let fallbackLogged = false;
+
+/** Forgets that the empty-database fallback was announced. Tests use it. */
+export function registryResetFallbackLog(): void {
+  fallbackLogged = false;
+}
+
 /** Looks up registered merchants. At most five are returned. */
-export async function registryLookup(by: RegistryField, value: string): Promise<RegistryMerchant[]> {
+export async function registryLookup(by: RegistryField, value: string, deps: LookupDeps = {}): Promise<RegistryMerchant[]> {
   const q = value.trim().toLowerCase();
-  const backend = await getBackend();
-  if (backend.mode === 'database') {
+  const useDatabase = deps.database ?? (await getBackend()).mode === 'database';
+  if (useDatabase) {
     const column = by === 'name' ? 'lower(claimed_name)' : by === 'domain' ? 'lower(domain)' : 'lower(merchant_id)';
-    const res = await query<MerchantRow>(`SELECT * FROM merchant_records WHERE ${column} = $1 LIMIT 5`, [by === 'domain' ? cleanDomain(q) : q]);
-    return res.rows.map(fromRow);
+    const run = deps.run ?? ((text: string, params?: unknown[]) => query<MerchantRow>(text, params));
+    const res = await run(`SELECT * FROM merchant_records WHERE ${column} = $1 LIMIT 5`, [by === 'domain' ? cleanDomain(q) : q]);
+    // An empty table falls back to the in-memory demo catalogue only on a demo deployment (DEMO_SEED=true).
+    // Otherwise the database answer, even an empty one, is the answer.
+    if (res.rows.length > 0 || (deps.env ?? process.env).DEMO_SEED !== 'true') return res.rows.map(fromRow);
+    if (!fallbackLogged) {
+      fallbackLogged = true;
+      console.info('registry: database empty, using demo catalogue');
+    }
   }
   seedMemory();
   const out: RegistryMerchant[] = [];
   for (const m of memory.values()) {
     const hit =
-      (by === 'name' && m.brandNames.some((n) => n.toLowerCase() === q)) ||
+      (by === 'name' && (m.brandNames.some((n) => n.toLowerCase() === q) || m.legalName.toLowerCase() === q)) ||
       (by === 'merchantId' && m.merchantId.toLowerCase() === q) ||
       (by === 'domain' && m.domain === cleanDomain(q));
     if (hit) out.push(m);
