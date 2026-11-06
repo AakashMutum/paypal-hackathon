@@ -7,7 +7,7 @@ import { useSlowLoading } from '../hooks/useSlowLoading';
 import { InvestigationView } from '../components/InvestigationView';
 import { Icon, Skeleton, VerdictBadge } from '../components/ui';
 import { cn, download } from '../lib/format';
-import { displayBrand, formatDateTime, VERDICT_WORDS } from '../lib/labels';
+import { displayBrand, formatDateTime, payeeDisplay, VERDICT_WORDS } from '../lib/labels';
 
 const FILTERS = ['ALL', 'ALLOW', 'WARN', 'PAUSE'] as const;
 export const PAGE_SIZE = 25;
@@ -76,7 +76,7 @@ export default function Investigations() {
         {visible.map(i => <button key={i.id} aria-current={selected === i.id ? 'true' : undefined} onClick={() => nav(`/engine/${i.id}`)}
           className={cn('w-full text-left p-4 flex justify-between items-center gap-3 hover:bg-surface-2', selected === i.id && 'bg-surface-2')}>
           <div className="min-w-0"><div className="font-mono text-sm font-semibold truncate">{i.domain}</div>
-            <div className="text-xs text-muted truncate">{displayBrand(i.claimedBrand, i.domain)} → {i.payeeName ?? 'Not supplied'}</div>
+            <div className="text-xs text-muted truncate">{displayBrand(i.claimedBrand, i.domain)} → {payeeDisplay(i.payeeName)}</div>
             <time dateTime={i.createdAt} className="text-xs text-muted font-mono">{formatDateTime(i.createdAt)}</time></div>
           <VerdictBadge verdict={i.verdict} /></button>)}</div>
       {rows.length > visible.length && <button className="btn-secondary w-full mt-3" onClick={() => setShown(n => n + PAGE_SIZE)}>Load more ({rows.length - visible.length} more)</button>}

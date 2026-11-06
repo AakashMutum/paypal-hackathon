@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { closeCases, displayBrand, evidenceLabel, formatDateTime, memoryLabel, retrievalLabel, scoreText, VERDICT_WORDS, verdictText } from '../src/lib/labels.js';
+import { closeCases, displayBrand, evidenceLabel, formatDateTime, memoryLabel, payeeDisplay, retrievalLabel, scoreText, VERDICT_WORDS, verdictText } from '../src/lib/labels.js';
 import { radarMessage } from '../src/lib/explain.js';
 
 test('one user-facing word per decision; the API words stay for the analyst table', () => {
@@ -51,6 +51,12 @@ test('a long or description-like claimed brand falls back to the host name', () 
   assert.equal(displayBrand(long, 'www.shop.example'), 'shop.example');
   assert.equal(displayBrand('Great Shop | Official Store', 'www.shop.example'), 'shop.example');
   assert.equal(displayBrand('', 'www.shop.example'), 'shop.example');
+});
+
+test('a website check says the receiving account is checked at checkout, not that it is missing', () => {
+  assert.equal(payeeDisplay('Harborline Outfitters Ltd'), 'Harborline Outfitters Ltd');
+  assert.equal(payeeDisplay(null), 'Checked at checkout');
+  assert.equal(payeeDisplay(''), 'Checked at checkout');
 });
 
 test('dates show the day and the time', () => {

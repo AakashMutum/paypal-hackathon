@@ -8,7 +8,7 @@ const denylistPath = join(root, 'scripts', 'brand-denylist.txt');
 // deliberately not listed, and node_modules is always skipped.
 const scanPaths = [
   'demo-sites',
-  'tests/fixtures',
+  'tests',
   'docs',
   'apps/web/src',
   'apps/web/index.html',
@@ -19,6 +19,11 @@ const scanPaths = [
   'packages/*/tests',
   'packages/*/README.md',
   'apps/*/src',
+  // Checked-in test data and fixtures are scanned too: a real brand must not be saved as if it
+  // were demo content.
+  'apps/*/test',
+  'apps/*/tests',
+  'apps/*/fixtures',
 ];
 const skipDirs = new Set(['node_modules', 'dist', '.git']);
 const binaryExt = new Set(['.png', '.jpg', '.jpeg', '.gif', '.ico', '.webp', '.pdf', '.woff', '.woff2']);

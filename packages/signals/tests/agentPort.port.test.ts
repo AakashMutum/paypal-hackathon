@@ -286,6 +286,36 @@ test('structured product price is used for a price comparison when no amount was
   assert.equal((price.data as { discountPct: number }).discountPct, 85);
 });
 
+test('when no order amount is supplied, the page-extracted currency is used for comparison not the order currency', async () => {
+  // An Indian shop page publishes INR pricing; no transactionAmount is supplied.
+  // The price comparison must use INR, not the default USD order currency.
+  const html = `<html><head><title>Example</title><script type="application/ld+json">
+  {"@type":"Product","name":"Trail jacket","offers":{"price":"1299.00","priceCurrency":"INR"}}
+  </script></head><body><p>Trail jacket</p></body></html>`;
+  const channel3Called: Array<{ currency?: string; maxPrice: number }> = [];
+  const spyChannel3: import('../src/agentPort/types.js').Channel3Client = {
+    async searchOffers(q) {
+      channel3Called.push({ currency: q.currency, maxPrice: q.maxPrice });
+      return { offerCount: 0, medianPrice: undefined, minPrice: undefined, sampleDomains: [] };
+    },
+  };
+  const port = createLocalSignalsPort(
+    baseOptions(
+      { pages: { 'https://shop.example/item': html } },
+      { channel3: spyChannel3 },
+    ),
+  );
+  const claims = await port.getPageClaims('https://shop.example/item', callOpts);
+  assert.equal(claims.product?.price, 1299);
+  assert.equal(claims.product?.currency, 'INR');
+
+  // getPriceReport with no amount or items; currency comes from the page, not the default USD.
+  await port.getPriceReport({ claims, currency: 'USD' }, callOpts);
+  assert.equal(channel3Called.length, 1);
+  assert.equal(channel3Called[0]?.currency, 'INR', 'must compare in INR, not the order USD');
+  assert.equal(channel3Called[0]?.maxPrice, 1299);
+});
+
 test('fetchPageSection finds the first usual path and caps text', async () => {
   const about =
     '<html><body><h1>About us</h1><p>Veloura Outdoor Pvt Ltd, registration no: U12345AB2020.</p><address>5 Test Lane, Pune</address></body></html>';

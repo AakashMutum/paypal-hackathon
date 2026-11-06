@@ -107,6 +107,16 @@ export function embeddingSettingLabel(embeddings?: string): string | null {
   return embeddings;
 }
 
+/**
+ * What "who gets paid" says for a website check. A check on a website never carries a payee; the
+ * receiving account is compared when the buyer pays, so this is a normal state, not missing data.
+ */
+export const PAYEE_AT_CHECKOUT = 'Checked at checkout';
+
+export function payeeDisplay(payeeName: string | null | undefined): string {
+  return payeeName?.trim() || PAYEE_AT_CHECKOUT;
+}
+
 const MAX_BRAND = 60;
 
 /**

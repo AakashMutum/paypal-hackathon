@@ -2,7 +2,8 @@
 // VITE_USE_MOCK=true. Everything here is simulated and every investigation says so.
 import type { CreateOrderRequest, CreateOrderResponse, Evidence, EvidenceStatus, Investigation, MerchantRegistration, MerchantResult, Provenance, ReportRequest, SimilarCase, Verdict } from '../types';
 
-const KEY = 'trustora_mock_v2', STEP = 1000;
+// v3 drops saved state from earlier versions that invented a brand from the domain label.
+const KEY = 'trustora_mock_v3', STEP = 1000;
 const wait = (ms = 150) => new Promise(r => setTimeout(r, ms));
 const rid = () => Math.random().toString(16).slice(2, 8).toUpperCase();
 
@@ -30,9 +31,9 @@ function profileFor(url: string): Profile {
   const bare = (d: string) => d.replace(/^www\./, '');
   const k = domain && KNOWN.find(p => bare(p.domain) === bare(domain));
   if (k) return k;
-  // Unknown domain: the simulator has no signals for it, so it cannot clear it.
-  const brand = (bare(domain).split('.')[0].split('-')[0] || 'Unknown').replace(/^./, c => c.toUpperCase());
-  return { domain: domain || 'unknown.example', brand, product: 'Featured item', price: 0, benchmark: 0, payeeName: 'Unknown receiver', payeeId: 'UNKNOWN', payeeTier: 'Unknown', ageDays: 0, records: 0, verdict: 'WARN', risk: 0 };
+  // Unknown domain: the simulator has no signals for it, so it cannot clear it. No brand is
+  // invented from the domain label: the domain is the identity, and saved records stay honest.
+  return { domain: domain || 'unknown.example', brand: '', product: 'Featured item', price: 0, benchmark: 0, payeeName: 'Unknown receiver', payeeId: 'UNKNOWN', payeeTier: 'Unknown', ageDays: 0, records: 0, verdict: 'WARN', risk: 0 };
 }
 
 function build(p: Profile, o: { id?: string; orderId?: string; buyerEmail?: string; at?: number } = {}): Investigation {

@@ -304,6 +304,119 @@ function sellerFromMeta(meta: Map<string, string>): string | undefined {
   return meta.get('product:seller') ?? meta.get('og:seller');
 }
 
+/**
+ * Product data written as microdata or data attributes instead of OpenGraph. Real storefronts
+ * commonly publish `<span itemprop="price" content="...">` or `data-product-price="..."`.
+ */
+function productFromDataAttributes(html: string): PageProduct | undefined {
+  let price: number | undefined;
+  let currency: string | undefined;
+
+  for (const match of html.matchAll(/<([a-z][a-z0-9]*)\b([^>]*)>/gi)) {
+    const tag = `<${match[1]} ${match[2] ?? ''}>`;
+    const items = (attr(tag, 'itemprop') ?? '').toLowerCase().split(/\s+/);
+    if (!currency && items.includes('pricecurrency')) {
+      currency = currencyCode(attr(tag, 'content') ?? attr(tag, 'value'));
+    }
+    if (price !== undefined) continue;
+    if (items.includes('price')) {
+      const content = attr(tag, 'content') ?? attr(tag, 'value');
+      const text = content ?? collapse((html.slice((match.index ?? 0) + match[0].length).split('<')[0] ?? '').slice(0, 40));
+      price = parsePrice(text);
+    } else {
+      price = parsePrice(attr(tag, 'data-product-price') ?? attr(tag, 'data-price'));
+    }
+  }
+
+  if (price === undefined) return undefined;
+  return { price, ...(currency ? { currency } : {}), source: 'microdata' };
+}
+
+/** Keeps a product's own fields and only fills a missing price from microdata. */
+function mergeProduct(base: PageProduct | undefined, extra: PageProduct | undefined): PageProduct | undefined {
+  const product = base ?? extra;
+  if (!product) return undefined;
+  if (product.price !== undefined) return product;
+  if (extra?.price === undefined) return product;
+  return {
+    ...product,
+    price: extra.price,
+    ...(product.currency ?? extra.currency ? { currency: product.currency ?? extra.currency } : {}),
+    source: extra.source,
+  };
+}
+
+const CURRENCY_BY_TOKEN: Readonly<Record<string, string>> = {
+  '₹': 'INR',
+  'RS': 'INR',
+  'RS.': 'INR',
+  'INR': 'INR',
+  'A$': 'AUD',
+  'C$': 'CAD',
+  'S$': 'SGD',
+  'R$': 'BRL',
+  'MX$': 'MXN',
+  '$': 'USD',
+  '€': 'EUR',
+  '£': 'GBP',
+  '¥': 'JPY',
+  'USD': 'USD',
+  'EUR': 'EUR',
+  'GBP': 'GBP',
+  'AUD': 'AUD',
+  'CAD': 'CAD',
+  'SGD': 'SGD',
+  'JPY': 'JPY',
+  'BRL': 'BRL',
+  'MXN': 'MXN',
+};
+
+function currencyFromToken(token: string): string | undefined {
+  return CURRENCY_BY_TOKEN[token.replace(/\s+/g, '').toUpperCase()];
+}
+
+const NOT_A_PRICE = /(?:under|below|upto|up to|from|starting|over|above|save|off|emi|cashback|shipping|delivery|fee|tax|free)\W{0,3}$/i;
+const PRICE_LABEL = /(?:price|mrp|m\.r\.p\.?|now|deal|sale|offer|only|buy(?:\s+at)?|you\s+pay|total|cost)\W{0,3}$/i;
+const LIST_PRICE_LABEL = /(?:mrp|m\.r\.p\.?|list\s+price|was|before)\W{0,3}$/i;
+
+/**
+ * A price read from the visible text of a product page. Many real storefronts render the price
+ * without JSON-LD or OpenGraph metadata. A grouped or explicitly labelled amount is accepted;
+ * navigation text ("Under ₹500") and a crossed-out list price are not treated as the selling price.
+ */
+export function priceFromVisibleText(text: string): { price: number; currency?: string } | undefined {
+  const source = text.slice(0, VISIBLE_CAP);
+  let chosen: { price: number; currency?: string } | undefined;
+  let listPrice: { price: number; currency?: string } | undefined;
+
+  const consider = (raw: string, index: number, token: string): void => {
+    if (chosen) return;
+    const before = source.slice(Math.max(0, index - 24), index).trim();
+    if (NOT_A_PRICE.test(before)) return;
+    const price = parsePrice(raw);
+    if (price === undefined || price > 100_000_000) return;
+    // A bare number is only a price when a label names it; grouped amounts ("1,299") count on their own.
+    if (!/[.,]\d{2}/.test(raw) && !PRICE_LABEL.test(before)) return;
+    const currency = currencyFromToken(token);
+    const candidate = { price, ...(currency ? { currency } : {}) };
+    if (LIST_PRICE_LABEL.test(before)) {
+      listPrice ??= candidate;
+      return;
+    }
+    chosen = candidate;
+  };
+
+  const prefixed = /(A\$|C\$|S\$|R\$|MX\$|₹|Rs\.?|INR|USD|EUR|GBP|AUD|CAD|SGD|JPY|BRL|MXN|\$|€|£|¥)\s?(\d[\d,.]{0,18})/gi;
+  for (const match of source.matchAll(prefixed)) consider(match[2] ?? '', match.index ?? 0, match[1] ?? '');
+
+  if (!chosen) {
+    const suffixed = /(\d[\d,.]{0,18})\s*(INR|USD|EUR|GBP|AUD|CAD|SGD|JPY|BRL|MXN)\b/gi;
+    for (const match of source.matchAll(suffixed)) consider(match[1] ?? '', match.index ?? 0, match[2] ?? '');
+  }
+
+  return chosen ?? listPrice;
+}
+
 export interface ExtractedPage {
   title?: string;
   siteName?: string;
@@ -403,7 +516,8 @@ export function extractPage(html: string): ExtractedPage {
   const labelled = visibleText.match(/Address:\s*([^|]{8,120})/i);
 
   // Only structured metadata counts as product data. An arbitrary <h1> is not a product name.
-  const product = jsonLdProduct ?? productFromMeta(meta);
+  const microProduct = productFromDataAttributes(withoutComments);
+  const product = jsonLdProduct ?? mergeProduct(productFromMeta(meta), microProduct) ?? microProduct;
 
   return {
     title,
@@ -479,7 +593,11 @@ export function classifyPageAccess(
 function isProductPath(url: string): boolean {
   try {
     const path = new URL(url).pathname;
-    return /\/(?:dp|gp\/product|product|products|p|item|listing)\//i.test(`${path}/`);
+    // Covers common product URL segment patterns across various e-commerce platforms:
+    //   /dp/ /p/ /product/ /products/ /item/ /listing/ /itm/ /sku/   – generic
+    //   /proddetail/ /prn/ /pd/                                       – region-specific patterns
+    //   /buy/ /details/                                                – slug-style
+    return /\/(?:dp|gp\/product|products?|p|item|listing|itm|sku|proddetail|prn|pd|buy|details?)(?:\/|$)/i.test(path);
   } catch {
     return false;
   }
@@ -515,7 +633,22 @@ export function extractPageClaims(html: string, finalUrl: string, httpStatus = 2
           ),
         )
       : undefined;
-  const product = page.product ?? titleProduct;
+  const baseProduct = page.product ?? titleProduct;
+  // Many real product pages render the price without any structured metadata. A price is only
+  // read from the page text on a product-style URL, never from a homepage or listing.
+  const textPrice =
+    baseProduct && baseProduct.price === undefined && access.state === 'ok' && isProductPath(finalUrl)
+      ? priceFromVisibleText(page.visibleText)
+      : undefined;
+  const product =
+    baseProduct && textPrice
+      ? {
+          ...baseProduct,
+          price: textPrice.price,
+          ...(textPrice.currency && !baseProduct.currency ? { currency: textPrice.currency } : {}),
+          source: 'visible-text' as const,
+        }
+      : baseProduct;
   const own = host ? registrableDomain(host) : '';
   const linkedDomains = new Set<string>();
   const sectionLinks: Partial<Record<SectionHint, string>> = {};

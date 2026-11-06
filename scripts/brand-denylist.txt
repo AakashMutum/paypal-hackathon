@@ -38,3 +38,35 @@ Dell
 Keychron
 Rogue Fitness
 Audio-Technica
+# Marketplaces and retailers, including the Indian sites real scans tend to target. They are
+# listed so checked-in fixtures, tests and saved demo data can never quietly hold a real brand.
+Flipkart
+Blinkit
+Snapdeal
+DeoDap
+IndiaMART
+Myntra
+Meesho
+Nykaa
+Ajio
+Tata CLiQ
+Croma
+JioMart
+BigBasket
+Zepto
+ShopClues
+Limeroad
+FirstCry
+Pepperfry
+Swiggy
+Zomato
+eBay
+Etsy
+Alibaba
+AliExpress
+Temu
+Shein
+Rakuten
+Lazada
+Shopee
+Mercado Libre

@@ -1,7 +1,13 @@
 // @brand-check-allow functional real-merchant hostname tests, not demo content.
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { classifyPageAccess, extractPage, extractPageClaims, parsePrice } from '../src/agentPort/html.js';
+import {
+  classifyPageAccess,
+  extractPage,
+  extractPageClaims,
+  parsePrice,
+  priceFromVisibleText,
+} from '../src/agentPort/html.js';
 
 const html = `<!doctype html><html><head><title>Veloura Outdoor - Home</title>
 <link rel="icon" href="/favicon.png">
@@ -217,4 +223,76 @@ test('prices are parsed from common locale formats without inventing values', ()
   assert.equal(parsePrice('free'), undefined);
   assert.equal(parsePrice('0'), undefined);
   assert.equal(parsePrice(undefined), undefined);
+});
+
+test('reads a selling price from visible page text when structured metadata has none', () => {
+  const page = `<html><head><title>Trailphone 15 (Black, 128 GB)</title>
+    <meta property="og:title" content="Trailphone 15 (Black, 128 GB)">
+    </head><body>
+    <p>Under ₹500</p>
+    <p>Saver Deal ₹59,900</p>
+    <p>+₹299 Protect Promise Fee</p>
+    </body></html>`;
+  const claims = extractPageClaims(page, 'https://shop.example/trailphone-15/p/itm6ac6485515ae4');
+  assert.equal(claims.product?.price, 59900);
+  assert.equal(claims.product?.currency, 'INR');
+  assert.equal(claims.product?.source, 'visible-text');
+});
+
+test('a price is not read from a homepage or a navigation hint', () => {
+  const home = extractPageClaims(
+    '<html><head><title>Example shop</title></head><body><p>Deals from ₹999</p></body></html>',
+    'https://shop.example/',
+  );
+  assert.equal(home.product?.price, undefined);
+  assert.equal(priceFromVisibleText('Under ₹500'), undefined);
+});
+
+test('reads a price from microdata and prefers the selling price over a list price', () => {
+  const micro = extractPageClaims(
+    `<html><head><title>Trail jacket</title></head><body>
+      <span itemprop="price" content="84.50"></span>
+      <span itemprop="priceCurrency" content="USD"></span>
+    </body></html>`,
+    'https://shop.example/products/trail-jacket',
+  );
+  assert.equal(micro.product?.price, 84.5);
+  assert.equal(micro.product?.currency, 'USD');
+  assert.equal(micro.product?.source, 'microdata');
+
+  assert.deepEqual(priceFromVisibleText('M.R.P.: ₹2,49,900 Deal price ₹1,19,900'), {
+    price: 119900,
+    currency: 'INR',
+  });
+});
+
+test('product URLs from Indian e-commerce sites are recognised as product paths', () => {
+  // Flipkart /p/ style
+  const flipkart = extractPageClaims(
+    `<html><head><title>Trailphone 15</title><meta property="og:title" content="Trailphone 15"></head>
+     <body><p>Price: ₹59,900</p></body></html>`,
+    'https://www.flipkart.example/trailphone-15/p/itm6ac6485515ae4',
+  );
+  assert.equal(flipkart.product?.price, 59900);
+  assert.equal(flipkart.product?.currency, 'INR');
+  assert.equal(flipkart.product?.source, 'visible-text');
+
+  // IndiaMART /proddetail/ style
+  const indiamart = extractPageClaims(
+    `<html><head><title>Industrial Widget</title><meta property="og:title" content="Industrial Widget"></head>
+     <body><p>Price: ₹1,200</p></body></html>`,
+    'https://www.indiamart.example/proddetail/industrial-widget-12345.html',
+  );
+  assert.equal(indiamart.product?.price, 1200);
+  assert.equal(indiamart.product?.source, 'visible-text');
+
+  // Blinkit /prn/ style
+  const blinkit = extractPageClaims(
+    `<html><head><title>Fresh Milk 1L</title><meta property="og:title" content="Fresh Milk 1L"></head>
+     <body><p>Now ₹65</p></body></html>`,
+    'https://blinkit.example/prn/fresh-milk-1l/prid/999',
+  );
+  // /prn/ is a known product path; a price with PRICE_LABEL before it is extracted
+  assert.equal(blinkit.product?.price, 65);
+  assert.equal(blinkit.product?.source, 'visible-text');
 });
