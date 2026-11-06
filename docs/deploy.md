@@ -74,6 +74,23 @@ Everything the API and web app read, and where:
 | `WARMUP` | `apps/api/src/services/warmup.service.ts` (off with `WARMUP=off`; optional) |
 | `KERNEL_API_KEY`, `CHANNEL3_API_KEY` | `packages/signals/src/agentPort/liveClients.ts` (`createLiveClientsFromEnv`); the live clients are chosen in `apps/api/src/services/agent/agentPorts.ts` |
 | `DEMO_ADMIN_TOKEN`, `GUARDIAN_API_KEY` | `apps/api/src/config/env.ts` |
+
+### Agent timing on a hosted deployment
+
+The code defaults are `AGENT_TIMEOUT_MS=12000` and `AGENT_MODEL_BUDGET_MS=1200`. A hosted deployment with a
+live language model and live signals may need more room. Set these as environment settings, not in code:
+
+```
+AGENT_TIMEOUT_MS=25000
+AGENT_MODEL_BUDGET_MS=4000
+```
+
+The trade-off: a slow scan is allowed to run longer and the model may use more of it, so the time per scan
+rises (up to 25 seconds in the worst case, instead of 12). Keep the defaults where speed matters more.
+
+Placeholder values copied from `.env.example` (for example `LLM_API_KEY=your_llm_api_key`) are treated as
+not set, so the model and Elasticsearch are off until a real value is given. `DEMO_SEED=true` also lets a
+registry lookup fall back to the built-in demo merchants when the database table is empty.
 | `SIGNALS_MODE`, `LLM_MODE`, `LLM_API_KEY`, `LLM_BASE_URL`, `LLM_MODEL_FAST`, `LLM_MODEL_STRONG`, `LLM_FIXTURE_DIR`, `KERNEL_API_KEY`, `CHANNEL3_API_KEY`, `ELASTIC_URL`, `ELASTIC_API_KEY`, `ELASTIC_INDEX` | `apps/api/src/services/agent/agentPorts.ts` |
 | `STORE_GENUINE_PAYEE_EMAIL`, `STORE_GENUINE_PAYEE_MERCHANT_ID`, and the same for `DISCOUNT` and `IMPERSONATOR` | `apps/api/src/config/storeCatalog.ts` |
 | `VITE_API_URL`, `VITE_USE_MOCK` | `apps/web/src/api/apiClient.ts` |
