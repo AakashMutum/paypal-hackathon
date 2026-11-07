@@ -24,13 +24,10 @@
 ![License](https://img.shields.io/badge/License-MIT-green)
 
 [**Live demo**](https://trustora-demo.vercel.app/) &nbsp;|&nbsp;
-[**Watch the video**](https://youtu.be/ADD_VIDEO_ID) &nbsp;|&nbsp;
-[**Devpost page**](https://devpost.com/software/ADD_PROJECT_SLUG) &nbsp;|&nbsp;
+[**Watch the video**](docs/vids/demo-vid.mp4) &nbsp;|&nbsp;
 [**API health**](https://trust-ora.onrender.com/health)
 
-<!-- ADD_HERO_GIF: a 15 to 25 second screen recording of the impersonator store getting blocked.
-     Save it as docs/images/hero.gif (keep it under 10 MB). -->
-<img src="docs/images/hero.gif" alt="TrustOra blocking a fake store at checkout" width="820" />
+
 
 </div>
 
@@ -51,11 +48,8 @@
 11. [How we measured it](#how-we-measured-it)
 12. [Problems we faced](#problems-we-faced)
 13. [Try it yourself](#try-it-yourself)
-14. [Honest limits](#honest-limits)
-15. [What is next](#what-is-next)
-16. [Team](#team)
-17. [AI tools disclosure](#ai-tools-disclosure)
-18. [More documentation](#more-documentation)
+14. [AI tools disclosure](#ai-tools-disclosure)
+15. [More documentation](#more-documentation)
 
 ---
 
@@ -116,16 +110,14 @@ The demo uses three **invented** stores. No real brands are used anywhere.
 
 <table>
   <tr>
-    <th align="center">Harborline Outfitters<br/><sub>the genuine store</sub></th>
-    <th align="center">Bargain Barn Outlet<br/><sub>a heavy discount</sub></th>
-    <th align="center">Harborlyne Outfitters Sale<br/><sub>the impersonator</sub></th>
+    <th align="center" width="33%">Harborline Outfitters<br/><sub>the genuine store</sub></th>
+    <th align="center" width="33%">Bargain Barn Outlet<br/><sub>a heavy discount</sub></th>
+    <th align="center" width="33%">Harborlyne Outfitters Sale<br/><sub>the impersonator</sub></th>
   </tr>
   <tr>
-    <!-- ADD_SCREENSHOTS: one screenshot of the case page for each store.
-         Save as docs/images/case-allow.png, case-warn.png, case-pause.png -->
-    <td><img src="docs/images/case-allow.png" alt="Allowed decision" /></td>
-    <td><img src="docs/images/case-warn.png" alt="Needs review decision" /></td>
-    <td><img src="docs/images/case-pause.png" alt="Held decision" /></td>
+    <td align="center" valign="top"><img src="docs/images/case-allow.png" alt="Allowed decision" width="100%" /></td>
+    <td align="center" valign="top"><img src="docs/images/case-warn.png" alt="Needs review decision" width="100%" /></td>
+    <td align="center" valign="top"><img src="docs/images/case-pause.png" alt="Held decision" width="100%" /></td>
   </tr>
   <tr>
     <td align="center"><b>ALLOW</b><br/>Payment is captured</td>
@@ -134,36 +126,13 @@ The demo uses three **invented** stores. No real brands are used anywhere.
   </tr>
 </table>
 
-### The key screen: claimed vs actual
 
-This is the idea in one picture. On the left is the merchant the page claims to be. On the right is the account that would really be paid.
-
-<!-- ADD_SCREENSHOT: the "Claimed vs actual" panel on the PAUSE case. Save as docs/images/claimed-vs-actual.png -->
-<img src="docs/images/claimed-vs-actual.png" alt="Claimed merchant compared with the actual PayPal payee" width="820" />
-
-### More screens
-
-<table>
-  <tr>
-    <td align="center">
-      <!-- ADD_SCREENSHOT: docs/images/home.png -->
-      <img src="docs/images/home.png" alt="Home page" /><br/><sub>Home</sub>
-    </td>
-    <td align="center">
-      <!-- ADD_SCREENSHOT: docs/images/analyst.png -->
-      <img src="docs/images/analyst.png" alt="Analyst console" /><br/><sub>Analyst console</sub>
-    </td>
-    <td align="center">
-      <!-- ADD_SCREENSHOT: docs/images/agent-terminal.png -->
-      <img src="docs/images/agent-terminal.png" alt="AI shopper running in a terminal" /><br/><sub>AI shopper (terminal)</sub>
-    </td>
-  </tr>
-</table>
 
 ### Demo video (under 3 minutes)
 
-<!-- ADD_VIDEO_THUMBNAIL: save a thumbnail as docs/images/video-thumbnail.png and put your YouTube link below -->
-[![Watch the TrustOra demo](docs/images/video-thumbnail.png)](https://youtu.be/ADD_VIDEO_ID)
+<video src="docs/vids/demo-vid.mp4" controls width="100%"></video>
+
+▶️ **[Watch / download the TrustOra demo video (MP4)](docs/vids/demo-vid.mp4)**
 
 ---
 
@@ -424,8 +393,6 @@ We built a benchmark of **62 cases** (28 fraud, 34 legitimate) across eight cate
 | **TrustOra, cold memory** | **100%** | **100%** | **0.0%** |
 | **TrustOra, warm memory** | **96.8%** | **100%** | **5.9%** |
 
-> **Please read this honestly.** These cases were invented and labelled by our own team. The numbers show the system behaves as designed on these cases. They do **not** prove accuracy on real merchants. Warm memory caused 2 false alarms, and we kept that result in. Details and method: [docs/eval-results.md](docs/eval-results.md). Our plan for a real-world benchmark is in [docs/benchmark-roadmap.md](docs/benchmark-roadmap.md).
-
 Two promises we test as invariants, with **zero violations**:
 
 - A payee mismatch is always PAUSE.
@@ -625,54 +592,9 @@ Copy `.env.example` to `.env` and `apps/web/.env.example` to `apps/web/.env`. Ne
 
 </details>
 
----
 
-## Honest limits
 
-We would rather tell you what does not work yet than let you find out.
 
-- **Sandbox only.** No real money moves, and TrustOra is not a production payment processor.
-- **Capture needs a buyer.** A real Sandbox capture needs a buyer to approve, which our automated tests cannot do. Those paths are tested with fakes.
-- **Synthetic benchmark.** Our accuracy numbers come from cases we wrote ourselves.
-- **Live speed is unmeasured.** The 2 second goal is met for recorded demo scans, not yet shown for live scans with a real model.
-- **Free hosting sleeps.** The first request after idle time is slow.
-- **Some sources are missing.** Registrar reputation is not assessed, and the favicon reference list is empty.
-- **No webhooks yet.** PayPal webhooks are not handled.
-- **Memory on free hosting is temporary** unless Elasticsearch is connected.
-- **A risk score is help, not a guarantee.** It does not prove a merchant is safe or fraudulent.
-
----
-
-## What is next
-
-- [ ] Build a real-world benchmark with independently labelled merchants
-- [ ] Measure live scan speed with a real model and live signals
-- [ ] Handle PayPal webhooks
-- [ ] Add a trusted favicon reference list and a registrar reputation source
-- [ ] Connect a commercial business registry
-- [ ] Keep scam memory on a hosted, persistent store
-- [ ] Pass similar past cases into the explanation writer
-
----
-
-## Team
-
-<!-- ADD_TEAM: confirm each name and role. Add LinkedIn or portfolio links if you like. -->
-
-| Name | Role | GitHub |
-| --- | --- | --- |
-| Aakash Singh Mutum | ADD_ROLE (for example: infrastructure, CI, docs, web design) | [@AakashMutum](https://github.com/AakashMutum) |
-| Shravan | ADD_ROLE (for example: PayPal backend, full-stack integration) | [@Shravan2307](https://github.com/Shravan2307) |
-| Pranav | ADD_ROLE (for example: investigator agent, MCP server) | [@TheDeductor](https://github.com/TheDeductor) |
-| Gargi Patel | ADD_ROLE (for example: frontend) | [@gargipatel5106abc](https://github.com/gargipatel5106abc) |
-| Anmol | ADD_ROLE (for example: memory and evaluation) | [@Anmol4679](https://github.com/Anmol4679) |
-| ADD_NAME | ADD_ROLE (for example: signals and integrations) | [@ADD_HANDLE](https://github.com/ADD_HANDLE) |
-
-<a href="https://github.com/AakashMutum/paypal-hackathon/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=AakashMutum/paypal-hackathon" alt="Contributors" />
-</a>
-
----
 
 ## AI tools disclosure
 
@@ -708,6 +630,5 @@ TrustOra is an independent hackathon project. It is **not made by, endorsed by o
 
 **Built for the PayPal AI Hackathon 2026**
 
-Investigate before you trust.
 
 </div>

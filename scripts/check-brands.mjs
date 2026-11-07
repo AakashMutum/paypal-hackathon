@@ -26,7 +26,7 @@ const scanPaths = [
   'apps/*/fixtures',
 ];
 const skipDirs = new Set(['node_modules', 'dist', '.git']);
-const binaryExt = new Set(['.png', '.jpg', '.jpeg', '.gif', '.ico', '.webp', '.pdf', '.woff', '.woff2']);
+const binaryExt = new Set(['.png', '.jpg', '.jpeg', '.gif', '.ico', '.webp', '.pdf', '.woff', '.woff2', '.mp4', '.mov', '.webm']);
 
 const escapeRegExp = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 

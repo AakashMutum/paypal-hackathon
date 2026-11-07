@@ -4,7 +4,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const MAX_BYTES = 5 * 1024 * 1024;
+const MAX_BYTES = 10 * 1024 * 1024;
 const requiredScripts = [
   'build',
   'lint',
@@ -48,7 +48,7 @@ for (const file of tracked) {
   if (existsSync(full)) {
     const size = statSync(full).size;
     if (size > MAX_BYTES) {
-      problems.push(`tracked file larger than 5 MB: ${file} (${(size / 1024 / 1024).toFixed(1)} MB)`);
+      problems.push(`tracked file larger than 10 MB: ${file} (${(size / 1024 / 1024).toFixed(1)} MB)`);
     }
   }
 }
