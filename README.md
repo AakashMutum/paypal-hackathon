@@ -20,16 +20,28 @@
 ![Node](https://img.shields.io/badge/Node-22-339933?logo=nodedotjs&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)
 ![PayPal](https://img.shields.io/badge/PayPal-Sandbox-003087?logo=paypal&logoColor=white)
+![Channel3](https://img.shields.io/badge/Channel3-price%20data-111111)
+![Render](https://img.shields.io/badge/Render-hosting-46E3B7?logo=render&logoColor=black)
 ![MCP](https://img.shields.io/badge/MCP-agent%20tools-6C47FF)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
 [**Live demo**](https://trustora-demo.vercel.app/) &nbsp;|&nbsp;
-[**Watch the video**](docs/vids/demo-vid.mp4) &nbsp;|&nbsp;
+[**Watch the video**](https://github.com/user-attachments/assets/0c2f296b-699f-48ee-b287-6a5fa0118c8a) &nbsp;|&nbsp;
 [**API health**](https://trust-ora.onrender.com/health)
 
-
-
 </div>
+
+---
+
+## At a glance
+
+| | How TrustOra uses it |
+| --- | --- |
+| **PayPal** | Orders API v2 and Payments API v2 in the Sandbox. We create the order with intent `AUTHORIZE` so the money is held, investigate, then **capture** or **void**. See [How we used PayPal](#how-we-used-paypal). |
+| **AI** | A language model (Gemini or any OpenAI-compatible model) explains decisions and compares merchant names. An MCP server lets AI shopping agents use the same guard. A shield treats page text as an attack. AI **cannot** override the rules. See [How we used AI](#how-we-used-ai). |
+| **Channel3** (sponsor) | Product search API. We find the same product at other stores and flag prices far from the market. See [Channel3](#channel3). |
+| **Render** (sponsor) | Hosts the API and the PostgreSQL database from one blueprint file. See [Render](#render). |
+| **Open source** | Public repository under the [MIT License](LICENSE). Setup steps are in [Try it yourself](#try-it-yourself). |
 
 ---
 
@@ -40,16 +52,20 @@
 3. [See it in action](#see-it-in-action)
 4. [How it works](#how-it-works)
 5. [Why you can trust the decision](#why-you-can-trust-the-decision)
-6. [Built for AI shopping agents](#built-for-ai-shopping-agents)
-7. [Architecture](#architecture)
-8. [Tech stack](#tech-stack)
-9. [PayPal integration](#paypal-integration)
-10. [Partner tools we used](#partner-tools-we-used)
-11. [How we measured it](#how-we-measured-it)
-12. [Problems we faced](#problems-we-faced)
-13. [Try it yourself](#try-it-yourself)
-14. [AI tools disclosure](#ai-tools-disclosure)
-15. [More documentation](#more-documentation)
+6. [How we used PayPal](#how-we-used-paypal)
+7. [How we used AI](#how-we-used-ai)
+8. [Sponsor integrations](#sponsor-integrations)
+9. [Built for AI shopping agents](#built-for-ai-shopping-agents)
+10. [Architecture](#architecture)
+11. [Tech stack and other tools](#tech-stack-and-other-tools)
+12. [How we measured it](#how-we-measured-it)
+13. [Problems we faced](#problems-we-faced)
+14. [Try it yourself](#try-it-yourself)
+15. [Honest limits](#honest-limits)
+16. [What is next](#what-is-next)
+17. [Team](#team)
+18. [AI tools disclosure](#ai-tools-disclosure)
+19. [More documentation](#more-documentation)
 
 ---
 
@@ -95,7 +111,7 @@ TrustOra sits between **approving** a payment and **taking** the money. It works
 - **Domain:** how old it is, who registered it, and whether the TLS certificate is valid
 - **Payee binding:** does the site publish which merchant it is, and does that match the PayPal payee?
 - **Lookalike check:** does the address imitate a known brand?
-- **Price:** how it compares with other sellers of the same product
+- **Price:** how it compares with other sellers of the same product (through Channel3)
 - **Registry:** is the payee a registered business, and does the registered name match the claimed name?
 - **Scam memory:** does this look like a pattern we have seen before?
 - **Hidden text:** does the page try to give instructions to an AI?
@@ -126,13 +142,9 @@ The demo uses three **invented** stores. No real brands are used anywhere.
   </tr>
 </table>
 
+### Demo video
 
-
-### Demo video (under 3 minutes)
-
-<video src="docs/vids/demo-vid.mp4" controls width="100%"></video>
-
-▶️ **[Watch / download the TrustOra demo video (MP4)](docs/vids/demo-vid.mp4)**
+<video src="https://github.com/user-attachments/assets/0c2f296b-699f-48ee-b287-6a5fa0118c8a" controls width="100%"></video>
 
 ---
 
@@ -222,6 +234,116 @@ If a check did not run, TrustOra says so. Price, payee and registry checks can r
 
 ---
 
+## How we used PayPal
+
+**In short:** PayPal holds the money while TrustOra investigates. Only after the decision do we capture it or void it.
+
+1. **Create an order with intent `AUTHORIZE`.** The shopper approves, but nothing is charged yet.
+2. **Authorize.** PayPal holds the funds.
+3. **Investigate.** TrustOra checks the store and the account that would be paid.
+4. **Capture or void.** An ALLOW is captured. A PAUSE is voided and never captured. A WARN waits for a person.
+
+We use the **Orders API v2** and **Payments API v2**, in the **PayPal Sandbox only**. The API refuses to start unless `PAYPAL_MODE=sandbox`.
+
+| What | Endpoint | Code |
+| --- | --- | --- |
+| Get an access token | `POST /v1/oauth2/token` | `apps/api/src/services/paypal/paypalAuth.service.ts` |
+| Create an order (intent `AUTHORIZE`) | `POST /v2/checkout/orders` | `apps/api/src/services/paypal/paypalOrders.service.ts` |
+| Authorize the order | `POST /v2/checkout/orders/{id}/authorize` | same file |
+| Capture an authorization | `POST /v2/payments/authorizations/{id}/capture` | same file |
+| Void an authorization | `POST /v2/payments/authorizations/{id}/void` | same file |
+
+Every write sends a `PayPal-Request-Id` header, so a retry never charges twice.
+
+The real PayPal button appears when the API runs with sandbox credentials and the web app has `VITE_PAYPAL_CLIENT_ID` set. Without them, the demo uses a clearly labelled simulation (ids start with `SIM-`).
+
+See [docs/paypal-sandbox.md](docs/paypal-sandbox.md) for the full sandbox setup.
+
+---
+
+## How we used AI
+
+AI is used in three ways. In each one, a person can still check the result.
+
+### 1. Inside the investigator
+
+A language model (Gemini, or any OpenAI-compatible model) helps with the parts that need language skills:
+
+| Job | Why AI helps |
+| --- | --- |
+| Write a plain-language explanation of the decision | Shoppers should understand why a payment was held |
+| Compare the claimed merchant name with the registered business name | Names differ in small, human ways ("Co." vs "Company") |
+| Spot pushy or promotional language on the page | A signal that is hard to write as a fixed rule |
+| Write a short sentence that describes a case for scam memory | Lets us find similar past cases with semantic search (Elasticsearch) |
+
+### 2. For AI shopping agents
+
+An **MCP server** gives AI agents three tools (`investigate_merchant`, `safe_checkout`, `set_spend_policy`), so an agent gets the same protection as a person. See [Built for AI shopping agents](#built-for-ai-shopping-agents).
+
+### 3. Against AI attacks
+
+Merchant pages can contain hidden text written to trick an AI. A **prompt-injection shield** treats all page text as untrusted data, and finding such text is a hard rule.
+
+### What AI is not allowed to do
+
+- It cannot force a PAUSE on its own.
+- It cannot lower a score.
+- It cannot capture or void a payment.
+- Every model reply is checked against a strict schema (Zod) before it is used.
+- There is a time budget (1.2 seconds by default). When time runs out, the repeatable logic takes over.
+- If no model key is set, TrustOra still works and writes the explanation without a model.
+
+<!-- ADD_CONFIRM: ask your team lead whether the hosted demo has LLM_MODE=live and a Gemini key. If yes, add this line: "The hosted demo runs with the language model switched on." If not, add: "The hosted demo uses the repeatable logic. The model switches on when a key is set." -->
+
+---
+
+## Sponsor integrations
+
+### Channel3
+
+[Channel3](https://www.trychannel3.com/) is a product search API. TrustOra uses it as the **price check**.
+
+**How it works:** For a product and price on a storefront, we ask Channel3 for up to 10 offers of the same product from other stores. We take the median market price and compare it with the page price. If the page price is **25% or more** away from the market, it is flagged as a price deviation. This feeds the pricing part of the score (20 of 100 points).
+
+**Why it matters:** Scam stores often copy a real shop but lower the price. Honest new shops can also be cheap. Real market data lets TrustOra treat a discount as a clue, not as proof.
+
+**Built to fail safely:**
+- It only talks to `api.trychannel3.com` over HTTPS.
+- It has a time limit (2.5 seconds by default) and a response size limit.
+- If Channel3 is missing or fails, the price shows as **unknown**. It is never shown as a pass.
+
+| | |
+| --- | --- |
+| Price service (API) | `apps/api/src/services/pricing/channel3.ts` |
+| Signals client (agent) | `packages/signals/src/agentPort/channel3Client.ts` |
+| Tests | `apps/api/test/channel3.test.ts` |
+| Turn it on | Set `CHANNEL3_API_KEY` and `CHANNEL3_BASE_URL=https://api.trychannel3.com` |
+
+<!-- ADD_CHANNEL3_SCREENSHOT: a case page on the hosted demo showing the price comparison. Save as docs/images/channel3-price.png -->
+<img src="docs/images/channel3-price.png" alt="Price comparison from Channel3 on a TrustOra case page" width="820" />
+
+### Render
+
+[Render](https://render.com/) hosts the TrustOra **API** and its **PostgreSQL database**. Everything is described in one blueprint file, `render.yaml`, so the whole backend can be recreated with a few clicks.
+
+| Resource | What it is | How it is set up |
+| --- | --- | --- |
+| `trustora-api` | Node 22 web service | Builds the API, runs database migrations, then starts it. Health check at `/health`. |
+| `trustora-db` | PostgreSQL | Stores investigations, checkout sessions, policies and payment decisions. |
+| Secrets | PayPal keys, audit keys, model and Channel3 keys | Marked `sync: false`, so they are entered in the dashboard and never committed. |
+
+The web app is hosted on Vercel. The same blueprint also defines a static site on Render as an alternative.
+
+| | |
+| --- | --- |
+| Blueprint | [`render.yaml`](render.yaml) |
+| Step-by-step guide | [docs/deploy.md](docs/deploy.md) |
+| Live health check | [trust-ora.onrender.com/health](https://trust-ora.onrender.com/health) |
+
+The health check also tells you which parts are live and which are simulated, so nobody has to guess.
+
+---
+
 ## Built for AI shopping agents
 
 More and more purchases will be made by AI agents. TrustOra gives them the same guard through an **MCP server** (Model Context Protocol).
@@ -268,7 +390,7 @@ flowchart TB
     end
 
     PP["PayPal Sandbox<br/>Orders v2, Payments v2"]
-    DB[("PostgreSQL")]
+    DB[("PostgreSQL<br/>(Render)")]
     ES[("Elasticsearch<br/>or local file")]
     CH["Channel3<br/>price comparison"]
     REG["Merchant registry<br/>data.gov.in or local table"]
@@ -305,14 +427,14 @@ trustora/
 ├── docs/             Guides, reports and judge documents
 ├── scripts/          Repository checks and smoke tests
 ├── tests/            Shared fixtures
-└── render.yaml       Deployment blueprint
+└── render.yaml       Render blueprint (API and database)
 ```
 
 > The package names start with `@checkout-guardian/`. That was our working title and we kept it inside the code to avoid risky renames late in the build.
 
 ---
 
-## Tech stack
+## Tech stack and other tools
 
 <p>
   <img src="https://img.shields.io/badge/React-20232A?logo=react&logoColor=61DAFB" />
@@ -338,45 +460,22 @@ trustora/
 | Payments | PayPal Orders v2 and Payments v2 (Sandbox) | Authorize, then capture or void |
 | AI | Google Gemini through an OpenAI-compatible endpoint (optional) | Explanations, name comparison, promotional language, memory sentences |
 | Agent tools | Model Context Protocol SDK | `investigate_merchant`, `safe_checkout`, `set_spend_policy` |
-| Data | PostgreSQL | Investigations, checkout sessions, policies, payment decisions |
+| Data | PostgreSQL on Render | Investigations, checkout sessions, policies, payment decisions |
 | Memory | Elasticsearch (optional) with a local file fallback | Past scam patterns and similar cases |
 | Validation | Zod | Config, evidence and every model reply |
 | Quality | Node test runner, tsx, Supertest, ESLint, Prettier | Unit, integration and end-to-end tests |
 | Delivery | GitHub Actions, Render, Vercel | CI, API hosting, frontend hosting |
 
----
-
-## PayPal integration
-
-We use the **Orders API v2** and **Payments API v2**, in the **PayPal Sandbox only**. The API refuses to start unless `PAYPAL_MODE=sandbox`.
-
-| What | Endpoint | Code |
-| --- | --- | --- |
-| Get an access token | `POST /v1/oauth2/token` | `apps/api/src/services/paypal/paypalAuth.service.ts` |
-| Create an order (intent `AUTHORIZE`) | `POST /v2/checkout/orders` | `apps/api/src/services/paypal/paypalOrders.service.ts` |
-| Authorize the order | `POST /v2/checkout/orders/{id}/authorize` | same file |
-| Capture an authorization | `POST /v2/payments/authorizations/{id}/capture` | same file |
-| Void an authorization | `POST /v2/payments/authorizations/{id}/void` | same file |
-
-Every write sends a `PayPal-Request-Id` header, so a retry never charges twice.
-
-The real PayPal button appears when the API runs with sandbox credentials and the web app has `VITE_PAYPAL_CLIENT_ID` set. Without them, the demo uses a clearly labelled simulation (ids start with `SIM-`).
-
-See [docs/paypal-sandbox.md](docs/paypal-sandbox.md) for the full sandbox setup.
-
----
-
-## Partner tools we used
+### Other tools and data sources
 
 | Tool | How we use it | Required to run the demo? |
 | --- | --- | --- |
-| **PayPal Sandbox** | Orders, authorization, capture and void | No (simulation is the default) |
-| **Google Gemini** | Plain-language explanations and name comparison | No (deterministic fallback) |
-| **Channel3** | Product catalogue for price comparison (`packages/signals/src/agentPort/channel3Client.ts`) | No (price shows as unknown) |
-| **Elasticsearch** | Semantic search over past scam patterns | No (local file memory) |
+| **Google Gemini** | Plain-language explanations and name comparison | No (repeatable fallback) |
+| **Elasticsearch** | Semantic search over past scam patterns | No (local memory) |
 | **data.gov.in** | Corporate registry lookup for the payee | No (falls back to a local table) |
-| **Render** | Hosts the API and PostgreSQL (`render.yaml`) | No |
 | **Vercel** | Hosts the web app | No |
+
+Channel3 and Render are described in [Sponsor integrations](#sponsor-integrations).
 
 ---
 
@@ -392,6 +491,8 @@ We built a benchmark of **62 cases** (28 fraud, 34 legitimate) across eight cate
 | Baseline B (adds identity matching) | 75.8% | 46.4% | 0.0% |
 | **TrustOra, cold memory** | **100%** | **100%** | **0.0%** |
 | **TrustOra, warm memory** | **96.8%** | **100%** | **5.9%** |
+
+> **Please read this honestly.** We invented and labelled these cases ourselves. The numbers show the system behaves as designed on them. They do **not** prove accuracy on real merchants. Warm memory caused 2 false alarms, and we kept that result in. Method and details: [docs/eval-results.md](docs/eval-results.md).
 
 Two promises we test as invariants, with **zero violations**:
 
@@ -490,7 +591,7 @@ Open `/analyst` to see every investigation with its evidence, filters and CSV ex
 
 ### Option 2: run it on your machine
 
-You need **Node.js 22**. No accounts and no keys are needed for the default run.
+**You need:** Node.js 22 and npm. No accounts and no keys are needed for the default run.
 
 ```bash
 git clone https://github.com/AakashMutum/paypal-hackathon.git
@@ -508,18 +609,25 @@ To make the web app call your local API, copy `apps/web/.env.example` to `apps/w
 VITE_API_URL=http://localhost:3000
 ```
 
+**How to know it worked:**
+
+1. Open `http://localhost:3000/health`. It should answer with a status and show which modes are simulated.
+2. Open `http://localhost:5173`, go to **Demo stores**, and check out at each store. You should see ALLOW, WARN and PAUSE as in the table above.
+
 To watch an AI shopper try all three stores (with the API running):
 
 ```bash
 npm run demo:agent -- --auto-human yes
 ```
 
-### Option 3: use the real PayPal Sandbox
+### Option 3: use the real PayPal Sandbox, Channel3 and a model
 
 1. Create sandbox business and buyer accounts in the [PayPal Developer Dashboard](https://developer.paypal.com/).
 2. Put `PAYPAL_MODE=sandbox`, `PAYPAL_CLIENT_ID` and `PAYPAL_CLIENT_SECRET` in `.env`.
 3. Put `VITE_PAYPAL_CLIENT_ID` in `apps/web/.env`.
-4. Restart both servers. A real PayPal button appears, and a sandbox buyer approves the payment.
+4. For live price checks, add `CHANNEL3_API_KEY` and `CHANNEL3_BASE_URL=https://api.trychannel3.com`.
+5. For model explanations, add your model key and set `LLM_MODE=live` (see the table below).
+6. Restart both servers. A real PayPal button appears, and a sandbox buyer approves the payment.
 
 ### What is real and what is simulated
 
@@ -545,8 +653,8 @@ Copy `.env.example` to `.env` and `apps/web/.env.example` to `apps/web/.env`. Ne
 | `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET` | PayPal Sandbox credentials |
 | `DATABASE_URL` | PostgreSQL connection (memory mode when empty) |
 | `AUDIT_ENCRYPTION_KEY` | 64 hex characters, encrypts stored audit data |
-| `LLM_PROVIDER`, `LLM_API_KEY` or `GEMINI_API_KEY`, `LLM_BASE_URL`, `LLM_MODEL_FAST`, `LLM_MODEL_STRONG`, `LLM_MODE` | Language model settings |
-| `CHANNEL3_API_KEY` | Live price comparison |
+| `LLM_PROVIDER`, `LLM_API_KEY` or `GEMINI_API_KEY`, `LLM_BASE_URL`, `LLM_MODEL_FAST`, `LLM_MODEL_STRONG`, `LLM_MODE` | Language model settings (`LLM_MODE=live` turns the model on) |
+| `CHANNEL3_API_KEY`, `CHANNEL3_BASE_URL` | Live price comparison |
 | `ELASTIC_URL`, `ELASTIC_API_KEY`, `MEMORY_MODE` | Scam memory backend |
 | `SIGNALS_MODE` | `replay`, `live` or `auto` |
 | `AGENT_MODEL_BUDGET_MS`, `AGENT_TIMEOUT_MS` | Time limits for the agent |
@@ -592,9 +700,54 @@ Copy `.env.example` to `.env` and `apps/web/.env.example` to `apps/web/.env`. Ne
 
 </details>
 
+---
 
+## Honest limits
 
+We would rather tell you what does not work yet than let you find out.
 
+- **Sandbox only.** No real money moves, and TrustOra is not a production payment processor.
+- **Capture needs a buyer.** A real Sandbox capture needs a buyer to approve, which our automated tests cannot do. Those paths are tested with fakes.
+- **Synthetic benchmark.** Our accuracy numbers come from cases we wrote ourselves.
+- **Live speed is unmeasured.** The 2 second goal is met for recorded demo scans, not yet shown for live scans with a real model.
+- **Free hosting limits.** The Render API sleeps after idle time, and Render's free PostgreSQL database expires 30 days after it is created.
+- **Some sources are missing.** Registrar reputation is not assessed, and the favicon reference list is empty.
+- **No webhooks yet.** PayPal webhooks are not handled.
+- **Memory on free hosting is temporary** unless Elasticsearch is connected.
+- **A risk score is help, not a guarantee.** It does not prove a merchant is safe or fraudulent.
+
+---
+
+## What is next
+
+- [ ] Build a real-world benchmark with independently labelled merchants
+- [ ] Measure live scan speed with a real model and live signals
+- [ ] Handle PayPal webhooks
+- [ ] Add a trusted favicon reference list and a registrar reputation source
+- [ ] Connect a commercial business registry
+- [ ] Keep scam memory on a hosted, persistent store
+- [ ] Pass similar past cases into the explanation writer
+
+---
+
+## Team
+
+<!-- ADD_TEAM: confirm each name and role. Add LinkedIn or portfolio links if you like. -->
+
+| Name | Role | GitHub |
+| --- | --- | --- |
+| Aakash Singh Mutum | ADD_ROLE (for example: infrastructure, CI, docs, web design) | [@AakashMutum](https://github.com/AakashMutum) |
+| Shravan | ADD_ROLE (for example: PayPal backend, full-stack integration) | [@Shravan2307](https://github.com/Shravan2307) |
+| Pranav | ADD_ROLE (for example: investigator agent, MCP server) | [@TheDeductor](https://github.com/TheDeductor) |
+| Gargi Patel | ADD_ROLE (for example: frontend) | [@gargipatel5106abc](https://github.com/gargipatel5106abc) |
+| Anmol | ADD_ROLE (for example: memory and evaluation) | [@Anmol4679](https://github.com/Anmol4679) |
+| ADD_NAME (committed as "Popo") | ADD_ROLE (for example: signals and integrations) | [@ADD_HANDLE](https://github.com/ADD_HANDLE) |
+
+<a href="https://github.com/AakashMutum/paypal-hackathon/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=AakashMutum/paypal-hackathon" alt="Contributors" />
+</a>
+
+---
 
 ## AI tools disclosure
 
@@ -624,11 +777,12 @@ Copy `.env.example` to `.env` and `apps/web/.env.example` to `apps/web/.env`. Ne
 
 Released under the [MIT License](LICENSE).
 
-TrustOra is an independent hackathon project. It is **not made by, endorsed by or affiliated with PayPal**. The only PayPal mark in the app is the button that PayPal's own SDK renders. All demo stores and brands are invented.
+TrustOra is an independent hackathon project. It is **not made by, endorsed by or affiliated with PayPal, Channel3 or Render**. The only PayPal mark in the app is the button that PayPal's own SDK renders. All demo stores and brands are invented.
 
 <div align="center">
 
 **Built for the PayPal AI Hackathon 2026**
 
+Investigate before you trust.
 
 </div>
