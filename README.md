@@ -128,11 +128,10 @@ The demo uses three **invented** stores. No real brands are used anywhere.
 
 
 
-### Demo video (under 3 minutes)
+### Demo video 
 
-<video src="docs/vids/demo-vid.mp4" controls width="100%"></video>
 
-▶️ **[Watch / download the TrustOra demo video (MP4)](docs/vids/demo-vid.mp4)**
+<video src="https://github.com/user-attachments/assets/0c2f296b-699f-48ee-b287-6a5fa0118c8a" controls width="100%"></video>
 
 ---
 
