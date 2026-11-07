@@ -24,8 +24,7 @@
 ![License](https://img.shields.io/badge/License-MIT-green)
 
 [**Live demo**](https://trustora-demo.vercel.app/) &nbsp;|&nbsp;
-[**Watch the video**](https://youtu.be/ADD_VIDEO_ID) &nbsp;|&nbsp;
-[**Devpost page**](https://devpost.com/software/ADD_PROJECT_SLUG) &nbsp;|&nbsp;
+[**Watch the video**](docs/vids/demo-vid.mp4) &nbsp;|&nbsp;
 [**API health**](https://trust-ora.onrender.com/health)
 
 
@@ -131,8 +130,9 @@ The demo uses three **invented** stores. No real brands are used anywhere.
 
 ### Demo video (under 3 minutes)
 
-<!-- ADD_VIDEO_THUMBNAIL: save a thumbnail as docs/images/video-thumbnail.png and put your YouTube link below -->
-[![Watch the TrustOra demo](docs/images/video-thumbnail.png)](https://youtu.be/ADD_VIDEO_ID)
+<video src="docs/vids/demo-vid.mp4" controls width="100%"></video>
+
+▶️ **[Watch / download the TrustOra demo video (MP4)](docs/vids/demo-vid.mp4)**
 
 ---
 
@@ -392,8 +392,6 @@ We built a benchmark of **62 cases** (28 fraud, 34 legitimate) across eight cate
 | Baseline B (adds identity matching) | 75.8% | 46.4% | 0.0% |
 | **TrustOra, cold memory** | **100%** | **100%** | **0.0%** |
 | **TrustOra, warm memory** | **96.8%** | **100%** | **5.9%** |
-
-> **Please read this honestly.** These cases were invented and labelled by our own team. The numbers show the system behaves as designed on these cases. They do **not** prove accuracy on real merchants. Warm memory caused 2 false alarms, and we kept that result in. Details and method: [docs/eval-results.md](docs/eval-results.md). Our plan for a real-world benchmark is in [docs/benchmark-roadmap.md](docs/benchmark-roadmap.md).
 
 Two promises we test as invariants, with **zero violations**:
 
