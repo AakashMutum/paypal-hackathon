@@ -731,25 +731,6 @@ We would rather tell you what does not work yet than let you find out.
 
 ---
 
-## Team
-
-<!-- ADD_TEAM: confirm each name and role. Add LinkedIn or portfolio links if you like. -->
-
-| Name | Role | GitHub |
-| --- | --- | --- |
-| Aakash Singh Mutum | ADD_ROLE (for example: infrastructure, CI, docs, web design) | [@AakashMutum](https://github.com/AakashMutum) |
-| Shravan | ADD_ROLE (for example: PayPal backend, full-stack integration) | [@Shravan2307](https://github.com/Shravan2307) |
-| Pranav | ADD_ROLE (for example: investigator agent, MCP server) | [@TheDeductor](https://github.com/TheDeductor) |
-| Gargi Patel | ADD_ROLE (for example: frontend) | [@gargipatel5106abc](https://github.com/gargipatel5106abc) |
-| Anmol | ADD_ROLE (for example: memory and evaluation) | [@Anmol4679](https://github.com/Anmol4679) |
-| ADD_NAME (committed as "Popo") | ADD_ROLE (for example: signals and integrations) | [@ADD_HANDLE](https://github.com/ADD_HANDLE) |
-
-<a href="https://github.com/AakashMutum/paypal-hackathon/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=AakashMutum/paypal-hackathon" alt="Contributors" />
-</a>
-
----
-
 ## AI tools disclosure
 
 **Inside the product** (what runs when someone uses TrustOra): Google Gemini, or any OpenAI-compatible model, used for explanations and name comparison. It is optional and cannot override the hard rules.
